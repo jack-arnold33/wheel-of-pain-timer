@@ -17,3 +17,5 @@ recorded in the specs are final.
 - [Local-first content packs](specs/content-packs.md)
 - [MVP timer behavior](specs/timer-behavior.md)
 - [MVP screens and flows](specs/screens-and-flows.md)
+- [MVP acceptance scenarios](specs/acceptance-scenarios.md)
+- [iOS and PWA capability risks](specs/ios-pwa-risks.md)

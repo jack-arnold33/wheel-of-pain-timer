@@ -13,7 +13,9 @@ Pre-workout
 Prepare begins immediately
   -> timed workout phases
 Active workout
-  -> user confirms End Workout -> Pre-workout for the same routine
+  -> End Workout -> confirmation
+     -> Keep Workout Paused -> Active workout, paused
+     -> confirm End Workout -> Pre-workout for the same routine
   -> workout completes -> Completion -> press Done
      -> Pre-workout for the same routine
 ```
@@ -74,6 +76,11 @@ screen.
 Motivational sayings are spoken rather than displayed, keeping the mirrored
 timer visually focused on phase, time, and progress.
 
+End Workout opens a simple confirmation and immediately pauses phase time. It
+offers **Keep Workout Paused** and the destructive **End Workout**. Canceling
+does not resume automatically. Confirming ends progress without showing
+Completion.
+
 ## Settings
 
 Settings contains the explicit opt-in for online speech synthesis. The option
@@ -110,6 +117,51 @@ remove names stored on the current device. The roster is optional and applies
 to spoken sayings from any selected content pack; it does not appear in routine
 configuration or content-pack export.
 
+## Routine editor
+
+The routine editor contains the routine name, five duration fields, three count
+fields, and continuously updated totals for Work intervals and scheduled
+duration. Optional durations explicitly allow `00:00`; Work and all counts must
+be positive. Errors identify the field or aggregate limit and block Save.
+
+Customizing **Wheel of Pain** opens the editor with a new user-owned copy. The
+protected preset itself is never an edit target. Editing a user routine changes
+that routine; Duplicate creates another editable user routine. Deleting a user
+routine requires confirmation that names the routine and returns to Home.
+
+## Content-pack library
+
+The library is opened from the pre-workout Personality row and shows None plus
+saved packs. Selecting a pack or completing a valid import returns to the
+originating pre-workout screen. Pack inspection shows the pack name, category
+counts, total saying count, and that it is saved on this device; sayings need
+not be presented on the active workout screen.
+
+Import errors remain in the import flow, identify the invalid field or limit,
+and do not change saved data. A name or identity conflict offers Replace, Save
+a Copy with a distinct name, or Cancel only after the incoming pack validates.
+Rename rejects an invalid or conflicting name. Removing a pack requires a
+named confirmation; removing the selected pack changes Personality to None.
+
+## Backup and restore
+
+Settings provides local backup export and restore. Before export and before
+destructive bulk actions, the screen explains that browser data or app removal
+can erase local information.
+
+Restore validates the complete file before offering confirmation. Its preview
+summarizes the routines, packs, participants, and preferences that will replace
+current device data. Confirmation performs one atomic replacement of user data;
+the app-supplied protected preset remains available. Invalid or unsupported
+backups show actionable errors and never enable a partial restore.
+
+## Capability notices
+
+Wake-lock, offline-resource, storage, voice, and installation limitations use
+short notices outside the primary timer hierarchy. A notice never obscures
+Play/Pause or the remaining time and never claims a capability succeeded when
+the browser or operating system did not provide it.
+
 ## Completion
 
 Normal completion opens a simple, persistent completion screen suitable for the
@@ -140,7 +192,5 @@ Complete but does not speak the missed `finished` saying.
 
 ## Screens still to define
 
-- Routine editor and destructive-action confirmations
-- Content-pack library, import review, and pack inspection
-- Backup and restore presentation
-- Remaining preferences and capability notices
+- Exact duration-field input treatment on small screens
+- Exact reduced-motion treatment and sound selection
