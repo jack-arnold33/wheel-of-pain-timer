@@ -5,6 +5,9 @@ plan. Capability behavior must be verified on the supported iPhone and iOS
 versions before release. Feature detection and truthful fallback notices remain
 required even where a platform release claims support.
 
+The pre-implementation experiments, evidence format, and decision thresholds
+for these risks are defined in [`risk-lab.md`](risk-lab.md).
+
 ## Current evidence
 
 - iOS and iPadOS support adding websites to the Home Screen. A manifest with an

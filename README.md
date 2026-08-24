@@ -19,3 +19,4 @@ recorded in the specs are final.
 - [MVP screens and flows](specs/screens-and-flows.md)
 - [MVP acceptance scenarios](specs/acceptance-scenarios.md)
 - [iOS and PWA capability risks](specs/ios-pwa-risks.md)
+- [PWA risk lab specification](specs/risk-lab.md)
