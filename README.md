@@ -7,8 +7,9 @@ rest intervals and runs as an installable web app on a phone.
 
 ## Project status
 
-The project is in specification. No implementation choices beyond those
-recorded in the specs are final.
+The project is in specification. The PWA delivery model and initial technical
+baseline are accepted; product implementation has not begun. Other choices are
+final only when recorded in the specifications.
 
 ## Specifications
 
@@ -17,3 +18,5 @@ recorded in the specs are final.
 - [Local-first content packs](specs/content-packs.md)
 - [MVP timer behavior](specs/timer-behavior.md)
 - [MVP screens and flows](specs/screens-and-flows.md)
+- [PWA risk-lab findings](specs/pwa-risk-lab-findings.md)
+- [Accepted PWA architecture](specs/pwa-architecture-decision.md)

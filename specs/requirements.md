@@ -130,6 +130,10 @@ reused for a different behavior.
   participants, or preferences.
 - **P-005:** The app clearly reports when a capability is limited by the browser
   or operating system rather than pretending it succeeded.
+- **P-006:** When a complete compatible application update is waiting, the app
+  presents a visible, safe activation path. It does not replace the active
+  version during a workout or serve a mixture of assets from different
+  versions.
 
 ## Accessibility and presentation
 
