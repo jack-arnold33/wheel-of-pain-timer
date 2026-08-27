@@ -121,6 +121,8 @@ Each phase gives countdown cues at 5, 4, 3, 2, and 1 seconds remaining. A common
 transition sound plays when the next phase begins; Work and Rest do not require
 different transition sounds. Visual state changes accompany audio cues, and
 the timer remains understandable when audio is muted or unavailable.
+When a phase is shorter than five seconds, only the remaining applicable
+countdown numbers are cued.
 
 Whole seconds are displayed using ceiling behavior. A 30-second phase begins
 at `00:30`, shows `00:01` throughout its final fractional second, and moves
@@ -136,16 +138,26 @@ starts a three-second resume countdown.
 - The paused phase continues only after the resume countdown ends.
 - Pausing during the resume countdown cancels it and leaves the workout paused.
 - The resume countdown applies to every timed phase.
+- Backgrounding, reloading, or terminating the app during the resume countdown
+  cancels it. Recovery returns to the same phase paused at its saved remaining
+  duration; a workout never resumes while it is not visible.
 
 Skip Phase and End Workout are secondary actions.
 
 Skip immediately advances through the normal sequence and plays the normal
 transition cue. A skipped Work interval counts as completed and is not retried.
-Skipping Cooldown completes the workout.
+Skipping Cooldown completes the workout. When Skip is used while paused, the
+next non-omitted phase is selected at its full duration and remains paused. If
+Skip is used during the resume countdown, the countdown is canceled first and
+the next non-omitted phase remains paused.
 
-End Workout requires confirmation, discards current progress, and returns to
-the same routine's pre-workout screen. The user must press Play to start again.
-There is no separate Restart action because it would have the same result.
+End Workout requires confirmation. Opening the confirmation immediately stops
+phase time and cancels any resume countdown. Its actions are **Keep Workout
+Paused** and the destructive **End Workout**. Keeping the workout closes the
+confirmation and leaves the current phase paused. Confirming End Workout
+discards current progress and returns to the same routine's pre-workout screen.
+The user must press Play to start again. There is no separate Restart action
+because it would have the same result.
 
 ## Backgrounding, recovery, and wake lock
 
@@ -161,6 +173,13 @@ wall clock. When reopened, the app restores a paused workout exactly as paused
 or reconstructs a running workout. It returns directly to the correct phase, or
 to Complete when the workout elapsed while closed. A small recovery notice
 explains that state was reconstructed.
+
+If the current wall clock is earlier than the persisted checkpoint clock, the
+app cannot verify elapsed time. It restores the checkpoint phase as paused,
+does not subtract or invent time, and shows a notice that accuracy could not be
+verified. The user may resume or End Workout. A positive elapsed value advances
+normally; a long closure and a forward manual clock change cannot be reliably
+distinguished by a web app and remain a documented platform risk.
 
 Missed countdown cues, transition sounds, and spoken sayings are not
 replayed in a burst after recovery. End Workout remains available if the
@@ -190,7 +209,4 @@ elapsed before it was skipped.
 
 ## Decisions still needed
 
-- Exact confirmation presentation for End Workout
-- Handling an implausible wall-clock change while reconstructing after full
-  process termination
 - Exact sound assets and reduced-motion presentation

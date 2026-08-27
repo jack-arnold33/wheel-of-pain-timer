@@ -32,7 +32,8 @@ reused for a different behavior.
 - **T-002:** The app displays the current cycle, round, and exercise position
   plus the next phase.
 - **T-003:** The user can start, pause, resume, skip a phase, or end a workout
-  safely. End Workout replaces separate restart and cancel actions.
+  safely. End Workout immediately pauses for confirmation and replaces separate
+  restart and cancel actions. Skip advances while preserving a paused state.
 - **T-004:** While the app process remains active, timer state is calculated
   from monotonic elapsed time rather than by assuming each periodic callback
   occurs on schedule. Recovery after full termination uses persisted timeline
@@ -60,7 +61,9 @@ reused for a different behavior.
   presentation.
 - **T-014:** After reload or process termination, a recoverable running workout
   is reconstructed from its saved timeline and a paused workout remains paused.
-  Missed cues are not replayed.
+  An interrupted resume countdown recovers as paused. A backward wall-clock
+  change fails safe as paused with an accuracy warning. Missed cues are not
+  replayed.
 
 ## Content packs
 
@@ -74,6 +77,7 @@ reused for a different behavior.
 - **C-004:** Importing a pack does not require a separate session-only or
   persistence choice.
 - **C-005:** The user can select, rename, inspect, and remove saved packs.
+  Import conflicts never silently overwrite an existing pack.
 - **C-006:** The app validates a pack before use and presents actionable errors
   without partially importing invalid content.
 - **C-007:** Imported text is rendered as text and is never executed as HTML or
@@ -90,7 +94,8 @@ reused for a different behavior.
   configurable name list.
 - **C-013:** Participant selection uses a shuffled rotation that selects every
   name before repeating and avoids an immediate repeat across reshuffles when
-  at least two names exist.
+  at least two names exist. Rotation is initialized per workout from the active
+  attendance snapshot.
 - **C-014:** A v1 pack is limited to 512 KB, a name of 1 through 80 Unicode
   characters, sayings of 1 through 240 Unicode characters, 500 sayings per
   category, and 1,000 sayings total.
@@ -117,7 +122,8 @@ reused for a different behavior.
   participants for the workout and remembers the last attendance selection.
 - **D-008:** The user can export and restore a portable local backup containing
   routines, packs, preferences, and participants. Restore shows the proposed
-  changes and validates the complete backup before changing saved data.
+  replacement, validates the complete backup, and atomically replaces user data
+  without replacing the app-supplied protected preset.
 
 ## PWA and offline operation
 
@@ -148,16 +154,19 @@ reused for a different behavior.
 - **A-007:** Timer sounds and spoken motivation can be enabled independently.
   Voice selection offers browser-exposed choices, a generic preview, speech
   speed, and a safe System Default fallback.
+- **A-008:** App presentation is provided by named, replaceable themes. A theme
+  may define visual tokens and decorative assets, but it does not change screen
+  structure, control meaning, timer behavior, stored routines, or content-pack
+  behavior. Every theme must continue to satisfy A-001 through A-004.
+- **A-009:** MVP may ship with only one built-in default theme and need not show
+  a theme selector in that state. The active theme is represented by a stable
+  identifier in device-local preferences so additional built-in themes can be
+  offered later without changing timer or content data. An unavailable theme
+  identifier falls back to the default theme without blocking app use.
 
-## Acceptance scenarios to write next
+## Acceptance scenarios
 
-The next specification pass should convert these priority behaviors into
-Given/When/Then scenarios:
-
-1. Create and run a standard Tabata routine.
-2. Pause and resume without timer drift.
-3. Recover accurately after a brief background transition.
-4. Import and save a valid text pack locally.
-5. Reject an invalid JSON pack without changing saved data.
-6. Save, select, export, and delete an on-device pack.
-7. Complete a configured workout while offline.
+The MVP Given/When/Then suite is maintained in
+[`acceptance-scenarios.md`](acceptance-scenarios.md). Scenarios cite these
+identifiers so requirements, future implementation work, and verification stay
+traceable.

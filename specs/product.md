@@ -5,8 +5,8 @@
 - Product name: **Wheel of Pain Timer**
 - Repository name: `wheel-of-pain-timer`
 - Name inspiration: the group's workouts and *Conan the Barbarian*
-- Theme: playful garage workouts with an optional 1980s sword-and-sorcery
-  visual style
+- Initial theme: playful garage workouts with an optional 1980s
+  sword-and-sorcery visual style
 - Voice: encouraging, ridiculous, affectionate, and never cruel
 
 Display-name refinements can be made without changing the product specification.
@@ -65,6 +65,8 @@ Version 1 does not require accounts or a centralized list of users.
 - Provide audible and visual timer cues
 - Keep the display awake when supported
 - Store routines and preferences locally
+- Use a themeable presentation system; MVP may ship with only one built-in
+  theme and no theme picker
 - Configure a device-local participant roster for spoken motivation
 - Import, select, and remove local-first content packs
 - Save imported content packs on the current device for later selection or
@@ -82,6 +84,7 @@ Version 1 does not require accounts or a centralized list of users.
 - Apple Health integration
 - Social feeds, leaderboards, or workout analytics
 - Complex nested workout programming
+- Shipping multiple selectable themes or user-authored themes
 
 ## Success criteria
 
@@ -99,6 +102,9 @@ Version 1 does not require accounts or a centralized list of users.
   content packs. Under the online-speech opt-in, the selected name may be sent
   with an individual saying for synthesis.
 - The interface remains fully usable when all humorous content is disabled.
+- Adding a built-in theme does not require changes to timer behavior, routine
+  data, content packs, or screen semantics, and every theme preserves the same
+  accessibility requirements.
 
 ## Open product decisions
 

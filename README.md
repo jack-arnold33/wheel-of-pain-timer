@@ -18,5 +18,8 @@ final only when recorded in the specifications.
 - [Local-first content packs](specs/content-packs.md)
 - [MVP timer behavior](specs/timer-behavior.md)
 - [MVP screens and flows](specs/screens-and-flows.md)
+- [MVP acceptance scenarios](specs/acceptance-scenarios.md)
+- [iOS and PWA capability risks](specs/ios-pwa-risks.md)
+- [PWA risk lab specification](specs/risk-lab.md)
 - [PWA risk-lab findings](specs/pwa-risk-lab-findings.md)
 - [Accepted PWA architecture](specs/pwa-architecture-decision.md)

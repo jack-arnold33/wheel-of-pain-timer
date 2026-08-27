@@ -157,6 +157,11 @@ Participant selection uses a shuffled rotation:
 - With one participant, that person is used for every saying.
 - With an empty roster, sayings are spoken without a name.
 
+The rotation is initialized independently for each workout from a snapshot of
+the participants checked active when Play is pressed. Rotation order is not
+carried across workouts. The remembered attendance checks are device-local and
+do carry across workouts.
+
 Only participants checked as active on the pre-workout screen take part in the
 rotation. The last attendance selection is remembered for later workouts. If
 no names are active, sayings are spoken without a name.
@@ -174,6 +179,22 @@ to include a name placeholder in saying text.
   before committing any change.
 - The app warns that uninstalling it or clearing browser site data may remove
   on-device data.
+
+A valid import never silently overwrites a saved pack. When its normalized name
+or portable identity conflicts with an existing pack, the user may explicitly
+replace the existing pack, save a copy under a distinct valid name, or cancel.
+The incoming pack is fully validated before those actions are offered, and the
+selected action is committed atomically. Removing a selected pack changes the
+current Personality to None; it does not affect routines or essential cues.
+
+The portable backup is a UTF-8 JSON file with an integer `schemaVersion` and
+collections for user routines, packs, preferences, and participants, including
+remembered attendance. The protected Wheel of Pain preset is app-supplied and
+is not serialized as user data. Restore is a full replacement of those user
+collections, not a merge. A preview summarizes what will be replaced, and the
+complete backup—including contained routine and pack rules and cross-references—
+must validate before confirmation can change any current data. The replacement
+is atomic and the protected preset remains available afterward.
 
 ## Deferred extensions
 
