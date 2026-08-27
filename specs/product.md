@@ -23,6 +23,16 @@ Create an installable phone-friendly timer that works offline, is quick to use
 during a workout, and can deliver user-supplied jokes and motivational sayings
 without publishing that content with the application.
 
+## Technical direction
+
+The MVP is an installable, offline-first progressive web application. The
+accepted technical baseline and the physical-device evidence behind that
+decision are recorded in
+[`pwa-architecture-decision.md`](pwa-architecture-decision.md) and
+[`pwa-risk-lab-findings.md`](pwa-risk-lab-findings.md). This selects the
+product direction without turning the disposable risk-lab code into production
+scaffolding.
+
 ## Intended users
 
 - The owner, who creates routines and content packs
