@@ -31,7 +31,9 @@ decision are recorded in
 [`pwa-architecture-decision.md`](pwa-architecture-decision.md) and
 [`pwa-risk-lab-findings.md`](pwa-risk-lab-findings.md). This selects the
 product direction without turning the disposable risk-lab code into production
-scaffolding.
+scaffolding. The application UI uses React with TypeScript and Material UI;
+MUI's component and theme systems provide the shared presentation foundation
+while timer and persistence behavior remain independent of the UI library.
 
 ## Intended users
 

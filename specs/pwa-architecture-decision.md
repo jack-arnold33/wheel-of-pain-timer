@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Decision date:** 2026-08-27
+- **Last amended:** 2026-08-27 (adopt Material UI for components and themes)
 - **Scope:** Wheel of Pain Timer MVP
 - **Evidence:** [`pwa-risk-lab-findings.md`](pwa-risk-lab-findings.md)
 
@@ -26,12 +27,12 @@ baseline:
 
 | Concern | Selection |
 | --- | --- |
-| UI | React with TypeScript |
+| UI and component library | React with TypeScript and Material UI (MUI) |
 | Build and local development | Vite |
 | PWA integration | `vite-plugin-pwa` using `injectManifest` |
 | Offline worker | A small custom Workbox service worker |
 | Local structured storage | IndexedDB through Dexie |
-| Styling | Plain CSS |
+| Styling and themes | MUI `ThemeProvider`, typed theme definitions, generated CSS variables, component overrides, and `sx` |
 | Initial hosting | Static HTTPS hosting on GitHub Pages |
 | Server-side application | None required for MVP |
 | Accounts and synchronization | None for MVP |
@@ -40,6 +41,20 @@ baseline:
 The implementation should begin with current compatible stable dependency
 versions and commit its lockfile. The versions used by the risk lab are
 evidence of feasibility, not permanent product version constraints.
+
+MUI is the primary component and presentation system. Screens should compose
+MUI components and layout primitives, use semantic values from the active MUI
+theme, and place shared visual decisions in theme configuration rather than
+repeat them in individual components. Narrowly scoped custom styling remains
+appropriate for product-specific presentation such as the large active timer,
+mirrored landscape layout, and decorative theme assets; plain CSS is not a
+parallel general-purpose component system.
+
+Each built-in app theme is a complete, typed MUI theme definition registered
+under the stable identifier required by A-009. The registry supplies the theme
+to the root `ThemeProvider`. Adding a built-in theme must not change screen
+structure, component meaning, timer behavior, or stored domain data. If a
+stored identifier is unavailable, the registry supplies the built-in default.
 
 ## Runtime model
 
@@ -66,6 +81,9 @@ evidence of feasibility, not permanent product version constraints.
 - It is small enough for the initial product while retaining direct access to
   browser capabilities and IndexedDB.
 - It matches the product's local-first privacy boundary.
+- MUI supplies accessible component foundations and centralized, typed theme
+  configuration, reducing bespoke control and styling code while supporting
+  future built-in themes.
 
 ## Consequences and constraints
 
@@ -79,6 +97,13 @@ evidence of feasibility, not permanent product version constraints.
   denial or release.
 - Browser speech behavior and voice locality remain unvalidated and require
   implementation-stage privacy checks.
+- MUI becomes a deliberate application dependency. Product code should prefer
+  its public component and theme APIs, keep library-specific presentation out
+  of timer and persistence modules, and verify the resulting controls against
+  the app's touch-target, contrast, reduced-motion, and TV-legibility criteria.
+- Theme configuration may change appearance and decorative assets, but it must
+  not encode workout state transitions or make essential meaning depend on
+  color or animation.
 - Native-only capabilities are unavailable unless this decision is revisited.
 
 ## Not selected
@@ -89,13 +114,17 @@ evidence of feasibility, not permanent product version constraints.
 - Required cloud synchronization
 - Third-party analytics for core operation
 - A third-party speech provider without a separate privacy decision
+- Plain CSS as the primary component and theming system
+- A utility-first CSS framework as an additional styling layer for MVP
 
 ## Implementation boundary
 
 The risk lab is evidence, not a starter application. Product code may reuse the
 selected technologies and behavioral conclusions, but it must establish its
 own component structure, data model, migrations, tests, accessibility, error
-handling, and release process.
+handling, and release process. The component structure must also establish a
+small app-facing presentation boundary around MUI so timer and storage logic do
+not depend on component-library objects.
 
 ## Revisit triggers
 
