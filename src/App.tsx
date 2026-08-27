@@ -1,33 +1,128 @@
-import { Box, Chip, Container, Paper, Stack, Typography } from '@mui/material'
+import { useMemo, useState } from 'react'
+import {
+  Box,
+  Button,
+  Chip,
+  Container,
+  Divider,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material'
 import { buildWorkoutSequence } from './domain/timer/sequence'
 import { standardRoutineTiming } from './domain/timer/standardRoutine'
 import { PwaUpdatePrompt } from './presentation/PwaUpdatePrompt'
+import { WorkoutRunner } from './presentation/WorkoutRunner'
+import { formatClock } from './presentation/timerPresentation'
 
-const standardSequence = buildWorkoutSequence(standardRoutineTiming)
-const workIntervals = standardSequence.filter(({ kind }) => kind === 'work').length
+type Screen = 'preworkout' | 'active' | 'complete'
 
 export function App() {
+  const sequence = useMemo(
+    () => buildWorkoutSequence(standardRoutineTiming),
+    [],
+  )
+  const [screen, setScreen] = useState<Screen>('preworkout')
+  const [completedWorkoutMs, setCompletedWorkoutMs] = useState(0)
+
+  const workIntervals = sequence.filter(({ kind }) => kind === 'work').length
+  const scheduledDurationMs = sequence.reduce(
+    (total, phase) => total + phase.durationMs,
+    0,
+  )
+
+  if (screen === 'active') {
+    return (
+      <>
+        <WorkoutRunner
+          phases={sequence}
+          timing={standardRoutineTiming}
+          onComplete={(activeElapsedMs) => {
+            setCompletedWorkoutMs(activeElapsedMs)
+            setScreen('complete')
+          }}
+          onEnd={() => setScreen('preworkout')}
+        />
+        <PwaUpdatePrompt activationAllowed={false} />
+      </>
+    )
+  }
+
+  if (screen === 'complete') {
+    return (
+      <Box
+        component="main"
+        sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', p: 3 }}
+      >
+        <Container maxWidth="sm">
+          <Paper variant="outlined" sx={{ p: { xs: 3, sm: 5 }, textAlign: 'center' }}>
+            <Stack spacing={3} sx={{ alignItems: 'center' }}>
+              <Chip label="Workout complete" color="primary" />
+              <Typography variant="h1" sx={{ fontSize: { xs: '3rem', sm: '4.5rem' } }}>
+                Complete
+              </Typography>
+              <Typography variant="h5" color="text.secondary">
+                The wheel is conquered.
+              </Typography>
+              <Typography>
+                Workout time: {formatClock(completedWorkoutMs)}
+              </Typography>
+              <Button variant="contained" size="large" onClick={() => setScreen('preworkout')}>
+                Done
+              </Button>
+            </Stack>
+          </Paper>
+        </Container>
+        <PwaUpdatePrompt activationAllowed />
+      </Box>
+    )
+  }
+
   return (
     <Box component="main" sx={{ minHeight: '100dvh', py: { xs: 4, sm: 8 } }}>
       <Container maxWidth="sm">
         <Stack spacing={3}>
           <Stack spacing={1}>
-            <Chip label="MVP foundation" color="primary" sx={{ alignSelf: 'flex-start' }} />
+            <Chip label="Protected preset" color="primary" sx={{ alignSelf: 'flex-start' }} />
             <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', sm: '3.5rem' } }}>
               Wheel of Pain
             </Typography>
             <Typography color="text.secondary">
-              The production PWA shell and deterministic timer engine are ready.
+              Review the standard routine, then begin the Prepare phase.
             </Typography>
           </Stack>
 
           <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack spacing={1}>
-              <Typography variant="h6">Protected standard routine</Typography>
-              <Typography>{workIntervals} work intervals</Typography>
+            <Stack spacing={2}>
+              <Typography variant="h6">Standard routine</Typography>
+              <Stack direction="row" divider={<Divider orientation="vertical" flexItem />} spacing={2}>
+                <Box>
+                  <Typography variant="h5">{workIntervals}</Typography>
+                  <Typography variant="body2" color="text.secondary">Work intervals</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="h5">{formatClock(scheduledDurationMs)}</Typography>
+                  <Typography variant="body2" color="text.secondary">Total duration</Typography>
+                </Box>
+              </Stack>
               <Typography color="text.secondary">
                 4 cycles · 4 rounds · 3 exercises
               </Typography>
+              <Typography color="text.secondary">
+                10 sec prepare · 30 sec work · 15 sec rest · 2 min cycle rest
+              </Typography>
+              <Divider />
+              <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
+                <Typography>Personality</Typography>
+                <Typography color="text.secondary">None</Typography>
+              </Stack>
+              <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
+                <Typography>Participants</Typography>
+                <Typography color="text.secondary">0 active</Typography>
+              </Stack>
+              <Button variant="contained" size="large" onClick={() => setScreen('active')}>
+                Play
+              </Button>
             </Stack>
           </Paper>
         </Stack>
