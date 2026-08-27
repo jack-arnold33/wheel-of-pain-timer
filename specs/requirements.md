@@ -150,6 +150,15 @@ reused for a different behavior.
 - **A-007:** Timer sounds and spoken motivation can be enabled independently.
   Voice selection offers browser-exposed choices, a generic preview, speech
   speed, and a safe System Default fallback.
+- **A-008:** App presentation is provided by named, replaceable themes. A theme
+  may define visual tokens and decorative assets, but it does not change screen
+  structure, control meaning, timer behavior, stored routines, or content-pack
+  behavior. Every theme must continue to satisfy A-001 through A-004.
+- **A-009:** MVP may ship with only one built-in default theme and need not show
+  a theme selector in that state. The active theme is represented by a stable
+  identifier in device-local preferences so additional built-in themes can be
+  offered later without changing timer or content data. An unavailable theme
+  identifier falls back to the default theme without blocking app use.
 
 ## Acceptance scenarios
 

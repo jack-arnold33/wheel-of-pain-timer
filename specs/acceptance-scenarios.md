@@ -5,7 +5,8 @@ requirement identifiers that it accepts. They refine behavior without choosing
 an implementation stack.
 
 Unless a scenario says otherwise, the app has Timer sounds enabled, no
-Personality selected, no participant roster, and is in the foreground.
+Personality selected, no participant roster, the default theme active, and is
+in the foreground.
 
 ## Standard preset and routine management
 
@@ -697,6 +698,37 @@ Scenario: User explicitly allows online voices
 ```
 
 ## Presentation and accessibility
+
+### Theme support is extensible and safe with a one-theme MVP
+
+**Requirements:** A-001, A-002, A-003, A-004, A-008, A-009, D-001, D-008
+
+```gherkin
+Scenario: MVP has only its default theme
+  Given only the built-in default theme is available
+  When the user uses any app screen
+  Then the default theme is applied consistently
+  And Settings need not show a theme selector
+  And screen structure, control meaning, and timer behavior remain independent
+    of theme-specific decoration
+
+Scenario: A later release provides another built-in theme
+  Given more than one built-in theme is available
+  When the user selects a different theme in Appearance
+  Then the selected stable theme identifier is stored in local preferences
+  And the theme applies across app screens without changing routine, pack, or
+    active-workout data
+  And the selection is included with preferences in backup and restore
+  And all essential states and controls continue to satisfy the same contrast,
+    non-color, readability, and reduced-motion requirements
+
+Scenario: A selected theme is unavailable
+  Given stored preferences refer to a theme identifier the app cannot provide
+  When the app loads those preferences
+  Then the built-in default theme is used
+  And Settings reports the fallback
+  And the app and timer remain usable
+```
 
 ### The landscape timer remains TV-readable
 

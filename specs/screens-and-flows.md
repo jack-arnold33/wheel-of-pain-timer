@@ -117,6 +117,22 @@ remove names stored on the current device. The roster is optional and applies
 to spoken sayings from any selected content pack; it does not appear in routine
 configuration or content-pack export.
 
+### Appearance and themes
+
+Presentation uses a named theme while keeping screen structure, labels,
+controls, timer states, and accessibility semantics independent of that theme.
+Themes may supply visual tokens and decorative assets; they do not supply
+workout logic or user content.
+
+MVP may include only the default theme. When only one theme is available,
+Settings need not show a redundant theme selector. If additional built-in
+themes are added later, an **Appearance** setting lists them by name and stores
+the selected stable theme identifier as a device-local preference. The choice
+applies across all screens and is included with preferences in backup and
+restore. If a restored or previously selected identifier is unavailable, the
+app uses the default theme and reports the fallback in Settings without
+blocking timer use.
+
 ## Routine editor
 
 The routine editor contains the routine name, five duration fields, three count
