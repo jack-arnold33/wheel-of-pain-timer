@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Wheel of Pain Timer">
+  <rect width="512" height="512" rx="96" fill="#15110f"/>
+  <circle cx="256" cy="256" r="174" fill="none" stroke="#e8a126" stroke-width="34"/>
+  <path d="M122 164h58l35 188 41-135 41 135 35-188h58l-62 234h-58l-14-52-14 52h-58z" fill="#fff4dc"/>
+</svg>
