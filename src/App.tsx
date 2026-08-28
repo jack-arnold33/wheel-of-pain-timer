@@ -14,6 +14,7 @@ import { standardRoutineTiming } from './domain/timer/standardRoutine'
 import { PwaUpdatePrompt } from './presentation/PwaUpdatePrompt'
 import { WorkoutRunner } from './presentation/WorkoutRunner'
 import { formatClock } from './presentation/timerPresentation'
+import { primeTimerAudio } from './presentation/timerAudio'
 import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeLock'
 
 type Screen = 'preworkout' | 'active' | 'complete'
@@ -127,7 +128,14 @@ export function App() {
                 <Typography>Participants</Typography>
                 <Typography color="text.secondary">0 active</Typography>
               </Stack>
-              <Button variant="contained" size="large" onClick={() => setScreen('active')}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => {
+                  primeTimerAudio()
+                  setScreen('active')
+                }}
+              >
                 Play
               </Button>
             </Stack>
