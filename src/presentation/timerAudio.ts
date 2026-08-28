@@ -5,7 +5,23 @@ type WebkitAudioWindow = Window &
     webkitAudioContext?: typeof AudioContext
   }
 
+type AudioSessionNavigator = Navigator & {
+  audioSession?: {
+    type: string
+  }
+}
+
 let audioContext: AudioContext | undefined
+
+function configurePlaybackAudioSession() {
+  const audioSession = (navigator as AudioSessionNavigator).audioSession
+  if (audioSession === undefined) return
+  try {
+    audioSession.type = 'playback'
+  } catch {
+    // Experimental browser APIs can reject unsupported session types.
+  }
+}
 
 function getAudioContext(): AudioContext | undefined {
   if (audioContext !== undefined) return audioContext
@@ -20,6 +36,7 @@ function getAudioContext(): AudioContext | undefined {
 }
 
 export function primeTimerAudio() {
+  configurePlaybackAudioSession()
   const context = getAudioContext()
   if (context?.state === 'suspended') void context.resume().catch(() => undefined)
 }
@@ -48,6 +65,7 @@ function tone(
 
 export function playTimerCues(cues: readonly TimerCue[]) {
   if (cues.length === 0) return
+  configurePlaybackAudioSession()
   const context = getAudioContext()
   if (context === undefined) return
   if (context.state === 'suspended') void context.resume().catch(() => undefined)
