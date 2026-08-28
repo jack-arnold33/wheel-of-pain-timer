@@ -7,6 +7,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
+import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded'
 import type { Routine } from '../domain/routines/types'
 import {
   calculateScheduledSeconds,
@@ -19,6 +20,7 @@ interface RoutineLibraryProps {
   readonly storageNotice?: string
   readonly onSelect: (routine: Routine) => void
   readonly onCreate: () => void
+  readonly onSettings: () => void
 }
 
 export function RoutineLibrary({
@@ -26,6 +28,7 @@ export function RoutineLibrary({
   storageNotice,
   onSelect,
   onCreate,
+  onSettings,
 }: RoutineLibraryProps) {
   return (
     <Box component="main" sx={{ minHeight: '100dvh', py: { xs: 4, sm: 8 } }}>
@@ -45,9 +48,19 @@ export function RoutineLibrary({
 
           {storageNotice && <Alert severity="warning">{storageNotice}</Alert>}
 
-          <Button variant="contained" size="large" onClick={onCreate}>
-            Create routine
-          </Button>
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" size="large" onClick={onCreate} sx={{ flex: 1 }}>
+              Create routine
+            </Button>
+            <Button
+              variant="outlined"
+              size="large"
+              aria-label="Settings"
+              onClick={onSettings}
+            >
+              <SettingsRoundedIcon />
+            </Button>
+          </Stack>
 
           <Stack spacing={2} aria-label="Available routines">
             {routines.map((routine) => {

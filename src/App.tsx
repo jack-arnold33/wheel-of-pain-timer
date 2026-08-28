@@ -16,6 +16,7 @@ import type {
   ContentPackDraft,
 } from './domain/contentPacks/types'
 import type { Participant } from './domain/participants/types'
+import type { AppPreferences } from './domain/preferences/appPreferences'
 import { standardRoutineTiming } from './domain/timer/standardRoutine'
 import { buildWorkoutSequence } from './domain/timer/sequence'
 import type { WorkoutState } from './domain/timer/types'
@@ -34,6 +35,7 @@ import { WorkoutRunner } from './presentation/WorkoutRunner'
 import { formatClock } from './presentation/timerPresentation'
 import { primeTimerAudio } from './presentation/timerAudio'
 import { primeSpokenMotivation } from './presentation/spokenMotivation'
+import type { AudioPreferencePatch } from './presentation/SettingsScreen'
 import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeLock'
 
 type Screen =
@@ -42,6 +44,7 @@ type Screen =
   | 'editor'
   | 'contentPacks'
   | 'participants'
+  | 'settings'
   | 'preworkout'
   | 'active'
   | 'complete'
@@ -57,6 +60,10 @@ const ContentPackLibrary = lazy(async () => {
 const ParticipantAttendance = lazy(async () => {
   const module = await import('./presentation/ParticipantAttendance')
   return { default: module.ParticipantAttendance }
+})
+const SettingsScreen = lazy(async () => {
+  const module = await import('./presentation/SettingsScreen')
+  return { default: module.SettingsScreen }
 })
 
 interface EditorState {
@@ -77,6 +84,7 @@ interface AppProps {
     readonly allowOnlineVoices?: boolean
     readonly voiceId?: string | null
     readonly speechRate?: number
+    readonly timerSoundsEnabled?: boolean
   }>
   selectContentPack?: (id: string | null) => Promise<void>
   importContentPack?: (draft: ContentPackDraft) => Promise<ContentPack>
@@ -91,6 +99,9 @@ interface AppProps {
   createParticipant?: (name: string) => Promise<Participant>
   renameParticipant?: (id: string, name: string) => Promise<Participant>
   deleteParticipant?: (id: string) => Promise<void>
+  updatePreferences?: (
+    patch: Partial<AppPreferences>,
+  ) => Promise<AppPreferences>
 }
 
 const loadStoredRoutines = async () => {
@@ -129,6 +140,7 @@ const loadStoredContentPacks = async () => {
     allowOnlineVoices: state.preferences.allowOnlineVoices,
     voiceId: state.preferences.voiceId,
     speechRate: state.preferences.speechRate,
+    timerSoundsEnabled: state.preferences.timerSoundsEnabled,
   }
 }
 
@@ -182,6 +194,11 @@ const deleteStoredParticipant = async (id: string) => {
   return participantService.remove(id)
 }
 
+const updateStoredPreferences = async (patch: Partial<AppPreferences>) => {
+  const { preferencesRepository } = await import('./data/preferencesRepository')
+  return preferencesRepository.update(patch)
+}
+
 const contentPackConflict = (
   error: unknown,
 ): error is { readonly conflictingPack: ContentPack } =>
@@ -190,7 +207,7 @@ const contentPackConflict = (
   'conflictingPack' in error
 
 export function App({
-  timerSoundsEnabled = true,
+  timerSoundsEnabled: initialTimerSoundsEnabled = true,
   loadRoutines = loadStoredRoutines,
   createRoutine = createStoredRoutine,
   updateRoutine = updateStoredRoutine,
@@ -206,6 +223,7 @@ export function App({
   createParticipant = createStoredParticipant,
   renameParticipant = renameStoredParticipant,
   deleteParticipant = deleteStoredParticipant,
+  updatePreferences = updateStoredPreferences,
 }: AppProps) {
   const [screen, setScreen] = useState<Screen>('loading')
   const [routines, setRoutines] = useState<readonly Routine[]>([])
@@ -215,6 +233,7 @@ export function App({
   const [selectedContentPackId, setSelectedContentPackId] = useState<string | null>(null)
   const [contentPackNotice, setContentPackNotice] = useState<string>()
   const [spokenMotivationEnabled, setSpokenMotivationEnabled] = useState(true)
+  const [timerSoundsEnabled, setTimerSoundsEnabled] = useState(initialTimerSoundsEnabled)
   const [allowOnlineVoices, setAllowOnlineVoices] = useState(false)
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null)
   const [speechRate, setSpeechRate] = useState(1)
@@ -227,6 +246,8 @@ export function App({
   const [completedWorkoutMs, setCompletedWorkoutMs] = useState(0)
   const [recoveryMessage, setRecoveryMessage] = useState<string>()
   const [recoveryWarning, setRecoveryWarning] = useState(false)
+  const [settingsReturnScreen, setSettingsReturnScreen] = useState<'home' | 'preworkout'>('home')
+  const [participantReturnScreen, setParticipantReturnScreen] = useState<'settings' | 'preworkout'>('preworkout')
 
   const sequence = useMemo(
     () =>
@@ -324,6 +345,9 @@ export function App({
         }
         if (state.voiceId !== undefined) setSelectedVoiceId(state.voiceId)
         if (state.speechRate !== undefined) setSpeechRate(state.speechRate)
+        if (state.timerSoundsEnabled !== undefined) {
+          setTimerSoundsEnabled(state.timerSoundsEnabled)
+        }
       })
       .catch(() => {
         if (!active) return
@@ -388,6 +412,10 @@ export function App({
             setEditor({ mode: 'create' })
             setScreen('editor')
           }}
+          onSettings={() => {
+            setSettingsReturnScreen('home')
+            setScreen('settings')
+          }}
         />
         <PwaUpdatePrompt activationAllowed />
       </>
@@ -437,6 +465,94 @@ export function App({
               setSelectedRoutine(saved)
               setEditor(undefined)
               setScreen('preworkout')
+            }}
+          />
+        </Suspense>
+        <PwaUpdatePrompt activationAllowed />
+      </>
+    )
+  }
+
+  if (screen === 'settings') {
+    return (
+      <>
+        <Suspense
+          fallback={
+            <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+              <CircularProgress aria-label="Loading settings" />
+            </Box>
+          }
+        >
+          <SettingsScreen
+            timerSoundsEnabled={timerSoundsEnabled}
+            spokenMotivationEnabled={spokenMotivationEnabled}
+            allowOnlineVoices={allowOnlineVoices}
+            voiceId={selectedVoiceId}
+            speechRate={speechRate}
+            participantCount={participants.length}
+            onBack={() => setScreen(settingsReturnScreen)}
+            onParticipants={() => {
+              setParticipantReturnScreen('settings')
+              setScreen('participants')
+            }}
+            onChange={async (patch: Partial<AudioPreferencePatch>) => {
+              const saved = await updatePreferences(patch)
+              setTimerSoundsEnabled(saved.timerSoundsEnabled)
+              setSpokenMotivationEnabled(saved.spokenMotivationEnabled)
+              setAllowOnlineVoices(saved.allowOnlineVoices)
+              setSelectedVoiceId(saved.voiceId)
+              setSpeechRate(saved.speechRate)
+            }}
+          />
+        </Suspense>
+        <PwaUpdatePrompt activationAllowed />
+      </>
+    )
+  }
+
+  if (screen === 'participants') {
+    return (
+      <>
+        <Suspense
+          fallback={
+            <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+              <CircularProgress aria-label="Loading participants" />
+            </Box>
+          }
+        >
+          <ParticipantAttendance
+            participants={participants}
+            activeIds={activeParticipantIds}
+            storageNotice={participantNotice}
+            onBack={() => setScreen(participantReturnScreen)}
+            onSave={async (ids) => {
+              const saved = await saveAttendance(ids)
+              setActiveParticipantIds(saved)
+              setScreen(participantReturnScreen)
+            }}
+            onAdd={async (name) => {
+              const created = await createParticipant(name)
+              setParticipants((current) => [...current, created])
+              setActiveParticipantIds((current) => [...current, created.id])
+              return created
+            }}
+            onRename={async (id, name) => {
+              const renamed = await renameParticipant(id, name)
+              setParticipants((current) =>
+                current.map((participant) =>
+                  participant.id === renamed.id ? renamed : participant,
+                ),
+              )
+              return renamed
+            }}
+            onDelete={async (id) => {
+              await deleteParticipant(id)
+              setParticipants((current) =>
+                current.filter((participant) => participant.id !== id),
+              )
+              setActiveParticipantIds((current) =>
+                current.filter((activeId) => activeId !== id),
+              )
             }}
           />
         </Suspense>
@@ -501,57 +617,6 @@ export function App({
               await deleteContentPack(id, selected)
               setContentPacks((current) => current.filter((pack) => pack.id !== id))
               if (selected) setSelectedContentPackId(null)
-            }}
-          />
-        </Suspense>
-        <PwaUpdatePrompt activationAllowed />
-      </>
-    )
-  }
-
-  if (screen === 'participants') {
-    return (
-      <>
-        <Suspense
-          fallback={
-            <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
-              <CircularProgress aria-label="Loading participants" />
-            </Box>
-          }
-        >
-          <ParticipantAttendance
-            participants={participants}
-            activeIds={activeParticipantIds}
-            storageNotice={participantNotice}
-            onBack={() => setScreen('preworkout')}
-            onSave={async (ids) => {
-              const saved = await saveAttendance(ids)
-              setActiveParticipantIds(saved)
-              setScreen('preworkout')
-            }}
-            onAdd={async (name) => {
-              const created = await createParticipant(name)
-              setParticipants((current) => [...current, created])
-              setActiveParticipantIds((current) => [...current, created.id])
-              return created
-            }}
-            onRename={async (id, name) => {
-              const renamed = await renameParticipant(id, name)
-              setParticipants((current) =>
-                current.map((participant) =>
-                  participant.id === renamed.id ? renamed : participant,
-                ),
-              )
-              return renamed
-            }}
-            onDelete={async (id) => {
-              await deleteParticipant(id)
-              setParticipants((current) =>
-                current.filter((participant) => participant.id !== id),
-              )
-              setActiveParticipantIds((current) =>
-                current.filter((activeId) => activeId !== id),
-              )
             }}
           />
         </Suspense>
@@ -718,7 +783,14 @@ export function App({
         }
         onChoosePersonality={() => setScreen('contentPacks')}
         activeParticipantCount={activeParticipantIds.length}
-        onChooseParticipants={() => setScreen('participants')}
+        onChooseParticipants={() => {
+          setParticipantReturnScreen('preworkout')
+          setScreen('participants')
+        }}
+        onSettings={() => {
+          setSettingsReturnScreen('preworkout')
+          setScreen('settings')
+        }}
       />
       <PwaUpdatePrompt activationAllowed />
     </>

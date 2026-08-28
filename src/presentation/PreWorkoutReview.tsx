@@ -1,4 +1,5 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
+import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded'
 import {
   Alert,
   Box,
@@ -35,6 +36,7 @@ interface PreWorkoutReviewProps {
   readonly onChoosePersonality: () => void
   readonly activeParticipantCount: number
   readonly onChooseParticipants: () => void
+  readonly onSettings: () => void
 }
 
 const durationLabel = (seconds: number) =>
@@ -52,6 +54,7 @@ export function PreWorkoutReview({
   onChoosePersonality,
   activeParticipantCount,
   onChooseParticipants,
+  onSettings,
 }: PreWorkoutReviewProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -61,13 +64,14 @@ export function PreWorkoutReview({
     <Box component="main" sx={{ minHeight: '100dvh', py: { xs: 3, sm: 6 } }}>
       <Container maxWidth="sm">
         <Stack spacing={3}>
-          <Button
-            startIcon={<ArrowBackRoundedIcon />}
-            onClick={onBack}
-            sx={{ alignSelf: 'flex-start' }}
-          >
-            Routines
-          </Button>
+          <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
+            <Button startIcon={<ArrowBackRoundedIcon />} onClick={onBack}>
+              Routines
+            </Button>
+            <Button aria-label="Settings" onClick={onSettings}>
+              <SettingsRoundedIcon />
+            </Button>
+          </Stack>
 
           <Stack spacing={1}>
             <Chip
