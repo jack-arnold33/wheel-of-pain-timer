@@ -33,6 +33,8 @@ interface PreWorkoutReviewProps {
   readonly onDelete: () => Promise<void>
   readonly personalityName: string | null
   readonly onChoosePersonality: () => void
+  readonly activeParticipantCount: number
+  readonly onChooseParticipants: () => void
 }
 
 const durationLabel = (seconds: number) =>
@@ -48,6 +50,8 @@ export function PreWorkoutReview({
   onDelete,
   personalityName,
   onChoosePersonality,
+  activeParticipantCount,
+  onChooseParticipants,
 }: PreWorkoutReviewProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -126,10 +130,17 @@ export function PreWorkoutReview({
                   {personalityName ?? 'None'}
                 </Typography>
               </Button>
-              <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
+              <Button
+                color="inherit"
+                aria-label="Choose Participants"
+                onClick={onChooseParticipants}
+                sx={{ justifyContent: 'space-between', textTransform: 'none' }}
+              >
                 <Typography>Participants</Typography>
-                <Typography color="text.secondary">0 active</Typography>
-              </Stack>
+                <Typography color="text.secondary">
+                  {activeParticipantCount} active
+                </Typography>
+              </Button>
               <Button variant="contained" size="large" onClick={onPlay}>
                 Play
               </Button>

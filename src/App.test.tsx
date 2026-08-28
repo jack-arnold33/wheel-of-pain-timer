@@ -5,6 +5,7 @@ import { App } from './App'
 import { protectedStandardRoutine } from './domain/routines/protectedRoutine'
 import type { Routine } from './domain/routines/types'
 import type { ContentPack } from './domain/contentPacks/types'
+import type { Participant } from './domain/participants/types'
 import { clearWorkoutCheckpoint } from './domain/timer/workoutPersistence'
 import { wheelOfPainTheme } from './presentation/themes/wheelOfPainTheme'
 
@@ -35,6 +36,56 @@ afterEach(() => {
 })
 
 describe('App workout flow', () => {
+  it('remembers the active participant checklist for pre-workout', async () => {
+    const jarno: Participant = {
+      id: 'participant:jarno',
+      name: 'Jarno',
+      createdAt: 1,
+      updatedAt: 1,
+    }
+    const casey: Participant = {
+      id: 'participant:casey',
+      name: 'Casey',
+      createdAt: 1,
+      updatedAt: 1,
+    }
+    const saveAttendance = vi
+      .fn()
+      .mockImplementation(async (ids: readonly string[]) => ids)
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <App
+          loadRoutines={loadRoutines}
+          loadParticipants={() =>
+            Promise.resolve({
+              participants: [jarno, casey],
+              activeIds: [jarno.id],
+            })
+          }
+          saveAttendance={saveAttendance}
+        />
+      </ThemeProvider>,
+    )
+
+    await openProtectedRoutine()
+    expect(screen.getByText('1 active')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Choose Participants' }))
+    expect(
+      await screen.findByRole('heading', { name: 'Participants' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Jarno' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Casey' })).not.toBeChecked()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Casey' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save attendance · 2 active' }))
+
+    await waitFor(() =>
+      expect(saveAttendance).toHaveBeenCalledWith([jarno.id, casey.id]),
+    )
+    expect(screen.getByRole('heading', { name: 'Wheel of Pain' })).toBeInTheDocument()
+    expect(screen.getByText('2 active')).toBeInTheDocument()
+  })
+
   it('selects a saved Personality and returns to the same pre-workout screen', async () => {
     const pack: ContentPack = {
       id: 'pack:chaos',

@@ -30,10 +30,18 @@ export interface ContentPackRecord {
   readonly updatedAt: number
 }
 
+export interface ParticipantRecord {
+  readonly id: string
+  readonly name: string
+  readonly createdAt: number
+  readonly updatedAt: number
+}
+
 export class WheelOfPainDatabase extends Dexie {
   readonly routines!: EntityTable<UserRoutineRecord, 'id'>
   readonly preferences!: EntityTable<AppPreferencesRecord, 'id'>
   readonly contentPacks!: EntityTable<ContentPackRecord, 'id'>
+  readonly participants!: EntityTable<ParticipantRecord, 'id'>
 
   constructor(name = DATABASE_NAME) {
     super(name)
@@ -45,6 +53,12 @@ export class WheelOfPainDatabase extends Dexie {
       routines: '&id, name, updatedAt',
       preferences: '&id',
       contentPacks: '&id, name, updatedAt',
+    })
+    this.version(3).stores({
+      routines: '&id, name, updatedAt',
+      preferences: '&id',
+      contentPacks: '&id, name, updatedAt',
+      participants: '&id, name, updatedAt',
     })
   }
 }
