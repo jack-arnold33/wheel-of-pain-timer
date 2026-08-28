@@ -31,6 +31,8 @@ interface PreWorkoutReviewProps {
   readonly onEdit: () => void
   readonly onDuplicate: () => void
   readonly onDelete: () => Promise<void>
+  readonly personalityName: string | null
+  readonly onChoosePersonality: () => void
 }
 
 const durationLabel = (seconds: number) =>
@@ -44,6 +46,8 @@ export function PreWorkoutReview({
   onEdit,
   onDuplicate,
   onDelete,
+  personalityName,
+  onChoosePersonality,
 }: PreWorkoutReviewProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -111,10 +115,17 @@ export function PreWorkoutReview({
                 {durationLabel(timing.cooldownSeconds)} cooldown
               </Typography>
               <Divider />
-              <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
+              <Button
+                color="inherit"
+                aria-label="Choose Personality"
+                onClick={onChoosePersonality}
+                sx={{ justifyContent: 'space-between', textTransform: 'none' }}
+              >
                 <Typography>Personality</Typography>
-                <Typography color="text.secondary">None</Typography>
-              </Stack>
+                <Typography color="text.secondary">
+                  {personalityName ?? 'None'}
+                </Typography>
+              </Button>
               <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
                 <Typography>Participants</Typography>
                 <Typography color="text.secondary">0 active</Typography>

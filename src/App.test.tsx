@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 import { protectedStandardRoutine } from './domain/routines/protectedRoutine'
 import type { Routine } from './domain/routines/types'
+import type { ContentPack } from './domain/contentPacks/types'
 import { clearWorkoutCheckpoint } from './domain/timer/workoutPersistence'
 import { wheelOfPainTheme } from './presentation/themes/wheelOfPainTheme'
 
@@ -34,6 +35,81 @@ afterEach(() => {
 })
 
 describe('App workout flow', () => {
+  it('selects a saved Personality and returns to the same pre-workout screen', async () => {
+    const pack: ContentPack = {
+      id: 'pack:chaos',
+      schemaVersion: 1,
+      name: 'Tuesday Chaos',
+      sayings: { general: ['Move.'], work: ['Go.'] },
+      extensions: {},
+      createdAt: 1,
+      updatedAt: 1,
+    }
+    const selectContentPack = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <App
+          loadRoutines={loadRoutines}
+          loadContentPacks={() => Promise.resolve({ packs: [pack], selectedId: null })}
+          selectContentPack={selectContentPack}
+        />
+      </ThemeProvider>,
+    )
+
+    await openProtectedRoutine()
+    fireEvent.click(screen.getByRole('button', { name: 'Choose Personality' }))
+    expect(
+      await screen.findByRole('heading', { name: 'Personality' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('2 sayings · saved on this device')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Select Tuesday Chaos' }))
+
+    await waitFor(() => expect(selectContentPack).toHaveBeenCalledWith(pack.id))
+    expect(screen.getByRole('heading', { name: 'Wheel of Pain' })).toBeInTheDocument()
+    expect(screen.getByText('Tuesday Chaos')).toBeInTheDocument()
+  })
+
+  it('imports a plain-text pack locally and selects it automatically', async () => {
+    const imported: ContentPack = {
+      id: 'pack:phone',
+      schemaVersion: 1,
+      name: 'Phone Fun',
+      sayings: { general: ['Keep moving.'] },
+      extensions: {},
+      createdAt: 1,
+      updatedAt: 1,
+    }
+    const importContentPack = vi.fn().mockResolvedValue(imported)
+    const { container } = render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <App
+          loadRoutines={loadRoutines}
+          loadContentPacks={() => Promise.resolve({ packs: [], selectedId: null })}
+          importContentPack={importContentPack}
+        />
+      </ThemeProvider>,
+    )
+
+    await openProtectedRoutine()
+    fireEvent.click(screen.getByRole('button', { name: 'Choose Personality' }))
+    await screen.findByRole('heading', { name: 'Personality' })
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')
+    expect(input).not.toBeNull()
+    const file = new File(['Keep moving.\n'], 'phone-fun.txt', { type: 'text/plain' })
+    fireEvent.change(input!, { target: { files: [file] } })
+
+    await waitFor(() =>
+      expect(importContentPack).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Phone Fun',
+          sayings: { general: ['Keep moving.'] },
+        }),
+      ),
+    )
+    expect(screen.getByRole('heading', { name: 'Wheel of Pain' })).toBeInTheDocument()
+    expect(screen.getByText('Phone Fun')).toBeInTheDocument()
+  })
+
   it('customizes the protected preset as a validated saved copy', async () => {
     const createRoutine = vi.fn(async (input) => ({
       ...input,
