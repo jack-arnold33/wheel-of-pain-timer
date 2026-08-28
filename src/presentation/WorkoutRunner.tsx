@@ -31,6 +31,9 @@ import {
   startWorkout,
 } from '../domain/timer/engine'
 import type { RoutineTiming, WorkoutPhase, WorkoutState } from '../domain/timer/types'
+import type { ContentPack } from '../domain/contentPacks/types'
+import type { Participant } from '../domain/participants/types'
+import { MotivationSession } from '../domain/motivation/session'
 import {
   formatClock,
   nextPhase,
@@ -41,6 +44,18 @@ import {
 } from './timerPresentation'
 import { playTimerCues, primeTimerAudio } from './timerAudio'
 import { timerCueFrame, timerCuesBetween } from './timerCues'
+import { motivationCategoryBetween } from './motivationCues'
+import {
+  speakMotivation,
+  type MotivationSpeechOptions,
+} from './spokenMotivation'
+
+export interface WorkoutMotivation {
+  readonly pack: ContentPack
+  readonly participants: readonly Participant[]
+  readonly enabled: boolean
+  readonly speech: MotivationSpeechOptions
+}
 
 interface WorkoutRunnerProps {
   phases: readonly WorkoutPhase[]
@@ -48,6 +63,7 @@ interface WorkoutRunnerProps {
   initialWorkout?: WorkoutState
   initialActiveElapsedMs?: number
   soundsEnabled?: boolean
+  motivation?: WorkoutMotivation
   wakeLockMessage?: string
   recoveryMessage?: string
   recoveryWarning?: boolean
@@ -65,6 +81,7 @@ export function WorkoutRunner({
   initialWorkout,
   initialActiveElapsedMs = 0,
   soundsEnabled = true,
+  motivation,
   wakeLockMessage,
   recoveryMessage,
   recoveryWarning = false,
@@ -79,11 +96,24 @@ export function WorkoutRunner({
   )
   const [clockMs, setClockMs] = useState(initialClockMs)
   const [confirmingEnd, setConfirmingEnd] = useState(false)
+  const [motivationNotice, setMotivationNotice] = useState<string>()
+  const [motivationSession] = useState(() =>
+    motivation?.enabled
+      ? new MotivationSession(motivation.pack, motivation.participants)
+      : undefined,
+  )
   const activeElapsedMs = useRef(initialActiveElapsedMs)
   const completionReported = useRef(false)
   const lastCheckpointAtMs = useRef(0)
   const lastCheckpointPosition = useRef('')
   const previousCueFrame = useRef<ReturnType<typeof timerCueFrame> | undefined>(
+    initialWorkout === undefined
+      ? undefined
+      : timerCueFrame(initialWorkout, initialClockMs),
+  )
+  const previousMotivationFrame = useRef<
+    ReturnType<typeof timerCueFrame> | undefined
+  >(
     initialWorkout === undefined
       ? undefined
       : timerCueFrame(initialWorkout, initialClockMs),
@@ -106,6 +136,33 @@ export function WorkoutRunner({
     }, 100)
     return () => window.clearInterval(interval)
   })
+
+  useEffect(() => {
+    const currentFrame = timerCueFrame(workout, clockMs)
+    const category = motivationCategoryBetween(
+      previousMotivationFrame.current,
+      currentFrame,
+      phases,
+    )
+    if (category !== undefined && motivationSession !== undefined && motivation) {
+      const text = motivationSession.next(category)
+      if (text !== undefined) {
+        const result = speakMotivation(text, motivation.speech)
+        if (result === 'unsupported') {
+          setMotivationNotice('Spoken motivation is not supported by this browser.')
+        } else if (result === 'no-eligible-voice') {
+          setMotivationNotice(
+            'Spoken motivation is unavailable because no eligible on-device voice was found.',
+          )
+        } else if (result === 'spoken-with-fallback') {
+          setMotivationNotice(
+            'The selected voice is unavailable. Spoken motivation is using the system default.',
+          )
+        }
+      }
+    }
+    previousMotivationFrame.current = currentFrame
+  }, [clockMs, motivation, motivationSession, phases, workout])
 
   useEffect(() => {
     if (workout.status === 'complete' && !completionReported.current) {
@@ -429,6 +486,11 @@ export function WorkoutRunner({
           {wakeLockMessage && (
             <Typography variant="body2" color="warning.main" role="status">
               {wakeLockMessage}
+            </Typography>
+          )}
+          {motivationNotice && (
+            <Typography variant="body2" color="warning.main" role="status">
+              {motivationNotice}
             </Typography>
           )}
         </Stack>
