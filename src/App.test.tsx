@@ -34,6 +34,103 @@ afterEach(() => {
 })
 
 describe('App workout flow', () => {
+  it('customizes the protected preset as a validated saved copy', async () => {
+    const createRoutine = vi.fn(async (input) => ({
+      ...input,
+      id: 'routine:custom',
+      ownership: 'user' as const,
+      createdAt: 1,
+      updatedAt: 1,
+    }))
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <App loadRoutines={loadRoutines} createRoutine={createRoutine} />
+      </ThemeProvider>,
+    )
+
+    await openProtectedRoutine()
+    fireEvent.click(screen.getByRole('button', { name: 'Customize' }))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Customize routine' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Routine name')).toHaveValue('Wheel of Pain Copy')
+
+    fireEvent.change(screen.getByLabelText('Work'), {
+      target: { value: '00:00' },
+    })
+    expect(screen.getByRole('button', { name: 'Save routine' })).toBeDisabled()
+    expect(
+      screen.getByText('Work duration must be a whole number from 1 to 3,599 seconds.'),
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Routine name'), {
+      target: { value: 'My Wheel' },
+    })
+    fireEvent.change(screen.getByLabelText('Work'), {
+      target: { value: '00:45' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save routine' }))
+
+    await waitFor(() => expect(createRoutine).toHaveBeenCalledOnce())
+    expect(createRoutine).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'My Wheel',
+        timing: expect.objectContaining({ workSeconds: 45 }),
+      }),
+    )
+    expect(screen.getByRole('heading', { name: 'My Wheel' })).toBeInTheDocument()
+    expect(screen.getByText('Saved on this device')).toBeInTheDocument()
+  })
+
+  it('edits and deletes a saved routine with named confirmation', async () => {
+    const savedRoutine: Routine = {
+      id: 'routine:saved',
+      ownership: 'user',
+      name: 'Saved Wheel',
+      createdAt: 1,
+      updatedAt: 1,
+      timing: protectedStandardRoutine.timing,
+    }
+    const updatedRoutine = { ...savedRoutine, name: 'Updated Wheel', updatedAt: 2 }
+    const updateRoutine = vi.fn().mockResolvedValue(updatedRoutine)
+    const deleteRoutine = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <App
+          loadRoutines={() => Promise.resolve([protectedStandardRoutine, savedRoutine])}
+          updateRoutine={updateRoutine}
+          deleteRoutine={deleteRoutine}
+        />
+      </ThemeProvider>,
+    )
+
+    await screen.findByRole('heading', { name: 'Routines' })
+    fireEvent.click(screen.getByRole('button', { name: 'Review Saved Wheel' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await screen.findByRole('heading', { name: 'Edit routine' })
+    fireEvent.change(screen.getByLabelText('Routine name'), {
+      target: { value: 'Updated Wheel' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save routine' }))
+
+    await waitFor(() => expect(updateRoutine).toHaveBeenCalledOnce())
+    expect(screen.getByRole('heading', { name: 'Updated Wheel' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(
+      screen.getByRole('heading', { name: 'Delete Updated Wheel?' }),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Delete routine' }))
+
+    await waitFor(() => expect(deleteRoutine).toHaveBeenCalledWith(savedRoutine.id))
+    expect(
+      await screen.findByRole('heading', { name: 'Routines' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Review Updated Wheel' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('keeps the protected preset usable when saved routines cannot load', async () => {
     render(
       <ThemeProvider theme={wheelOfPainTheme}>

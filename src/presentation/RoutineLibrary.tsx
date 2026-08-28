@@ -18,12 +18,14 @@ interface RoutineLibraryProps {
   readonly routines: readonly Routine[]
   readonly storageNotice?: string
   readonly onSelect: (routine: Routine) => void
+  readonly onCreate: () => void
 }
 
 export function RoutineLibrary({
   routines,
   storageNotice,
   onSelect,
+  onCreate,
 }: RoutineLibraryProps) {
   return (
     <Box component="main" sx={{ minHeight: '100dvh', py: { xs: 4, sm: 8 } }}>
@@ -42,6 +44,10 @@ export function RoutineLibrary({
           </Stack>
 
           {storageNotice && <Alert severity="warning">{storageNotice}</Alert>}
+
+          <Button variant="contained" size="large" onClick={onCreate}>
+            Create routine
+          </Button>
 
           <Stack spacing={2} aria-label="Available routines">
             {routines.map((routine) => {
