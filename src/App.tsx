@@ -11,6 +11,10 @@ import {
 } from '@mui/material'
 import { protectedStandardRoutine } from './domain/routines/protectedRoutine'
 import type { Routine, RoutineInput, UserRoutine } from './domain/routines/types'
+import type {
+  ContentPack,
+  ContentPackDraft,
+} from './domain/contentPacks/types'
 import { standardRoutineTiming } from './domain/timer/standardRoutine'
 import { buildWorkoutSequence } from './domain/timer/sequence'
 import type { WorkoutState } from './domain/timer/types'
@@ -24,16 +28,28 @@ import { PreWorkoutReview } from './presentation/PreWorkoutReview'
 import { PwaUpdatePrompt } from './presentation/PwaUpdatePrompt'
 import { RoutineLibrary } from './presentation/RoutineLibrary'
 import type { RoutineEditorMode } from './presentation/RoutineEditor'
+import type { ContentPackImportResult } from './presentation/ContentPackLibrary'
 import { WorkoutRunner } from './presentation/WorkoutRunner'
 import { formatClock } from './presentation/timerPresentation'
 import { primeTimerAudio } from './presentation/timerAudio'
 import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeLock'
 
-type Screen = 'loading' | 'home' | 'editor' | 'preworkout' | 'active' | 'complete'
+type Screen =
+  | 'loading'
+  | 'home'
+  | 'editor'
+  | 'contentPacks'
+  | 'preworkout'
+  | 'active'
+  | 'complete'
 const LEGACY_STANDARD_ROUTINE_ID = 'protected-standard'
 const RoutineEditor = lazy(async () => {
   const module = await import('./presentation/RoutineEditor')
   return { default: module.RoutineEditor }
+})
+const ContentPackLibrary = lazy(async () => {
+  const module = await import('./presentation/ContentPackLibrary')
+  return { default: module.ContentPackLibrary }
 })
 
 interface EditorState {
@@ -47,6 +63,15 @@ interface AppProps {
   createRoutine?: (input: RoutineInput) => Promise<UserRoutine>
   updateRoutine?: (id: string, input: RoutineInput) => Promise<UserRoutine>
   deleteRoutine?: (id: string) => Promise<void>
+  loadContentPacks?: () => Promise<{
+    readonly packs: readonly ContentPack[]
+    readonly selectedId: string | null
+  }>
+  selectContentPack?: (id: string | null) => Promise<void>
+  importContentPack?: (draft: ContentPackDraft) => Promise<ContentPack>
+  replaceContentPack?: (id: string, draft: ContentPackDraft) => Promise<ContentPack>
+  renameContentPack?: (id: string, name: string) => Promise<ContentPack>
+  deleteContentPack?: (id: string, selected: boolean) => Promise<void>
 }
 
 const loadStoredRoutines = async () => {
@@ -69,17 +94,70 @@ const deleteStoredRoutine = async (id: string) => {
   return routineRepository.delete(id)
 }
 
+const loadStoredContentPacks = async () => {
+  const { contentPackService } = await import('./data/contentPackService')
+  const state = await contentPackService.load()
+  const requestedId = state.preferences.selectedContentPackId
+  const selectedId =
+    requestedId !== null && state.packs.some(({ id }) => id === requestedId)
+      ? requestedId
+      : null
+  if (requestedId !== selectedId) await contentPackService.select(null)
+  return { packs: state.packs, selectedId }
+}
+
+const selectStoredContentPack = async (id: string | null) => {
+  const { contentPackService } = await import('./data/contentPackService')
+  return contentPackService.select(id)
+}
+
+const importStoredContentPack = async (draft: ContentPackDraft) => {
+  const { contentPackService } = await import('./data/contentPackService')
+  return contentPackService.importAndSelect(draft)
+}
+
+const replaceStoredContentPack = async (id: string, draft: ContentPackDraft) => {
+  const { contentPackService } = await import('./data/contentPackService')
+  return contentPackService.replaceAndSelect(id, draft)
+}
+
+const renameStoredContentPack = async (id: string, name: string) => {
+  const { contentPackRepository } = await import('./data/contentPackRepository')
+  return contentPackRepository.rename(id, name)
+}
+
+const deleteStoredContentPack = async (id: string, selected: boolean) => {
+  const { contentPackService } = await import('./data/contentPackService')
+  return contentPackService.remove(id, selected)
+}
+
+const contentPackConflict = (
+  error: unknown,
+): error is { readonly conflictingPack: ContentPack } =>
+  error instanceof Error &&
+  error.name === 'ContentPackNameConflictError' &&
+  'conflictingPack' in error
+
 export function App({
   timerSoundsEnabled = true,
   loadRoutines = loadStoredRoutines,
   createRoutine = createStoredRoutine,
   updateRoutine = updateStoredRoutine,
   deleteRoutine = deleteStoredRoutine,
+  loadContentPacks = loadStoredContentPacks,
+  selectContentPack = selectStoredContentPack,
+  importContentPack = importStoredContentPack,
+  replaceContentPack = replaceStoredContentPack,
+  renameContentPack = renameStoredContentPack,
+  deleteContentPack = deleteStoredContentPack,
 }: AppProps) {
   const [screen, setScreen] = useState<Screen>('loading')
   const [routines, setRoutines] = useState<readonly Routine[]>([])
   const [selectedRoutine, setSelectedRoutine] = useState<Routine>()
   const [editor, setEditor] = useState<EditorState>()
+  const [contentPacks, setContentPacks] = useState<readonly ContentPack[]>([])
+  const [selectedContentPackId, setSelectedContentPackId] = useState<string | null>(null)
+  const [contentPackNotice, setContentPackNotice] = useState<string>()
   const [storageNotice, setStorageNotice] = useState<string>()
   const [initialWorkout, setInitialWorkout] = useState<WorkoutState>()
   const [initialActiveElapsedMs, setInitialActiveElapsedMs] = useState(0)
@@ -167,6 +245,25 @@ export function App({
       active = false
     }
   }, [loadRoutines])
+
+  useEffect(() => {
+    let active = true
+    void loadContentPacks()
+      .then((state) => {
+        if (!active) return
+        setContentPacks(state.packs)
+        setSelectedContentPackId(state.selectedId)
+      })
+      .catch(() => {
+        if (!active) return
+        setContentPackNotice(
+          'Saved Personality packs are unavailable on this device. The timer remains usable.',
+        )
+      })
+    return () => {
+      active = false
+    }
+  }, [loadContentPacks])
 
   const dismissRecovery = () => {
     setRecoveryMessage(undefined)
@@ -259,6 +356,68 @@ export function App({
   }
 
   if (selectedRoutine === undefined) return null
+
+  if (screen === 'contentPacks') {
+    return (
+      <>
+        <Suspense
+          fallback={
+            <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+              <CircularProgress aria-label="Loading Personality library" />
+            </Box>
+          }
+        >
+          <ContentPackLibrary
+            packs={contentPacks}
+            selectedId={selectedContentPackId}
+            storageNotice={contentPackNotice}
+            onBack={() => setScreen('preworkout')}
+            onSelect={async (id) => {
+              await selectContentPack(id)
+              setSelectedContentPackId(id)
+              setScreen('preworkout')
+            }}
+            onImport={async (draft): Promise<ContentPackImportResult> => {
+              try {
+                const saved = await importContentPack(draft)
+                setContentPacks((current) => [...current, saved])
+                setSelectedContentPackId(saved.id)
+                setScreen('preworkout')
+                return { status: 'saved', pack: saved }
+              } catch (error) {
+                if (contentPackConflict(error)) {
+                  return { status: 'conflict', existing: error.conflictingPack }
+                }
+                throw error
+              }
+            }}
+            onReplace={async (id, draft) => {
+              const saved = await replaceContentPack(id, draft)
+              setContentPacks((current) =>
+                current.map((pack) => (pack.id === saved.id ? saved : pack)),
+              )
+              setSelectedContentPackId(saved.id)
+              setScreen('preworkout')
+            }}
+            onRename={async (id, name) => {
+              const renamed = await renameContentPack(id, name)
+              setContentPacks((current) =>
+                current.map((pack) => (pack.id === renamed.id ? renamed : pack)),
+              )
+              return renamed
+            }}
+            onDelete={async (id) => {
+              const selected = selectedContentPackId === id
+              await deleteContentPack(id, selected)
+              setContentPacks((current) => current.filter((pack) => pack.id !== id))
+              if (selected) setSelectedContentPackId(null)
+            }}
+          />
+        </Suspense>
+        <PwaUpdatePrompt activationAllowed />
+      </>
+    )
+  }
 
   if (screen === 'active') {
     return (
@@ -395,6 +554,10 @@ export function App({
             throw error
           }
         }}
+        personalityName={
+          contentPacks.find(({ id }) => id === selectedContentPackId)?.name ?? null
+        }
+        onChoosePersonality={() => setScreen('contentPacks')}
       />
       <PwaUpdatePrompt activationAllowed />
     </>
