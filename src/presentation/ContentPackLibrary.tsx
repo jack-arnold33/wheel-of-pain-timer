@@ -22,6 +22,7 @@ import {
 } from '@mui/material'
 import { useState, type ChangeEvent } from 'react'
 import { importContentPackFile } from '../domain/contentPacks/importContentPack'
+import { isBuiltInContentPack } from '../domain/contentPacks/builtInContentPacks'
 import {
   contentPackCategories,
   type ContentPack,
@@ -183,10 +184,14 @@ export function ContentPackLibrary({
                     <Stack sx={{ alignItems: 'flex-start' }}>
                       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                         <Typography variant="h6">{pack.name}</Typography>
+                        {isBuiltInContentPack(pack.id) && (
+                          <Chip label="Built in" size="small" />
+                        )}
                         {selectedId === pack.id && <Chip label="Selected" color="primary" size="small" />}
                       </Stack>
                       <Typography variant="body2" color="text.secondary">
-                        {totalSayings(pack)} sayings · saved on this device
+                        {totalSayings(pack)} sayings ·{' '}
+                        {isBuiltInContentPack(pack.id) ? 'included with app' : 'saved on this device'}
                       </Typography>
                     </Stack>
                   </Button>
@@ -206,7 +211,11 @@ export function ContentPackLibrary({
             <DialogTitle>{inspection.name}</DialogTitle>
             <DialogContent>
               <Stack spacing={2}>
-                <Typography color="text.secondary">Saved on this device</Typography>
+                <Typography color="text.secondary">
+                  {isBuiltInContentPack(inspection.id)
+                    ? 'Included with the app'
+                    : 'Saved on this device'}
+                </Typography>
                 <Typography variant="h5">{totalSayings(inspection)} sayings</Typography>
                 <Divider />
                 {contentPackCategories.map((category) => (
@@ -218,26 +227,30 @@ export function ContentPackLibrary({
               </Stack>
             </DialogContent>
             <DialogActions sx={{ flexWrap: 'wrap' }}>
-              <Button
-                onClick={() => {
-                  setRenaming({ pack: inspection, name: inspection.name })
-                  setInspection(undefined)
-                }}
-              >
-                Rename
-              </Button>
-              <Button startIcon={<FileDownloadRoundedIcon />} onClick={() => exportPack(inspection)}>
-                Export
-              </Button>
-              <Button
-                color="error"
-                onClick={() => {
-                  setDeleting(inspection)
-                  setInspection(undefined)
-                }}
-              >
-                Remove
-              </Button>
+              {!isBuiltInContentPack(inspection.id) && (
+                <>
+                  <Button
+                    onClick={() => {
+                      setRenaming({ pack: inspection, name: inspection.name })
+                      setInspection(undefined)
+                    }}
+                  >
+                    Rename
+                  </Button>
+                  <Button startIcon={<FileDownloadRoundedIcon />} onClick={() => exportPack(inspection)}>
+                    Export
+                  </Button>
+                  <Button
+                    color="error"
+                    onClick={() => {
+                      setDeleting(inspection)
+                      setInspection(undefined)
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </>
+              )}
               <Button onClick={() => setInspection(undefined)}>Done</Button>
             </DialogActions>
           </>

@@ -102,6 +102,9 @@ reused for a different behavior.
 - **C-015:** V1 supports `general`, `work`, `cycleRest`, and `finished` saying
   categories. A missing specific category falls back to `general`; unknown
   saying categories are rejected.
+- **C-016:** A protected generic starter Personality is included with the app
+  so spoken motivation can be used without importing a pack. It can be selected
+  or inspected but not renamed, exported, or removed.
 
 ## Local storage and privacy
 
