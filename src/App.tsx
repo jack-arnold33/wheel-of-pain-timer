@@ -1,84 +1,184 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Container,
-  Divider,
   Paper,
   Stack,
   Typography,
 } from '@mui/material'
+import { protectedStandardRoutine } from './domain/routines/protectedRoutine'
+import type { Routine } from './domain/routines/types'
 import { buildWorkoutSequence } from './domain/timer/sequence'
-import { standardRoutineTiming } from './domain/timer/standardRoutine'
 import type { WorkoutState } from './domain/timer/types'
 import {
   clearWorkoutCheckpoint,
+  readWorkoutCheckpointRoutineId,
   restoreWorkoutCheckpoint,
   saveWorkoutCheckpoint,
 } from './domain/timer/workoutPersistence'
+import { PreWorkoutReview } from './presentation/PreWorkoutReview'
 import { PwaUpdatePrompt } from './presentation/PwaUpdatePrompt'
+import { RoutineLibrary } from './presentation/RoutineLibrary'
 import { WorkoutRunner } from './presentation/WorkoutRunner'
 import { formatClock } from './presentation/timerPresentation'
 import { primeTimerAudio } from './presentation/timerAudio'
 import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeLock'
 
-type Screen = 'preworkout' | 'active' | 'complete'
-const STANDARD_ROUTINE_ID = 'protected-standard'
+type Screen = 'loading' | 'home' | 'preworkout' | 'active' | 'complete'
+const LEGACY_STANDARD_ROUTINE_ID = 'protected-standard'
 
 interface AppProps {
   timerSoundsEnabled?: boolean
+  loadRoutines?: () => Promise<readonly Routine[]>
 }
 
-export function App({ timerSoundsEnabled = true }: AppProps) {
+const loadStoredRoutines = async () => {
+  const { routineRepository } = await import('./data/routineRepository')
+  return routineRepository.list()
+}
+
+export function App({
+  timerSoundsEnabled = true,
+  loadRoutines = loadStoredRoutines,
+}: AppProps) {
+  const [screen, setScreen] = useState<Screen>('loading')
+  const [routines, setRoutines] = useState<readonly Routine[]>([])
+  const [selectedRoutine, setSelectedRoutine] = useState<Routine>()
+  const [storageNotice, setStorageNotice] = useState<string>()
+  const [initialWorkout, setInitialWorkout] = useState<WorkoutState>()
+  const [initialActiveElapsedMs, setInitialActiveElapsedMs] = useState(0)
+  const [completedWorkoutMs, setCompletedWorkoutMs] = useState(0)
+  const [recoveryMessage, setRecoveryMessage] = useState<string>()
+  const [recoveryWarning, setRecoveryWarning] = useState(false)
+
   const sequence = useMemo(
-    () => buildWorkoutSequence(standardRoutineTiming),
-    [],
+    () =>
+      selectedRoutine === undefined
+        ? []
+        : buildWorkoutSequence(selectedRoutine.timing),
+    [selectedRoutine],
   )
-  const [restoredWorkout] = useState(() =>
-    restoreWorkoutCheckpoint(
-      STANDARD_ROUTINE_ID,
-      sequence,
-      Date.now(),
-      performance.now(),
-    ),
+  const wakeLockStatus = useScreenWakeLock(
+    screen === 'active' || screen === 'complete',
   )
-  const [initialWorkout, setInitialWorkout] = useState<WorkoutState | undefined>(
-    restoredWorkout?.workout.status === 'complete'
-      ? undefined
-      : restoredWorkout?.workout,
-  )
-  const [initialActiveElapsedMs, setInitialActiveElapsedMs] = useState(
-    restoredWorkout?.activeElapsedMs ?? 0,
-  )
-  const [recoveryMessage, setRecoveryMessage] = useState(restoredWorkout?.notice)
-  const [recoveryWarning, setRecoveryWarning] = useState(
-    restoredWorkout?.accuracyWarning ?? false,
-  )
-  const [screen, setScreen] = useState<Screen>(() => {
-    if (restoredWorkout?.workout.status === 'complete') return 'complete'
-    return restoredWorkout === undefined ? 'preworkout' : 'active'
-  })
-  const [completedWorkoutMs, setCompletedWorkoutMs] = useState(
-    restoredWorkout?.workout.status === 'complete'
-      ? restoredWorkout.activeElapsedMs
-      : 0,
-  )
-  const wakeLockStatus = useScreenWakeLock(screen !== 'preworkout')
   const wakeLockMessage = wakeLockNotice(wakeLockStatus)
 
-  const workIntervals = sequence.filter(({ kind }) => kind === 'work').length
-  const scheduledDurationMs = sequence.reduce(
-    (total, phase) => total + phase.durationMs,
-    0,
-  )
+  useEffect(() => {
+    let active = true
+    const showLoadedRoutines = (loadedRoutines: readonly Routine[]) => {
+      if (!active) return
+      setRoutines(loadedRoutines)
+
+      const checkpointRoutineId = readWorkoutCheckpointRoutineId()
+      if (checkpointRoutineId === undefined) {
+        setScreen('home')
+        return
+      }
+
+      const recoveryRoutine =
+        checkpointRoutineId === LEGACY_STANDARD_ROUTINE_ID
+          ? loadedRoutines.find(({ ownership }) => ownership === 'protected')
+          : loadedRoutines.find(({ id }) => id === checkpointRoutineId)
+      if (recoveryRoutine === undefined) {
+        clearWorkoutCheckpoint()
+        setStorageNotice(
+          'An interrupted workout could not be restored because its routine is unavailable.',
+        )
+        setScreen('home')
+        return
+      }
+
+      const restored = restoreWorkoutCheckpoint(
+        checkpointRoutineId,
+        buildWorkoutSequence(recoveryRoutine.timing),
+        Date.now(),
+        performance.now(),
+      )
+      if (restored === undefined) {
+        setScreen('home')
+        return
+      }
+
+      setSelectedRoutine(recoveryRoutine)
+      setInitialWorkout(
+        restored.workout.status === 'complete'
+          ? undefined
+          : restored.workout,
+      )
+      setInitialActiveElapsedMs(restored.activeElapsedMs)
+      setCompletedWorkoutMs(
+        restored.workout.status === 'complete'
+          ? restored.activeElapsedMs
+          : 0,
+      )
+      setRecoveryMessage(restored.notice)
+      setRecoveryWarning(restored.accuracyWarning)
+      setScreen(
+        restored.workout.status === 'complete' ? 'complete' : 'active',
+      )
+    }
+
+    void loadRoutines()
+      .then(showLoadedRoutines)
+      .catch(() => {
+        if (!active) return
+        setStorageNotice(
+          'Saved routines are unavailable on this device. The protected preset remains usable.',
+        )
+        showLoadedRoutines([protectedStandardRoutine])
+      })
+    return () => {
+      active = false
+    }
+  }, [loadRoutines])
+
+  const dismissRecovery = () => {
+    setRecoveryMessage(undefined)
+    setRecoveryWarning(false)
+  }
+
+  if (screen === 'loading') {
+    return (
+      <Box
+        component="main"
+        sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}
+      >
+        <Stack spacing={2} sx={{ alignItems: 'center' }}>
+          <CircularProgress />
+          <Typography color="text.secondary">Loading routines…</Typography>
+        </Stack>
+      </Box>
+    )
+  }
+
+  if (screen === 'home') {
+    return (
+      <>
+        <RoutineLibrary
+          routines={routines}
+          storageNotice={storageNotice}
+          onSelect={(routine) => {
+            setSelectedRoutine(routine)
+            setScreen('preworkout')
+          }}
+        />
+        <PwaUpdatePrompt activationAllowed />
+      </>
+    )
+  }
+
+  if (selectedRoutine === undefined) return null
 
   if (screen === 'active') {
     return (
       <>
         <WorkoutRunner
+          key={selectedRoutine.id}
           phases={sequence}
-          timing={standardRoutineTiming}
+          timing={selectedRoutine.timing}
           initialWorkout={initialWorkout}
           initialActiveElapsedMs={initialActiveElapsedMs}
           soundsEnabled={timerSoundsEnabled}
@@ -87,14 +187,14 @@ export function App({ timerSoundsEnabled = true }: AppProps) {
           recoveryWarning={recoveryWarning}
           onCheckpoint={(workout, activeElapsedMs) =>
             saveWorkoutCheckpoint(
-              STANDARD_ROUTINE_ID,
+              selectedRoutine.id,
               workout,
               activeElapsedMs,
             )
           }
           onComplete={(activeElapsedMs) => {
             saveWorkoutCheckpoint(
-              STANDARD_ROUTINE_ID,
+              selectedRoutine.id,
               { status: 'complete', phases: sequence },
               activeElapsedMs,
             )
@@ -103,16 +203,12 @@ export function App({ timerSoundsEnabled = true }: AppProps) {
             setInitialActiveElapsedMs(0)
             setScreen('complete')
           }}
-          onDismissRecovery={() => {
-            setRecoveryMessage(undefined)
-            setRecoveryWarning(false)
-          }}
+          onDismissRecovery={dismissRecovery}
           onEnd={() => {
             clearWorkoutCheckpoint()
             setInitialWorkout(undefined)
             setInitialActiveElapsedMs(0)
-            setRecoveryMessage(undefined)
-            setRecoveryWarning(false)
+            dismissRecovery()
             setScreen('preworkout')
           }}
         />
@@ -156,8 +252,7 @@ export function App({ timerSoundsEnabled = true }: AppProps) {
                 size="large"
                 onClick={() => {
                   clearWorkoutCheckpoint()
-                  setRecoveryMessage(undefined)
-                  setRecoveryWarning(false)
+                  dismissRecovery()
                   setScreen('preworkout')
                 }}
               >
@@ -172,67 +267,23 @@ export function App({ timerSoundsEnabled = true }: AppProps) {
   }
 
   return (
-    <Box component="main" sx={{ minHeight: '100dvh', py: { xs: 4, sm: 8 } }}>
-      <Container maxWidth="sm">
-        <Stack spacing={3}>
-          <Stack spacing={1}>
-            <Chip label="Protected preset" color="primary" sx={{ alignSelf: 'flex-start' }} />
-            <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', sm: '3.5rem' } }}>
-              Wheel of Pain
-            </Typography>
-            <Typography color="text.secondary">
-              Review the standard routine, then begin the Prepare phase.
-            </Typography>
-          </Stack>
-
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack spacing={2}>
-              <Typography variant="h6">Standard routine</Typography>
-              <Stack direction="row" divider={<Divider orientation="vertical" flexItem />} spacing={2}>
-                <Box>
-                  <Typography variant="h5">{workIntervals}</Typography>
-                  <Typography variant="body2" color="text.secondary">Work intervals</Typography>
-                </Box>
-                <Box>
-                  <Typography variant="h5">{formatClock(scheduledDurationMs)}</Typography>
-                  <Typography variant="body2" color="text.secondary">Total duration</Typography>
-                </Box>
-              </Stack>
-              <Typography color="text.secondary">
-                4 cycles · 4 rounds · 3 exercises
-              </Typography>
-              <Typography color="text.secondary">
-                10 sec prepare · 30 sec work · 15 sec rest · 2 min cycle rest
-              </Typography>
-              <Divider />
-              <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
-                <Typography>Personality</Typography>
-                <Typography color="text.secondary">None</Typography>
-              </Stack>
-              <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
-                <Typography>Participants</Typography>
-                <Typography color="text.secondary">0 active</Typography>
-              </Stack>
-              <Button
-                variant="contained"
-                size="large"
-                onClick={() => {
-                  clearWorkoutCheckpoint()
-                  setInitialWorkout(undefined)
-                  setInitialActiveElapsedMs(0)
-                  setRecoveryMessage(undefined)
-                  setRecoveryWarning(false)
-                  primeTimerAudio()
-                  setScreen('active')
-                }}
-              >
-                Play
-              </Button>
-            </Stack>
-          </Paper>
-        </Stack>
-      </Container>
+    <>
+      <PreWorkoutReview
+        routine={selectedRoutine}
+        onBack={() => {
+          setSelectedRoutine(undefined)
+          setScreen('home')
+        }}
+        onPlay={() => {
+          clearWorkoutCheckpoint()
+          setInitialWorkout(undefined)
+          setInitialActiveElapsedMs(0)
+          dismissRecovery()
+          primeTimerAudio()
+          setScreen('active')
+        }}
+      />
       <PwaUpdatePrompt activationAllowed />
-    </Box>
+    </>
   )
 }
