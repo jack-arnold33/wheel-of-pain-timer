@@ -35,13 +35,20 @@ import {
 interface WorkoutRunnerProps {
   phases: readonly WorkoutPhase[]
   timing: RoutineTiming
+  wakeLockMessage?: string
   onComplete: (activeElapsedMs: number) => void
   onEnd: () => void
 }
 
 const now = () => performance.now()
 
-export function WorkoutRunner({ phases, timing, onComplete, onEnd }: WorkoutRunnerProps) {
+export function WorkoutRunner({
+  phases,
+  timing,
+  wakeLockMessage,
+  onComplete,
+  onEnd,
+}: WorkoutRunnerProps) {
   const [workout, setWorkout] = useState<WorkoutState>(() => startWorkout(phases, now()))
   const [clockMs, setClockMs] = useState(() => now())
   const [confirmingEnd, setConfirmingEnd] = useState(false)
@@ -118,10 +125,21 @@ export function WorkoutRunner({ phases, timing, onComplete, onEnd }: WorkoutRunn
     <Box
       component="main"
       sx={{
-        minHeight: '100dvh',
-        display: 'grid',
-        placeItems: 'center',
-        p: { xs: 2, sm: 3 },
+        height: '100dvh',
+        boxSizing: 'border-box',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflowY: 'auto',
+        pl: 'max(16px, env(safe-area-inset-left))',
+        pr: 'max(16px, env(safe-area-inset-right))',
+        pt: 'max(16px, env(safe-area-inset-top))',
+        pb: 'max(16px, env(safe-area-inset-bottom))',
+        '@media (orientation: landscape) and (max-height: 500px)': {
+          alignItems: 'flex-start',
+          pt: 'max(8px, env(safe-area-inset-top))',
+          pb: 'max(8px, env(safe-area-inset-bottom))',
+        },
       }}
     >
       <Paper
@@ -130,10 +148,30 @@ export function WorkoutRunner({ phases, timing, onComplete, onEnd }: WorkoutRunn
           width: 'min(100%, 64rem)',
           p: { xs: 2.5, sm: 4 },
           textAlign: 'center',
+          '@media (orientation: landscape) and (max-height: 500px)': {
+            p: 1.5,
+          },
         }}
       >
-        <Stack spacing={{ xs: 2, sm: 3 }} sx={{ alignItems: 'stretch' }}>
-          <Box>
+        <Stack
+          spacing={{ xs: 2, sm: 3 }}
+          sx={{
+            alignItems: 'stretch',
+            '@media (orientation: landscape) and (max-height: 500px)': {
+              gap: 1,
+            },
+          }}
+        >
+          <Box
+            sx={{
+              '@media (orientation: landscape) and (max-height: 500px)': {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+              },
+            }}
+          >
             <Typography
               aria-label="Time remaining"
               sx={{
@@ -142,11 +180,24 @@ export function WorkoutRunner({ phases, timing, onComplete, onEnd }: WorkoutRunn
                 fontWeight: 900,
                 lineHeight: 0.95,
                 fontVariantNumeric: 'tabular-nums',
+                '@media (orientation: landscape) and (max-height: 500px)': {
+                  fontSize: '4rem',
+                },
               }}
             >
               {formatClock(remainingMs)}
             </Typography>
-            <Typography variant="h1" sx={{ fontSize: { xs: '2rem', sm: '3.25rem' }, mt: 1 }}>
+            <Typography
+              variant="h1"
+              sx={{
+                fontSize: { xs: '2rem', sm: '3.25rem' },
+                mt: 1,
+                '@media (orientation: landscape) and (max-height: 500px)': {
+                  fontSize: '2rem',
+                  mt: 0,
+                },
+              }}
+            >
               {phaseLabel(phase.kind)}
             </Typography>
             {isPaused && <Typography color="primary.main" variant="h6">Paused</Typography>}
@@ -185,6 +236,12 @@ export function WorkoutRunner({ phases, timing, onComplete, onEnd }: WorkoutRunn
             <Button variant="outlined" size="large" onClick={handleSkip}>Skip phase</Button>
             <Button color="error" size="large" onClick={handleOpenEnd}>End workout</Button>
           </Stack>
+
+          {wakeLockMessage && (
+            <Typography variant="body2" color="warning.main" role="status">
+              {wakeLockMessage}
+            </Typography>
+          )}
         </Stack>
       </Paper>
 

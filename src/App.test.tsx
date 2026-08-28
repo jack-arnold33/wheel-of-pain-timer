@@ -1,12 +1,17 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { ThemeProvider } from '@mui/material'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 import { wheelOfPainTheme } from './presentation/themes/wheelOfPainTheme'
 
 vi.mock('./presentation/PwaUpdatePrompt', () => ({
   PwaUpdatePrompt: () => null,
 }))
+
+afterEach(() => {
+  cleanup()
+  Reflect.deleteProperty(navigator, 'wakeLock')
+})
 
 describe('App workout flow', () => {
   it('launches the protected routine and guards ending it', async () => {
@@ -32,5 +37,38 @@ describe('App workout flow', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(screen.getByText('Paused')).toBeInTheDocument()
+  })
+
+  it('releases the screen wake lock when ending a workout', async () => {
+    const release = vi.fn().mockResolvedValue(undefined)
+    const request = vi.fn().mockResolvedValue({
+      released: false,
+      type: 'screen',
+      release,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: { request },
+    })
+
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <App />
+      </ThemeProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await waitFor(() => expect(request).toHaveBeenCalledWith('screen'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'End workout' }))
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'End workout' }),
+    )
+
+    await waitFor(() => expect(release).toHaveBeenCalledOnce())
+    expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument()
   })
 })
