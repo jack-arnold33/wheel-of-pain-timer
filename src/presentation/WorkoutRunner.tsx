@@ -33,7 +33,7 @@ import {
   formatClock,
   nextPhase,
   phaseLabel,
-  phasePosition,
+  phasePositionLines,
   remainingScheduledMs,
   workIntervalsRemaining,
 } from './timerPresentation'
@@ -97,6 +97,7 @@ export function WorkoutRunner({
   const isResuming = workout.status === 'resuming'
   const primaryControlLabel = workout.status === 'running' || isResuming ? 'Pause' : 'Resume'
   const progress = Math.min(100, Math.max(0, (workout.elapsedInPhaseMs / phase.durationMs) * 100))
+  const positionLines = phasePositionLines(phase, timing)
 
   const pauseAt = (atMs: number) => {
     setClockMs(atMs)
@@ -265,9 +266,19 @@ export function WorkoutRunner({
             <Typography sx={{ fontWeight: 700 }}>
               {workIntervalsRemaining(workout)} work intervals remaining
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {phasePosition(phase, timing)}
-            </Typography>
+            {positionLines.length > 0 && (
+              <Stack
+                spacing={0}
+                aria-label="Workout position"
+                sx={{ alignItems: { xs: 'center', sm: 'flex-end' } }}
+              >
+                {positionLines.map((line) => (
+                  <Typography key={line} variant="body2" color="text.secondary">
+                    {line}
+                  </Typography>
+                ))}
+              </Stack>
+            )}
           </Stack>
 
           <Stack

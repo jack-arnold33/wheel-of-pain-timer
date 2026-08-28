@@ -6,7 +6,7 @@ import {
   formatClock,
   nextPhase,
   phaseLabel,
-  phasePosition,
+  phasePositionLines,
   workIntervalsRemaining,
 } from './timerPresentation'
 
@@ -38,9 +38,11 @@ describe('timer presentation', () => {
     expect(firstWork).toBeDefined()
     if (firstWork === undefined) return
 
-    expect(phasePosition(firstWork, standardRoutineTiming)).toBe(
-      'Cycle 1 of 4 · Round 1 of 4 · Exercise 1 of 3',
-    )
+    expect(phasePositionLines(firstWork, standardRoutineTiming)).toEqual([
+      'Exercise 1 of 3',
+      'Round 1 of 4',
+      'Cycle 1 of 4',
+    ])
     expect(nextPhase(phases, 1)?.kind).toBe('exerciseRest')
   })
 })
