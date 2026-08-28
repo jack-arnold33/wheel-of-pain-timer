@@ -15,6 +15,7 @@ import type {
   ContentPack,
   ContentPackDraft,
 } from './domain/contentPacks/types'
+import type { Participant } from './domain/participants/types'
 import { standardRoutineTiming } from './domain/timer/standardRoutine'
 import { buildWorkoutSequence } from './domain/timer/sequence'
 import type { WorkoutState } from './domain/timer/types'
@@ -39,6 +40,7 @@ type Screen =
   | 'home'
   | 'editor'
   | 'contentPacks'
+  | 'participants'
   | 'preworkout'
   | 'active'
   | 'complete'
@@ -50,6 +52,10 @@ const RoutineEditor = lazy(async () => {
 const ContentPackLibrary = lazy(async () => {
   const module = await import('./presentation/ContentPackLibrary')
   return { default: module.ContentPackLibrary }
+})
+const ParticipantAttendance = lazy(async () => {
+  const module = await import('./presentation/ParticipantAttendance')
+  return { default: module.ParticipantAttendance }
 })
 
 interface EditorState {
@@ -72,6 +78,14 @@ interface AppProps {
   replaceContentPack?: (id: string, draft: ContentPackDraft) => Promise<ContentPack>
   renameContentPack?: (id: string, name: string) => Promise<ContentPack>
   deleteContentPack?: (id: string, selected: boolean) => Promise<void>
+  loadParticipants?: () => Promise<{
+    readonly participants: readonly Participant[]
+    readonly activeIds: readonly string[]
+  }>
+  saveAttendance?: (ids: readonly string[]) => Promise<readonly string[]>
+  createParticipant?: (name: string) => Promise<Participant>
+  renameParticipant?: (id: string, name: string) => Promise<Participant>
+  deleteParticipant?: (id: string) => Promise<void>
 }
 
 const loadStoredRoutines = async () => {
@@ -131,6 +145,31 @@ const deleteStoredContentPack = async (id: string, selected: boolean) => {
   return contentPackService.remove(id, selected)
 }
 
+const loadStoredParticipants = async () => {
+  const { participantService } = await import('./data/participantService')
+  return participantService.load()
+}
+
+const saveStoredAttendance = async (ids: readonly string[]) => {
+  const { participantService } = await import('./data/participantService')
+  return participantService.saveAttendance(ids)
+}
+
+const createStoredParticipant = async (name: string) => {
+  const { participantService } = await import('./data/participantService')
+  return participantService.createAndActivate(name)
+}
+
+const renameStoredParticipant = async (id: string, name: string) => {
+  const { participantService } = await import('./data/participantService')
+  return participantService.rename(id, name)
+}
+
+const deleteStoredParticipant = async (id: string) => {
+  const { participantService } = await import('./data/participantService')
+  return participantService.remove(id)
+}
+
 const contentPackConflict = (
   error: unknown,
 ): error is { readonly conflictingPack: ContentPack } =>
@@ -150,6 +189,11 @@ export function App({
   replaceContentPack = replaceStoredContentPack,
   renameContentPack = renameStoredContentPack,
   deleteContentPack = deleteStoredContentPack,
+  loadParticipants = loadStoredParticipants,
+  saveAttendance = saveStoredAttendance,
+  createParticipant = createStoredParticipant,
+  renameParticipant = renameStoredParticipant,
+  deleteParticipant = deleteStoredParticipant,
 }: AppProps) {
   const [screen, setScreen] = useState<Screen>('loading')
   const [routines, setRoutines] = useState<readonly Routine[]>([])
@@ -158,6 +202,9 @@ export function App({
   const [contentPacks, setContentPacks] = useState<readonly ContentPack[]>([])
   const [selectedContentPackId, setSelectedContentPackId] = useState<string | null>(null)
   const [contentPackNotice, setContentPackNotice] = useState<string>()
+  const [participants, setParticipants] = useState<readonly Participant[]>([])
+  const [activeParticipantIds, setActiveParticipantIds] = useState<readonly string[]>([])
+  const [participantNotice, setParticipantNotice] = useState<string>()
   const [storageNotice, setStorageNotice] = useState<string>()
   const [initialWorkout, setInitialWorkout] = useState<WorkoutState>()
   const [initialActiveElapsedMs, setInitialActiveElapsedMs] = useState(0)
@@ -264,6 +311,25 @@ export function App({
       active = false
     }
   }, [loadContentPacks])
+
+  useEffect(() => {
+    let active = true
+    void loadParticipants()
+      .then((state) => {
+        if (!active) return
+        setParticipants(state.participants)
+        setActiveParticipantIds(state.activeIds)
+      })
+      .catch(() => {
+        if (!active) return
+        setParticipantNotice(
+          'Saved participants are unavailable on this device. Workouts remain usable without names.',
+        )
+      })
+    return () => {
+      active = false
+    }
+  }, [loadParticipants])
 
   const dismissRecovery = () => {
     setRecoveryMessage(undefined)
@@ -419,6 +485,57 @@ export function App({
     )
   }
 
+  if (screen === 'participants') {
+    return (
+      <>
+        <Suspense
+          fallback={
+            <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+              <CircularProgress aria-label="Loading participants" />
+            </Box>
+          }
+        >
+          <ParticipantAttendance
+            participants={participants}
+            activeIds={activeParticipantIds}
+            storageNotice={participantNotice}
+            onBack={() => setScreen('preworkout')}
+            onSave={async (ids) => {
+              const saved = await saveAttendance(ids)
+              setActiveParticipantIds(saved)
+              setScreen('preworkout')
+            }}
+            onAdd={async (name) => {
+              const created = await createParticipant(name)
+              setParticipants((current) => [...current, created])
+              setActiveParticipantIds((current) => [...current, created.id])
+              return created
+            }}
+            onRename={async (id, name) => {
+              const renamed = await renameParticipant(id, name)
+              setParticipants((current) =>
+                current.map((participant) =>
+                  participant.id === renamed.id ? renamed : participant,
+                ),
+              )
+              return renamed
+            }}
+            onDelete={async (id) => {
+              await deleteParticipant(id)
+              setParticipants((current) =>
+                current.filter((participant) => participant.id !== id),
+              )
+              setActiveParticipantIds((current) =>
+                current.filter((activeId) => activeId !== id),
+              )
+            }}
+          />
+        </Suspense>
+        <PwaUpdatePrompt activationAllowed />
+      </>
+    )
+  }
+
   if (screen === 'active') {
     return (
       <>
@@ -558,6 +675,8 @@ export function App({
           contentPacks.find(({ id }) => id === selectedContentPackId)?.name ?? null
         }
         onChoosePersonality={() => setScreen('contentPacks')}
+        activeParticipantCount={activeParticipantIds.length}
+        onChooseParticipants={() => setScreen('participants')}
       />
       <PwaUpdatePrompt activationAllowed />
     </>
