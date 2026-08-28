@@ -14,6 +14,7 @@ import { standardRoutineTiming } from './domain/timer/standardRoutine'
 import { PwaUpdatePrompt } from './presentation/PwaUpdatePrompt'
 import { WorkoutRunner } from './presentation/WorkoutRunner'
 import { formatClock } from './presentation/timerPresentation'
+import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeLock'
 
 type Screen = 'preworkout' | 'active' | 'complete'
 
@@ -24,6 +25,8 @@ export function App() {
   )
   const [screen, setScreen] = useState<Screen>('preworkout')
   const [completedWorkoutMs, setCompletedWorkoutMs] = useState(0)
+  const wakeLockStatus = useScreenWakeLock(screen !== 'preworkout')
+  const wakeLockMessage = wakeLockNotice(wakeLockStatus)
 
   const workIntervals = sequence.filter(({ kind }) => kind === 'work').length
   const scheduledDurationMs = sequence.reduce(
@@ -37,6 +40,7 @@ export function App() {
         <WorkoutRunner
           phases={sequence}
           timing={standardRoutineTiming}
+          wakeLockMessage={wakeLockMessage}
           onComplete={(activeElapsedMs) => {
             setCompletedWorkoutMs(activeElapsedMs)
             setScreen('complete')
@@ -67,6 +71,9 @@ export function App() {
               <Typography>
                 Workout time: {formatClock(completedWorkoutMs)}
               </Typography>
+              {wakeLockMessage && (
+                <Typography color="warning.main">{wakeLockMessage}</Typography>
+              )}
               <Button variant="contained" size="large" onClick={() => setScreen('preworkout')}>
                 Done
               </Button>
