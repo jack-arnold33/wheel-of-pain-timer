@@ -7,11 +7,17 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  IconButton,
   LinearProgress,
   Paper,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material'
+import PauseRoundedIcon from '@mui/icons-material/PauseRounded'
+import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded'
+import SkipNextRoundedIcon from '@mui/icons-material/SkipNextRounded'
+import StopRoundedIcon from '@mui/icons-material/StopRounded'
 import {
   beginResumeCountdown,
   currentPhase,
@@ -89,6 +95,7 @@ export function WorkoutRunner({
   const followingPhase = nextPhase(workout.phases, workout.phaseIndex)
   const isPaused = workout.status === 'paused'
   const isResuming = workout.status === 'resuming'
+  const primaryControlLabel = workout.status === 'running' || isResuming ? 'Pause' : 'Resume'
   const progress = Math.min(100, Math.max(0, (workout.elapsedInPhaseMs / phase.durationMs) * 100))
 
   const pauseAt = (atMs: number) => {
@@ -135,7 +142,7 @@ export function WorkoutRunner({
         pr: 'max(16px, env(safe-area-inset-right))',
         pt: 'max(16px, env(safe-area-inset-top))',
         pb: 'max(16px, env(safe-area-inset-bottom))',
-        '@media (orientation: landscape) and (max-height: 500px)': {
+        '@media (orientation: landscape) and (max-height: 600px)': {
           alignItems: 'flex-start',
           pt: 'max(8px, env(safe-area-inset-top))',
           pb: 'max(8px, env(safe-area-inset-bottom))',
@@ -147,9 +154,14 @@ export function WorkoutRunner({
         sx={{
           width: 'min(100%, 64rem)',
           p: { xs: 2.5, sm: 4 },
+          position: 'relative',
           textAlign: 'center',
-          '@media (orientation: landscape) and (max-height: 500px)': {
-            p: 1.5,
+          '@media (orientation: landscape) and (max-height: 600px)': {
+            width: '100%',
+            height: '100%',
+            p: 0,
+            border: 0,
+            bgcolor: 'transparent',
           },
         }}
       >
@@ -157,18 +169,22 @@ export function WorkoutRunner({
           spacing={{ xs: 2, sm: 3 }}
           sx={{
             alignItems: 'stretch',
-            '@media (orientation: landscape) and (max-height: 500px)': {
-              gap: 1,
+            '@media (orientation: landscape) and (max-height: 600px)': {
+              height: '100%',
+              gap: 0.75,
             },
           }}
         >
           <Box
             sx={{
-              '@media (orientation: landscape) and (max-height: 500px)': {
-                display: 'flex',
+              '@media (orientation: landscape) and (max-height: 600px)': {
+                display: 'grid',
+                gridTemplateRows: 'auto minmax(0, 1fr)',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: 2,
+                justifyItems: 'center',
+                flex: 1,
+                minHeight: 0,
+                position: 'relative',
               },
             }}
           >
@@ -180,8 +196,10 @@ export function WorkoutRunner({
                 fontWeight: 900,
                 lineHeight: 0.95,
                 fontVariantNumeric: 'tabular-nums',
-                '@media (orientation: landscape) and (max-height: 500px)': {
-                  fontSize: '4rem',
+                '@media (orientation: landscape) and (max-height: 600px)': {
+                  gridRow: 2,
+                  fontSize: 'clamp(8rem, 23vw, 12rem)',
+                  lineHeight: 0.8,
                 },
               }}
             >
@@ -192,17 +210,46 @@ export function WorkoutRunner({
               sx={{
                 fontSize: { xs: '2rem', sm: '3.25rem' },
                 mt: 1,
-                '@media (orientation: landscape) and (max-height: 500px)': {
-                  fontSize: '2rem',
+                '@media (orientation: landscape) and (max-height: 600px)': {
+                  gridRow: 1,
+                  fontSize: 'clamp(2rem, 5vw, 3rem)',
+                  whiteSpace: 'nowrap',
                   mt: 0,
                 },
               }}
             >
               {phaseLabel(phase.kind)}
             </Typography>
-            {isPaused && <Typography color="primary.main" variant="h6">Paused</Typography>}
+            {isPaused && (
+              <Typography
+                color="primary.main"
+                variant="h6"
+                sx={{
+                  '@media (orientation: landscape) and (max-height: 600px)': {
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    fontSize: '0.875rem',
+                  },
+                }}
+              >
+                Paused
+              </Typography>
+            )}
             {isResuming && (
-              <Typography color="primary.main" variant="h6" aria-live="assertive">
+              <Typography
+                color="primary.main"
+                variant="h6"
+                aria-live="assertive"
+                sx={{
+                  '@media (orientation: landscape) and (max-height: 600px)': {
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    fontSize: '0.875rem',
+                  },
+                }}
+              >
                 Resuming in {Math.max(1, Math.ceil(resumeCountdownRemainingMs(workout, clockMs) / 1_000))}
               </Typography>
             )}
@@ -215,26 +262,93 @@ export function WorkoutRunner({
             spacing={1}
             sx={{ justifyContent: 'space-between' }}
           >
-            <Typography variant="h6">
+            <Typography sx={{ fontWeight: 700 }}>
               {workIntervalsRemaining(workout)} work intervals remaining
             </Typography>
-            <Typography color="text.secondary">{phasePosition(phase, timing)}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {phasePosition(phase, timing)}
+            </Typography>
           </Stack>
 
-          <Typography color="text.secondary">
-            {followingPhase ? `Next: ${phaseLabel(followingPhase.kind)}` : 'Next: Complete'}
-          </Typography>
-
           <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1.5}
-            sx={{ justifyContent: 'center' }}
+            direction="row"
+            spacing={2}
+            sx={{ alignItems: 'center', justifyContent: 'center' }}
           >
-            <Button variant="contained" size="large" onClick={handlePrimaryControl}>
-              {workout.status === 'running' || isResuming ? 'Pause' : 'Resume'}
-            </Button>
-            <Button variant="outlined" size="large" onClick={handleSkip}>Skip phase</Button>
-            <Button color="error" size="large" onClick={handleOpenEnd}>End workout</Button>
+            <Typography variant="body2" color="text.secondary">
+              {followingPhase ? `Next: ${phaseLabel(followingPhase.kind)}` : 'Next: Complete'}
+            </Typography>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                '@media (orientation: landscape) and (max-height: 600px)': {
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  zIndex: 2,
+                },
+              }}
+            >
+              <Tooltip title={primaryControlLabel}>
+                <IconButton
+                  aria-label={primaryControlLabel}
+                  onClick={handlePrimaryControl}
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                    '@media (orientation: landscape) and (max-height: 600px)': {
+                      width: 44,
+                      height: 44,
+                    },
+                  }}
+                >
+                  {primaryControlLabel === 'Pause' ? <PauseRoundedIcon /> : <PlayArrowRoundedIcon />}
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Skip phase">
+                <IconButton
+                  aria-label="Skip phase"
+                  onClick={handleSkip}
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    border: 1,
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    '@media (orientation: landscape) and (max-height: 600px)': {
+                      width: 44,
+                      height: 44,
+                    },
+                  }}
+                >
+                  <SkipNextRoundedIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="End workout">
+                <IconButton
+                  aria-label="End workout"
+                  color="error"
+                  onClick={handleOpenEnd}
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    border: 1,
+                    borderColor: 'error.main',
+                    color: 'error.main',
+                    '@media (orientation: landscape) and (max-height: 600px)': {
+                      width: 44,
+                      height: 44,
+                    },
+                  }}
+                >
+                  <StopRoundedIcon />
+                </IconButton>
+              </Tooltip>
+            </Stack>
           </Stack>
 
           {wakeLockMessage && (
