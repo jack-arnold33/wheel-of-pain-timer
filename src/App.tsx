@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import {
   Box,
   Button,
@@ -10,7 +10,8 @@ import {
   Typography,
 } from '@mui/material'
 import { protectedStandardRoutine } from './domain/routines/protectedRoutine'
-import type { Routine } from './domain/routines/types'
+import type { Routine, RoutineInput, UserRoutine } from './domain/routines/types'
+import { standardRoutineTiming } from './domain/timer/standardRoutine'
 import { buildWorkoutSequence } from './domain/timer/sequence'
 import type { WorkoutState } from './domain/timer/types'
 import {
@@ -22,17 +23,30 @@ import {
 import { PreWorkoutReview } from './presentation/PreWorkoutReview'
 import { PwaUpdatePrompt } from './presentation/PwaUpdatePrompt'
 import { RoutineLibrary } from './presentation/RoutineLibrary'
+import type { RoutineEditorMode } from './presentation/RoutineEditor'
 import { WorkoutRunner } from './presentation/WorkoutRunner'
 import { formatClock } from './presentation/timerPresentation'
 import { primeTimerAudio } from './presentation/timerAudio'
 import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeLock'
 
-type Screen = 'loading' | 'home' | 'preworkout' | 'active' | 'complete'
+type Screen = 'loading' | 'home' | 'editor' | 'preworkout' | 'active' | 'complete'
 const LEGACY_STANDARD_ROUTINE_ID = 'protected-standard'
+const RoutineEditor = lazy(async () => {
+  const module = await import('./presentation/RoutineEditor')
+  return { default: module.RoutineEditor }
+})
+
+interface EditorState {
+  readonly mode: RoutineEditorMode
+  readonly source?: Routine
+}
 
 interface AppProps {
   timerSoundsEnabled?: boolean
   loadRoutines?: () => Promise<readonly Routine[]>
+  createRoutine?: (input: RoutineInput) => Promise<UserRoutine>
+  updateRoutine?: (id: string, input: RoutineInput) => Promise<UserRoutine>
+  deleteRoutine?: (id: string) => Promise<void>
 }
 
 const loadStoredRoutines = async () => {
@@ -40,13 +54,32 @@ const loadStoredRoutines = async () => {
   return routineRepository.list()
 }
 
+const createStoredRoutine = async (input: RoutineInput) => {
+  const { routineRepository } = await import('./data/routineRepository')
+  return routineRepository.create(input)
+}
+
+const updateStoredRoutine = async (id: string, input: RoutineInput) => {
+  const { routineRepository } = await import('./data/routineRepository')
+  return routineRepository.update(id, input)
+}
+
+const deleteStoredRoutine = async (id: string) => {
+  const { routineRepository } = await import('./data/routineRepository')
+  return routineRepository.delete(id)
+}
+
 export function App({
   timerSoundsEnabled = true,
   loadRoutines = loadStoredRoutines,
+  createRoutine = createStoredRoutine,
+  updateRoutine = updateStoredRoutine,
+  deleteRoutine = deleteStoredRoutine,
 }: AppProps) {
   const [screen, setScreen] = useState<Screen>('loading')
   const [routines, setRoutines] = useState<readonly Routine[]>([])
   const [selectedRoutine, setSelectedRoutine] = useState<Routine>()
+  const [editor, setEditor] = useState<EditorState>()
   const [storageNotice, setStorageNotice] = useState<string>()
   const [initialWorkout, setInitialWorkout] = useState<WorkoutState>()
   const [initialActiveElapsedMs, setInitialActiveElapsedMs] = useState(0)
@@ -164,7 +197,62 @@ export function App({
             setSelectedRoutine(routine)
             setScreen('preworkout')
           }}
+          onCreate={() => {
+            setEditor({ mode: 'create' })
+            setScreen('editor')
+          }}
         />
+        <PwaUpdatePrompt activationAllowed />
+      </>
+    )
+  }
+
+  if (screen === 'editor' && editor !== undefined) {
+    const source = editor.source
+    const initialName =
+      editor.mode === 'create'
+        ? ''
+        : editor.mode === 'edit'
+          ? (source?.name ?? '')
+          : `${source?.name ?? 'Routine'} Copy`
+    const initialTiming = source?.timing ?? standardRoutineTiming
+
+    return (
+      <>
+        <Suspense
+          fallback={
+            <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+              <CircularProgress aria-label="Loading routine editor" />
+            </Box>
+          }
+        >
+          <RoutineEditor
+            key={`${editor.mode}:${source?.id ?? 'new'}`}
+            mode={editor.mode}
+            initialName={initialName}
+            initialTiming={initialTiming}
+            onCancel={() => {
+              setEditor(undefined)
+              setScreen(source === undefined ? 'home' : 'preworkout')
+            }}
+            onSave={async (input) => {
+              const saved =
+                editor.mode === 'edit' && source?.ownership === 'user'
+                  ? await updateRoutine(source.id, input)
+                  : await createRoutine(input)
+              setRoutines((current) =>
+                editor.mode === 'edit'
+                  ? current.map((routine) =>
+                      routine.id === saved.id ? saved : routine,
+                    )
+                  : [...current, saved],
+              )
+              setSelectedRoutine(saved)
+              setEditor(undefined)
+              setScreen('preworkout')
+            }}
+          />
+        </Suspense>
         <PwaUpdatePrompt activationAllowed />
       </>
     )
@@ -281,6 +369,31 @@ export function App({
           dismissRecovery()
           primeTimerAudio()
           setScreen('active')
+        }}
+        onCustomize={() => {
+          setEditor({ mode: 'customize', source: selectedRoutine })
+          setScreen('editor')
+        }}
+        onEdit={() => {
+          setEditor({ mode: 'edit', source: selectedRoutine })
+          setScreen('editor')
+        }}
+        onDuplicate={() => {
+          setEditor({ mode: 'duplicate', source: selectedRoutine })
+          setScreen('editor')
+        }}
+        onDelete={async () => {
+          try {
+            await deleteRoutine(selectedRoutine.id)
+            setRoutines((current) =>
+              current.filter(({ id }) => id !== selectedRoutine.id),
+            )
+            setSelectedRoutine(undefined)
+            setScreen('home')
+          } catch (error) {
+            setStorageNotice('The routine could not be deleted from this device.')
+            throw error
+          }
         }}
       />
       <PwaUpdatePrompt activationAllowed />

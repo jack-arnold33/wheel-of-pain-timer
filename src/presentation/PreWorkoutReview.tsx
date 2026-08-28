@@ -1,5 +1,6 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -8,7 +9,13 @@ import {
   Paper,
   Stack,
   Typography,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material'
+import { useState } from 'react'
 import type { Routine } from '../domain/routines/types'
 import {
   calculateScheduledSeconds,
@@ -20,6 +27,10 @@ interface PreWorkoutReviewProps {
   readonly routine: Routine
   readonly onBack: () => void
   readonly onPlay: () => void
+  readonly onCustomize: () => void
+  readonly onEdit: () => void
+  readonly onDuplicate: () => void
+  readonly onDelete: () => Promise<void>
 }
 
 const durationLabel = (seconds: number) =>
@@ -29,7 +40,14 @@ export function PreWorkoutReview({
   routine,
   onBack,
   onPlay,
+  onCustomize,
+  onEdit,
+  onDuplicate,
+  onDelete,
 }: PreWorkoutReviewProps) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(false)
   const { timing } = routine
   return (
     <Box component="main" sx={{ minHeight: '100dvh', py: { xs: 3, sm: 6 } }}>
@@ -104,10 +122,59 @@ export function PreWorkoutReview({
               <Button variant="contained" size="large" onClick={onPlay}>
                 Play
               </Button>
+              {routine.ownership === 'protected' ? (
+                <Button variant="outlined" onClick={onCustomize}>
+                  Customize
+                </Button>
+              ) : (
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                  <Button variant="outlined" onClick={onEdit} sx={{ flex: 1 }}>
+                    Edit
+                  </Button>
+                  <Button variant="outlined" onClick={onDuplicate} sx={{ flex: 1 }}>
+                    Duplicate
+                  </Button>
+                  <Button color="error" onClick={() => setConfirmDelete(true)} sx={{ flex: 1 }}>
+                    Delete
+                  </Button>
+                </Stack>
+              )}
             </Stack>
           </Paper>
         </Stack>
       </Container>
+      <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>
+        <DialogTitle>Delete {routine.name}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This removes the routine from this device and cannot be undone.
+          </DialogContentText>
+          {deleteError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              The routine could not be deleted from this device. Try again.
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
+          <Button
+            color="error"
+            disabled={deleting}
+            onClick={() => {
+              setDeleting(true)
+              setDeleteError(false)
+              void onDelete()
+                .then(() => setConfirmDelete(false))
+                .catch(() => {
+                  setDeleting(false)
+                  setDeleteError(true)
+                })
+            }}
+          >
+            {deleting ? 'Deleting…' : 'Delete routine'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
