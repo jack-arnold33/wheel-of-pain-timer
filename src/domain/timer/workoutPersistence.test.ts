@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import type { WorkoutPhase, WorkoutState } from './types'
 import {
   clearWorkoutCheckpoint,
+  readWorkoutCheckpointRoutineId,
   restoreWorkoutCheckpoint,
   saveWorkoutCheckpoint,
 } from './workoutPersistence'
@@ -14,6 +15,18 @@ const phases: readonly WorkoutPhase[] = [
 afterEach(() => clearWorkoutCheckpoint())
 
 describe('workout checkpoint recovery', () => {
+  it('exposes the saved routine identity before reconstructing its sequence', () => {
+    const paused: WorkoutState = {
+      status: 'paused',
+      phases,
+      phaseIndex: 0,
+      elapsedInPhaseMs: 1_000,
+    }
+    saveWorkoutCheckpoint('routine:custom', paused, 1_000, 1_000)
+
+    expect(readWorkoutCheckpointRoutineId()).toBe('routine:custom')
+  })
+
   it('advances a running workout once using wall-clock elapsed time', () => {
     const running: WorkoutState = {
       status: 'running',

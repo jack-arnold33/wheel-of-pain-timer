@@ -105,6 +105,31 @@ export function clearWorkoutCheckpoint(storage = browserStorage()) {
   }
 }
 
+function readStoredCheckpoint(
+  storage: Storage | undefined,
+): StoredCheckpoint | undefined {
+  if (storage === undefined) return undefined
+  try {
+    const serialized = storage.getItem(CHECKPOINT_KEY)
+    if (serialized === null) return undefined
+    const parsed: unknown = JSON.parse(serialized)
+    if (!isStoredCheckpoint(parsed)) {
+      clearWorkoutCheckpoint(storage)
+      return undefined
+    }
+    return parsed
+  } catch {
+    clearWorkoutCheckpoint(storage)
+    return undefined
+  }
+}
+
+export function readWorkoutCheckpointRoutineId(
+  storage = browserStorage(),
+): string | undefined {
+  return readStoredCheckpoint(storage)?.routineId
+}
+
 export function restoreWorkoutCheckpoint(
   routineId: string,
   phases: readonly WorkoutPhase[],
@@ -112,19 +137,9 @@ export function restoreWorkoutCheckpoint(
   monotonicNowMs = performance.now(),
   storage = browserStorage(),
 ): RestoredWorkout | undefined {
-  if (storage === undefined) return undefined
-
-  let checkpoint: StoredCheckpoint
-  try {
-    const serialized = storage.getItem(CHECKPOINT_KEY)
-    if (serialized === null) return undefined
-    const parsed: unknown = JSON.parse(serialized)
-    if (!isStoredCheckpoint(parsed) || parsed.routineId !== routineId) {
-      clearWorkoutCheckpoint(storage)
-      return undefined
-    }
-    checkpoint = parsed
-  } catch {
+  const checkpoint = readStoredCheckpoint(storage)
+  if (checkpoint === undefined) return undefined
+  if (checkpoint.routineId !== routineId) {
     clearWorkoutCheckpoint(storage)
     return undefined
   }
