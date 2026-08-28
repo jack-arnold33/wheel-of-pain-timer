@@ -26,7 +26,11 @@ import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeL
 type Screen = 'preworkout' | 'active' | 'complete'
 const STANDARD_ROUTINE_ID = 'protected-standard'
 
-export function App() {
+interface AppProps {
+  timerSoundsEnabled?: boolean
+}
+
+export function App({ timerSoundsEnabled = true }: AppProps) {
   const sequence = useMemo(
     () => buildWorkoutSequence(standardRoutineTiming),
     [],
@@ -77,6 +81,7 @@ export function App() {
           timing={standardRoutineTiming}
           initialWorkout={initialWorkout}
           initialActiveElapsedMs={initialActiveElapsedMs}
+          soundsEnabled={timerSoundsEnabled}
           wakeLockMessage={wakeLockMessage}
           recoveryMessage={recoveryMessage}
           recoveryWarning={recoveryWarning}
