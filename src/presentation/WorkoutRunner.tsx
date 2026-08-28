@@ -37,10 +37,13 @@ import {
   remainingScheduledMs,
   workIntervalsRemaining,
 } from './timerPresentation'
+import { playTimerCues } from './timerAudio'
+import { timerCueFrame, timerCuesBetween } from './timerCues'
 
 interface WorkoutRunnerProps {
   phases: readonly WorkoutPhase[]
   timing: RoutineTiming
+  soundsEnabled?: boolean
   wakeLockMessage?: string
   onComplete: (activeElapsedMs: number) => void
   onEnd: () => void
@@ -51,6 +54,7 @@ const now = () => performance.now()
 export function WorkoutRunner({
   phases,
   timing,
+  soundsEnabled = true,
   wakeLockMessage,
   onComplete,
   onEnd,
@@ -60,6 +64,9 @@ export function WorkoutRunner({
   const [confirmingEnd, setConfirmingEnd] = useState(false)
   const activeElapsedMs = useRef(0)
   const completionReported = useRef(false)
+  const previousCueFrame = useRef<ReturnType<typeof timerCueFrame> | undefined>(
+    undefined,
+  )
 
   const advance = (state: WorkoutState, atMs: number): WorkoutState => {
     if (state.status !== 'running') return projectWorkout(state, atMs)
@@ -85,6 +92,13 @@ export function WorkoutRunner({
       onComplete(activeElapsedMs.current)
     }
   }, [onComplete, workout.status])
+
+  useEffect(() => {
+    const currentCueFrame = timerCueFrame(workout, clockMs)
+    const cues = timerCuesBetween(previousCueFrame.current, currentCueFrame)
+    if (soundsEnabled) playTimerCues(cues)
+    previousCueFrame.current = currentCueFrame
+  }, [clockMs, soundsEnabled, workout])
 
   if (workout.status === 'complete') return null
 
