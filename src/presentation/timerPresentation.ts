@@ -38,15 +38,15 @@ export function workIntervalsRemaining(state: WorkoutState): number {
     .filter(({ kind }) => kind === 'work').length
 }
 
-export function phasePosition(
+export function phasePositionLines(
   phase: WorkoutPhase,
   timing: RoutineTiming,
-): string {
+): string[] {
   const parts: string[] = []
-  if (phase.cycle !== undefined) parts.push(`Cycle ${phase.cycle} of ${timing.cycles}`)
-  if (phase.round !== undefined) parts.push(`Round ${phase.round} of ${timing.roundsPerCycle}`)
   if (phase.exercise !== undefined) parts.push(`Exercise ${phase.exercise} of ${timing.exercisesPerRound}`)
-  return parts.join(' · ')
+  if (phase.round !== undefined) parts.push(`Round ${phase.round} of ${timing.roundsPerCycle}`)
+  if (phase.cycle !== undefined) parts.push(`Cycle ${phase.cycle} of ${timing.cycles}`)
+  return parts
 }
 
 export function remainingScheduledMs(state: WorkoutState): number {
