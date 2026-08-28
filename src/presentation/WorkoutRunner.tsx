@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  Alert,
   Box,
   Button,
   Dialog,
@@ -10,6 +11,7 @@ import {
   IconButton,
   LinearProgress,
   Paper,
+  Snackbar,
   Stack,
   Tooltip,
   Typography,
@@ -37,15 +39,21 @@ import {
   remainingScheduledMs,
   workIntervalsRemaining,
 } from './timerPresentation'
-import { playTimerCues } from './timerAudio'
+import { playTimerCues, primeTimerAudio } from './timerAudio'
 import { timerCueFrame, timerCuesBetween } from './timerCues'
 
 interface WorkoutRunnerProps {
   phases: readonly WorkoutPhase[]
   timing: RoutineTiming
+  initialWorkout?: WorkoutState
+  initialActiveElapsedMs?: number
   soundsEnabled?: boolean
   wakeLockMessage?: string
+  recoveryMessage?: string
+  recoveryWarning?: boolean
+  onCheckpoint: (workout: WorkoutState, activeElapsedMs: number) => void
   onComplete: (activeElapsedMs: number) => void
+  onDismissRecovery: () => void
   onEnd: () => void
 }
 
@@ -54,18 +62,31 @@ const now = () => performance.now()
 export function WorkoutRunner({
   phases,
   timing,
+  initialWorkout,
+  initialActiveElapsedMs = 0,
   soundsEnabled = true,
   wakeLockMessage,
+  recoveryMessage,
+  recoveryWarning = false,
+  onCheckpoint,
   onComplete,
+  onDismissRecovery,
   onEnd,
 }: WorkoutRunnerProps) {
-  const [workout, setWorkout] = useState<WorkoutState>(() => startWorkout(phases, now()))
-  const [clockMs, setClockMs] = useState(() => now())
+  const [initialClockMs] = useState(now)
+  const [workout, setWorkout] = useState<WorkoutState>(() =>
+    initialWorkout ?? startWorkout(phases, initialClockMs),
+  )
+  const [clockMs, setClockMs] = useState(initialClockMs)
   const [confirmingEnd, setConfirmingEnd] = useState(false)
-  const activeElapsedMs = useRef(0)
+  const activeElapsedMs = useRef(initialActiveElapsedMs)
   const completionReported = useRef(false)
+  const lastCheckpointAtMs = useRef(0)
+  const lastCheckpointPosition = useRef('')
   const previousCueFrame = useRef<ReturnType<typeof timerCueFrame> | undefined>(
-    undefined,
+    initialWorkout === undefined
+      ? undefined
+      : timerCueFrame(initialWorkout, initialClockMs),
   )
 
   const advance = (state: WorkoutState, atMs: number): WorkoutState => {
@@ -94,11 +115,39 @@ export function WorkoutRunner({
   }, [onComplete, workout.status])
 
   useEffect(() => {
+    if (workout.status === 'complete') return
+    const position = `${workout.status}:${workout.phaseIndex}`
+    const wallClockMs = Date.now()
+    if (
+      position !== lastCheckpointPosition.current ||
+      wallClockMs - lastCheckpointAtMs.current >= 1_000
+    ) {
+      onCheckpoint(workout, activeElapsedMs.current)
+      lastCheckpointPosition.current = position
+      lastCheckpointAtMs.current = wallClockMs
+    }
+  }, [onCheckpoint, workout])
+
+  useEffect(() => {
     const currentCueFrame = timerCueFrame(workout, clockMs)
     const cues = timerCuesBetween(previousCueFrame.current, currentCueFrame)
     if (soundsEnabled) playTimerCues(cues)
     previousCueFrame.current = currentCueFrame
   }, [clockMs, soundsEnabled, workout])
+
+  useEffect(() => {
+    const pauseInterruptedResume = () => {
+      if (document.visibilityState === 'visible') return
+      const atMs = now()
+      setClockMs(atMs)
+      setWorkout((state) =>
+        state.status === 'resuming' ? pauseWorkout(state, atMs) : state,
+      )
+    }
+    document.addEventListener('visibilitychange', pauseInterruptedResume)
+    return () =>
+      document.removeEventListener('visibilitychange', pauseInterruptedResume)
+  }, [])
 
   if (workout.status === 'complete') return null
 
@@ -122,6 +171,7 @@ export function WorkoutRunner({
   }
 
   const handlePrimaryControl = () => {
+    primeTimerAudio()
     const atMs = now()
     if (workout.status === 'running' || workout.status === 'resuming') {
       pauseAt(atMs)
@@ -396,6 +446,31 @@ export function WorkoutRunner({
           <Button color="error" variant="contained" onClick={onEnd}>End workout</Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={recoveryMessage !== undefined}
+        autoHideDuration={6_000}
+        onClose={onDismissRecovery}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={recoveryWarning ? 'warning' : 'info'}
+          variant="filled"
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => {
+                primeTimerAudio()
+                onDismissRecovery()
+              }}
+            >
+              Enable sound
+            </Button>
+          }
+        >
+          {recoveryMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

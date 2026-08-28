@@ -11,6 +11,12 @@ import {
 } from '@mui/material'
 import { buildWorkoutSequence } from './domain/timer/sequence'
 import { standardRoutineTiming } from './domain/timer/standardRoutine'
+import type { WorkoutState } from './domain/timer/types'
+import {
+  clearWorkoutCheckpoint,
+  restoreWorkoutCheckpoint,
+  saveWorkoutCheckpoint,
+} from './domain/timer/workoutPersistence'
 import { PwaUpdatePrompt } from './presentation/PwaUpdatePrompt'
 import { WorkoutRunner } from './presentation/WorkoutRunner'
 import { formatClock } from './presentation/timerPresentation'
@@ -18,14 +24,42 @@ import { primeTimerAudio } from './presentation/timerAudio'
 import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeLock'
 
 type Screen = 'preworkout' | 'active' | 'complete'
+const STANDARD_ROUTINE_ID = 'protected-standard'
 
 export function App() {
   const sequence = useMemo(
     () => buildWorkoutSequence(standardRoutineTiming),
     [],
   )
-  const [screen, setScreen] = useState<Screen>('preworkout')
-  const [completedWorkoutMs, setCompletedWorkoutMs] = useState(0)
+  const [restoredWorkout] = useState(() =>
+    restoreWorkoutCheckpoint(
+      STANDARD_ROUTINE_ID,
+      sequence,
+      Date.now(),
+      performance.now(),
+    ),
+  )
+  const [initialWorkout, setInitialWorkout] = useState<WorkoutState | undefined>(
+    restoredWorkout?.workout.status === 'complete'
+      ? undefined
+      : restoredWorkout?.workout,
+  )
+  const [initialActiveElapsedMs, setInitialActiveElapsedMs] = useState(
+    restoredWorkout?.activeElapsedMs ?? 0,
+  )
+  const [recoveryMessage, setRecoveryMessage] = useState(restoredWorkout?.notice)
+  const [recoveryWarning, setRecoveryWarning] = useState(
+    restoredWorkout?.accuracyWarning ?? false,
+  )
+  const [screen, setScreen] = useState<Screen>(() => {
+    if (restoredWorkout?.workout.status === 'complete') return 'complete'
+    return restoredWorkout === undefined ? 'preworkout' : 'active'
+  })
+  const [completedWorkoutMs, setCompletedWorkoutMs] = useState(
+    restoredWorkout?.workout.status === 'complete'
+      ? restoredWorkout.activeElapsedMs
+      : 0,
+  )
   const wakeLockStatus = useScreenWakeLock(screen !== 'preworkout')
   const wakeLockMessage = wakeLockNotice(wakeLockStatus)
 
@@ -41,12 +75,41 @@ export function App() {
         <WorkoutRunner
           phases={sequence}
           timing={standardRoutineTiming}
+          initialWorkout={initialWorkout}
+          initialActiveElapsedMs={initialActiveElapsedMs}
           wakeLockMessage={wakeLockMessage}
+          recoveryMessage={recoveryMessage}
+          recoveryWarning={recoveryWarning}
+          onCheckpoint={(workout, activeElapsedMs) =>
+            saveWorkoutCheckpoint(
+              STANDARD_ROUTINE_ID,
+              workout,
+              activeElapsedMs,
+            )
+          }
           onComplete={(activeElapsedMs) => {
+            saveWorkoutCheckpoint(
+              STANDARD_ROUTINE_ID,
+              { status: 'complete', phases: sequence },
+              activeElapsedMs,
+            )
             setCompletedWorkoutMs(activeElapsedMs)
+            setInitialWorkout(undefined)
+            setInitialActiveElapsedMs(0)
             setScreen('complete')
           }}
-          onEnd={() => setScreen('preworkout')}
+          onDismissRecovery={() => {
+            setRecoveryMessage(undefined)
+            setRecoveryWarning(false)
+          }}
+          onEnd={() => {
+            clearWorkoutCheckpoint()
+            setInitialWorkout(undefined)
+            setInitialActiveElapsedMs(0)
+            setRecoveryMessage(undefined)
+            setRecoveryWarning(false)
+            setScreen('preworkout')
+          }}
         />
         <PwaUpdatePrompt activationAllowed={false} />
       </>
@@ -75,7 +138,24 @@ export function App() {
               {wakeLockMessage && (
                 <Typography color="warning.main">{wakeLockMessage}</Typography>
               )}
-              <Button variant="contained" size="large" onClick={() => setScreen('preworkout')}>
+              {recoveryMessage && (
+                <Typography
+                  color={recoveryWarning ? 'warning.main' : 'info.main'}
+                  role="status"
+                >
+                  {recoveryMessage}
+                </Typography>
+              )}
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => {
+                  clearWorkoutCheckpoint()
+                  setRecoveryMessage(undefined)
+                  setRecoveryWarning(false)
+                  setScreen('preworkout')
+                }}
+              >
                 Done
               </Button>
             </Stack>
@@ -132,6 +212,11 @@ export function App() {
                 variant="contained"
                 size="large"
                 onClick={() => {
+                  clearWorkoutCheckpoint()
+                  setInitialWorkout(undefined)
+                  setInitialActiveElapsedMs(0)
+                  setRecoveryMessage(undefined)
+                  setRecoveryWarning(false)
                   primeTimerAudio()
                   setScreen('active')
                 }}

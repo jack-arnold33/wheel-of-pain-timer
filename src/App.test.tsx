@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { ThemeProvider } from '@mui/material'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
+import { clearWorkoutCheckpoint } from './domain/timer/workoutPersistence'
 import { wheelOfPainTheme } from './presentation/themes/wheelOfPainTheme'
 
 vi.mock('./presentation/PwaUpdatePrompt', () => ({
@@ -10,6 +11,7 @@ vi.mock('./presentation/PwaUpdatePrompt', () => ({
 
 afterEach(() => {
   cleanup()
+  clearWorkoutCheckpoint()
   Reflect.deleteProperty(navigator, 'wakeLock')
 })
 
@@ -70,5 +72,27 @@ describe('App workout flow', () => {
 
     await waitFor(() => expect(release).toHaveBeenCalledOnce())
     expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument()
+  })
+
+  it('restores a paused workout after the application remounts', () => {
+    const renderApp = () =>
+      render(
+        <ThemeProvider theme={wheelOfPainTheme}>
+          <App />
+        </ThemeProvider>,
+      )
+
+    renderApp()
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
+    cleanup()
+
+    renderApp()
+
+    expect(screen.getByRole('heading', { name: 'Prepare' })).toBeInTheDocument()
+    expect(screen.getByText('Paused')).toBeInTheDocument()
+    expect(
+      screen.getByText('Workout restored after an interruption.'),
+    ).toBeInTheDocument()
   })
 })
