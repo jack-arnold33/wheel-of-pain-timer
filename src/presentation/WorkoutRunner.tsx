@@ -17,7 +17,7 @@ import {
 import PauseRoundedIcon from '@mui/icons-material/PauseRounded'
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded'
 import SkipNextRoundedIcon from '@mui/icons-material/SkipNextRounded'
-import StopCircleOutlinedIcon from '@mui/icons-material/StopCircleOutlined'
+import StopRoundedIcon from '@mui/icons-material/StopRounded'
 import {
   beginResumeCountdown,
   currentPhase,
@@ -142,7 +142,7 @@ export function WorkoutRunner({
         pr: 'max(16px, env(safe-area-inset-right))',
         pt: 'max(16px, env(safe-area-inset-top))',
         pb: 'max(16px, env(safe-area-inset-bottom))',
-        '@media (orientation: landscape) and (max-height: 500px)': {
+        '@media (orientation: landscape) and (max-height: 600px)': {
           alignItems: 'flex-start',
           pt: 'max(8px, env(safe-area-inset-top))',
           pb: 'max(8px, env(safe-area-inset-bottom))',
@@ -154,8 +154,9 @@ export function WorkoutRunner({
         sx={{
           width: 'min(100%, 64rem)',
           p: { xs: 2.5, sm: 4 },
+          position: 'relative',
           textAlign: 'center',
-          '@media (orientation: landscape) and (max-height: 500px)': {
+          '@media (orientation: landscape) and (max-height: 600px)': {
             width: '100%',
             height: '100%',
             p: 0,
@@ -168,7 +169,7 @@ export function WorkoutRunner({
           spacing={{ xs: 2, sm: 3 }}
           sx={{
             alignItems: 'stretch',
-            '@media (orientation: landscape) and (max-height: 500px)': {
+            '@media (orientation: landscape) and (max-height: 600px)': {
               height: '100%',
               gap: 0.75,
             },
@@ -176,7 +177,7 @@ export function WorkoutRunner({
         >
           <Box
             sx={{
-              '@media (orientation: landscape) and (max-height: 500px)': {
+              '@media (orientation: landscape) and (max-height: 600px)': {
                 display: 'grid',
                 gridTemplateRows: 'auto minmax(0, 1fr)',
                 alignItems: 'center',
@@ -195,7 +196,7 @@ export function WorkoutRunner({
                 fontWeight: 900,
                 lineHeight: 0.95,
                 fontVariantNumeric: 'tabular-nums',
-                '@media (orientation: landscape) and (max-height: 500px)': {
+                '@media (orientation: landscape) and (max-height: 600px)': {
                   gridRow: 2,
                   fontSize: 'clamp(8rem, 23vw, 12rem)',
                   lineHeight: 0.8,
@@ -209,7 +210,7 @@ export function WorkoutRunner({
               sx={{
                 fontSize: { xs: '2rem', sm: '3.25rem' },
                 mt: 1,
-                '@media (orientation: landscape) and (max-height: 500px)': {
+                '@media (orientation: landscape) and (max-height: 600px)': {
                   gridRow: 1,
                   fontSize: 'clamp(2rem, 5vw, 3rem)',
                   whiteSpace: 'nowrap',
@@ -224,7 +225,7 @@ export function WorkoutRunner({
                 color="primary.main"
                 variant="h6"
                 sx={{
-                  '@media (orientation: landscape) and (max-height: 500px)': {
+                  '@media (orientation: landscape) and (max-height: 600px)': {
                     position: 'absolute',
                     top: 0,
                     right: 0,
@@ -241,7 +242,7 @@ export function WorkoutRunner({
                 variant="h6"
                 aria-live="assertive"
                 sx={{
-                  '@media (orientation: landscape) and (max-height: 500px)': {
+                  '@media (orientation: landscape) and (max-height: 600px)': {
                     position: 'absolute',
                     top: 0,
                     right: 0,
@@ -277,7 +278,18 @@ export function WorkoutRunner({
             <Typography variant="body2" color="text.secondary">
               {followingPhase ? `Next: ${phaseLabel(followingPhase.kind)}` : 'Next: Complete'}
             </Typography>
-            <Stack direction="row" spacing={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                '@media (orientation: landscape) and (max-height: 600px)': {
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  zIndex: 2,
+                },
+              }}
+            >
               <Tooltip title={primaryControlLabel}>
                 <IconButton
                   aria-label={primaryControlLabel}
@@ -288,7 +300,7 @@ export function WorkoutRunner({
                     bgcolor: 'primary.main',
                     color: 'primary.contrastText',
                     '&:hover': { bgcolor: 'primary.dark' },
-                    '@media (orientation: landscape) and (max-height: 500px)': {
+                    '@media (orientation: landscape) and (max-height: 600px)': {
                       width: 44,
                       height: 44,
                     },
@@ -307,7 +319,7 @@ export function WorkoutRunner({
                     border: 1,
                     borderColor: 'primary.main',
                     color: 'primary.main',
-                    '@media (orientation: landscape) and (max-height: 500px)': {
+                    '@media (orientation: landscape) and (max-height: 600px)': {
                       width: 44,
                       height: 44,
                     },
@@ -324,13 +336,16 @@ export function WorkoutRunner({
                   sx={{
                     width: 48,
                     height: 48,
-                    '@media (orientation: landscape) and (max-height: 500px)': {
+                    border: 1,
+                    borderColor: 'error.main',
+                    color: 'error.main',
+                    '@media (orientation: landscape) and (max-height: 600px)': {
                       width: 44,
                       height: 44,
                     },
                   }}
                 >
-                  <StopCircleOutlinedIcon />
+                  <StopRoundedIcon />
                 </IconButton>
               </Tooltip>
             </Stack>
