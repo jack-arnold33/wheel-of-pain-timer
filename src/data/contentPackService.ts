@@ -1,4 +1,8 @@
 import type { ContentPack, ContentPackDraft } from '../domain/contentPacks/types'
+import {
+  builtInContentPacks,
+  isBuiltInContentPack,
+} from '../domain/contentPacks/builtInContentPacks'
 import type { AppPreferences } from '../domain/preferences/appPreferences'
 import { appDatabase, type WheelOfPainDatabase } from './database'
 import {
@@ -25,11 +29,15 @@ export class ContentPackService {
       this.packs.list(),
       this.preferences.get(),
     ])
-    return { packs, preferences }
+    return { packs: [...builtInContentPacks, ...packs], preferences }
   }
 
   async select(id: string | null): Promise<void> {
-    if (id !== null && (await this.packs.get(id)) === undefined) {
+    if (
+      id !== null &&
+      !isBuiltInContentPack(id) &&
+      (await this.packs.get(id)) === undefined
+    ) {
       throw new Error('The selected content pack is unavailable.')
     }
     await this.preferences.update({ selectedContentPackId: id })
@@ -63,6 +71,9 @@ export class ContentPackService {
   }
 
   async remove(id: string, selected: boolean): Promise<void> {
+    if (isBuiltInContentPack(id)) {
+      throw new Error('Built-in content packs cannot be removed.')
+    }
     await this.database.transaction(
       'rw',
       [this.database.contentPacks, this.database.preferences],

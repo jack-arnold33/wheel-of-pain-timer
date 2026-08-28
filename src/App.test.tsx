@@ -9,9 +9,16 @@ import type { Participant } from './domain/participants/types'
 import { clearWorkoutCheckpoint } from './domain/timer/workoutPersistence'
 import { wheelOfPainTheme } from './presentation/themes/wheelOfPainTheme'
 
+const speechMocks = vi.hoisted(() => ({
+  primeSpokenMotivation: vi.fn(),
+  speakMotivation: vi.fn(() => 'spoken'),
+}))
+
 vi.mock('./presentation/PwaUpdatePrompt', () => ({
   PwaUpdatePrompt: () => null,
 }))
+
+vi.mock('./presentation/spokenMotivation', () => speechMocks)
 
 const loadRoutines = () => Promise.resolve([protectedStandardRoutine])
 
@@ -33,9 +40,71 @@ afterEach(() => {
   cleanup()
   clearWorkoutCheckpoint()
   Reflect.deleteProperty(navigator, 'wakeLock')
+  speechMocks.primeSpokenMotivation.mockClear()
+  speechMocks.speakMotivation.mockClear()
 })
 
 describe('App workout flow', () => {
+  it('speaks the selected Personality with the active participant snapshot', async () => {
+    const quickRoutine: Routine = {
+      id: 'routine:spoken',
+      ownership: 'user',
+      name: 'Spoken Test',
+      createdAt: 1,
+      updatedAt: 1,
+      timing: {
+        prepareSeconds: 0,
+        workSeconds: 10,
+        exerciseRestSeconds: 0,
+        exercisesPerRound: 1,
+        roundsPerCycle: 1,
+        cycles: 1,
+        cycleRestSeconds: 0,
+        cooldownSeconds: 0,
+      },
+    }
+    const pack: ContentPack = {
+      id: 'pack:spoken',
+      schemaVersion: 1,
+      name: 'Spoken Pack',
+      sayings: { work: ['Move now.'] },
+      extensions: {},
+      createdAt: 1,
+      updatedAt: 1,
+    }
+    const jarno: Participant = {
+      id: 'participant:jarno',
+      name: 'Jarno',
+      createdAt: 1,
+      updatedAt: 1,
+    }
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <App
+          loadRoutines={() => Promise.resolve([protectedStandardRoutine, quickRoutine])}
+          loadContentPacks={() =>
+            Promise.resolve({ packs: [pack], selectedId: pack.id })
+          }
+          loadParticipants={() =>
+            Promise.resolve({ participants: [jarno], activeIds: [jarno.id] })
+          }
+        />
+      </ThemeProvider>,
+    )
+
+    await screen.findByRole('heading', { name: 'Routines' })
+    fireEvent.click(screen.getByRole('button', { name: 'Review Spoken Test' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+
+    expect(speechMocks.primeSpokenMotivation).toHaveBeenCalledOnce()
+    await waitFor(() =>
+      expect(speechMocks.speakMotivation).toHaveBeenCalledWith(
+        'Jarno! Move now.',
+        expect.objectContaining({ allowOnlineVoices: false, rate: 1 }),
+      ),
+    )
+  })
+
   it('remembers the active participant checklist for pre-workout', async () => {
     const jarno: Participant = {
       id: 'participant:jarno',

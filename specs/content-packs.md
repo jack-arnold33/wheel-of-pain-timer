@@ -103,6 +103,11 @@ Its required `name` field is authoritative rather than the filename.
 
 ## Selection and playback
 
+- The app includes a protected generic **Workout Starter** pack so a fresh
+  install offers spoken motivation without requiring a file import. It can be
+  selected and inspected, but it cannot be renamed, exported, or removed.
+- Built-in sayings are application content. Private or group-specific sayings
+  remain user-supplied data and are never bundled into the deployment.
 - Zero or one pack is active for an MVP workout.
 - The pre-workout screen shows the selected pack in a compact **Personality**
   row, or clearly shows that no pack is selected.

@@ -33,6 +33,7 @@ import type { ContentPackImportResult } from './presentation/ContentPackLibrary'
 import { WorkoutRunner } from './presentation/WorkoutRunner'
 import { formatClock } from './presentation/timerPresentation'
 import { primeTimerAudio } from './presentation/timerAudio'
+import { primeSpokenMotivation } from './presentation/spokenMotivation'
 import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeLock'
 
 type Screen =
@@ -72,6 +73,10 @@ interface AppProps {
   loadContentPacks?: () => Promise<{
     readonly packs: readonly ContentPack[]
     readonly selectedId: string | null
+    readonly spokenMotivationEnabled?: boolean
+    readonly allowOnlineVoices?: boolean
+    readonly voiceId?: string | null
+    readonly speechRate?: number
   }>
   selectContentPack?: (id: string | null) => Promise<void>
   importContentPack?: (draft: ContentPackDraft) => Promise<ContentPack>
@@ -117,7 +122,14 @@ const loadStoredContentPacks = async () => {
       ? requestedId
       : null
   if (requestedId !== selectedId) await contentPackService.select(null)
-  return { packs: state.packs, selectedId }
+  return {
+    packs: state.packs,
+    selectedId,
+    spokenMotivationEnabled: state.preferences.spokenMotivationEnabled,
+    allowOnlineVoices: state.preferences.allowOnlineVoices,
+    voiceId: state.preferences.voiceId,
+    speechRate: state.preferences.speechRate,
+  }
 }
 
 const selectStoredContentPack = async (id: string | null) => {
@@ -202,6 +214,10 @@ export function App({
   const [contentPacks, setContentPacks] = useState<readonly ContentPack[]>([])
   const [selectedContentPackId, setSelectedContentPackId] = useState<string | null>(null)
   const [contentPackNotice, setContentPackNotice] = useState<string>()
+  const [spokenMotivationEnabled, setSpokenMotivationEnabled] = useState(true)
+  const [allowOnlineVoices, setAllowOnlineVoices] = useState(false)
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null)
+  const [speechRate, setSpeechRate] = useState(1)
   const [participants, setParticipants] = useState<readonly Participant[]>([])
   const [activeParticipantIds, setActiveParticipantIds] = useState<readonly string[]>([])
   const [participantNotice, setParticipantNotice] = useState<string>()
@@ -300,6 +316,14 @@ export function App({
         if (!active) return
         setContentPacks(state.packs)
         setSelectedContentPackId(state.selectedId)
+        if (state.spokenMotivationEnabled !== undefined) {
+          setSpokenMotivationEnabled(state.spokenMotivationEnabled)
+        }
+        if (state.allowOnlineVoices !== undefined) {
+          setAllowOnlineVoices(state.allowOnlineVoices)
+        }
+        if (state.voiceId !== undefined) setSelectedVoiceId(state.voiceId)
+        if (state.speechRate !== undefined) setSpeechRate(state.speechRate)
       })
       .catch(() => {
         if (!active) return
@@ -546,6 +570,23 @@ export function App({
           initialWorkout={initialWorkout}
           initialActiveElapsedMs={initialActiveElapsedMs}
           soundsEnabled={timerSoundsEnabled}
+          motivation={(() => {
+            const pack = contentPacks.find(
+              ({ id }) => id === selectedContentPackId,
+            )
+            if (pack === undefined) return undefined
+            const activeIds = new Set(activeParticipantIds)
+            return {
+              pack,
+              participants: participants.filter(({ id }) => activeIds.has(id)),
+              enabled: spokenMotivationEnabled,
+              speech: {
+                allowOnlineVoices,
+                voiceId: selectedVoiceId,
+                rate: speechRate,
+              },
+            }
+          })()}
           wakeLockMessage={wakeLockMessage}
           recoveryMessage={recoveryMessage}
           recoveryWarning={recoveryWarning}
@@ -644,6 +685,7 @@ export function App({
           setInitialActiveElapsedMs(0)
           dismissRecovery()
           primeTimerAudio()
+          primeSpokenMotivation()
           setScreen('active')
         }}
         onCustomize={() => {

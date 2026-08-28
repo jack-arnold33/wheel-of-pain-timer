@@ -2,6 +2,7 @@ import { ThemeProvider } from '@mui/material'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ContentPack } from '../domain/contentPacks/types'
+import { builtInStarterPack } from '../domain/contentPacks/builtInContentPacks'
 import { ContentPackLibrary } from './ContentPackLibrary'
 import { wheelOfPainTheme } from './themes/wheelOfPainTheme'
 
@@ -22,6 +23,30 @@ const pack: ContentPack = {
 afterEach(cleanup)
 
 describe('ContentPackLibrary', () => {
+  it('offers the protected built-in starter personality', () => {
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <ContentPackLibrary
+          packs={[builtInStarterPack]}
+          selectedId={null}
+          onBack={vi.fn()}
+          onSelect={vi.fn()}
+          onImport={vi.fn()}
+          onReplace={vi.fn()}
+          onRename={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </ThemeProvider>,
+    )
+
+    expect(screen.getByRole('button', { name: 'Select Workout Starter' })).toBeInTheDocument()
+    expect(screen.getByText('Built in')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Inspect Workout Starter' }))
+    expect(screen.getByText('Included with the app')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Rename' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument()
+  })
+
   it('inspects category totals, renames, and removes a saved pack', async () => {
     const renamed = { ...pack, name: 'Friday Fire', updatedAt: 2 }
     const onRename = vi.fn().mockResolvedValue(renamed)

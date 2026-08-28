@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { ContentPackDraft } from '../domain/contentPacks/types'
+import {
+  BUILT_IN_STARTER_PACK_ID,
+  builtInStarterPack,
+} from '../domain/contentPacks/builtInContentPacks'
 import { ContentPackRepository } from './contentPackRepository'
 import { ContentPackService } from './contentPackService'
 import { WheelOfPainDatabase } from './database'
@@ -31,7 +35,7 @@ describe('content-pack selection service', () => {
     const saved = await service.importAndSelect(draft)
     const state = await service.load()
 
-    expect(state.packs).toEqual([saved])
+    expect(state.packs).toEqual([builtInStarterPack, saved])
     expect(state.preferences.selectedContentPackId).toBe(saved.id)
   })
 
@@ -40,8 +44,23 @@ describe('content-pack selection service', () => {
     await service.remove(saved.id, true)
     const state = await service.load()
 
-    expect(state.packs).toEqual([])
+    expect(state.packs).toEqual([builtInStarterPack])
     expect(state.preferences.selectedContentPackId).toBeNull()
+  })
+
+  it('selects the built-in starter pack without saving a duplicate', async () => {
+    await service.select(BUILT_IN_STARTER_PACK_ID)
+    const state = await service.load()
+
+    expect(state.packs).toEqual([builtInStarterPack])
+    expect(state.preferences.selectedContentPackId).toBe(BUILT_IN_STARTER_PACK_ID)
+    expect(await database.contentPacks.count()).toBe(0)
+  })
+
+  it('protects the built-in starter pack from removal', async () => {
+    await expect(service.remove(BUILT_IN_STARTER_PACK_ID, true)).rejects.toThrow(
+      'Built-in content packs cannot be removed.',
+    )
   })
 })
 
