@@ -28,6 +28,7 @@ a pull request.
 - [Product brief](specs/product.md)
 - [Requirements](specs/requirements.md)
 - [Local-first content packs](specs/content-packs.md)
+- [Portable local backup](specs/local-backup.md)
 - [MVP timer behavior](specs/timer-behavior.md)
 - [MVP screens and flows](specs/screens-and-flows.md)
 - [MVP acceptance scenarios](specs/acceptance-scenarios.md)

@@ -1,6 +1,9 @@
 import { ThemeProvider } from '@mui/material'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { LocalBackup } from '../domain/backup/localBackup'
+import { defaultAppPreferences } from '../domain/preferences/appPreferences'
+import { standardRoutineTiming } from '../domain/timer/standardRoutine'
 import { SettingsScreen } from './SettingsScreen'
 import { wheelOfPainTheme } from './themes/wheelOfPainTheme'
 
@@ -24,8 +27,35 @@ const voice = (
     voiceURI,
   }) as SpeechSynthesisVoice
 
+const backupHandlers = {
+  onExportBackup: vi.fn().mockRejectedValue(new Error('not used')),
+  onRestoreBackup: vi.fn().mockResolvedValue(undefined),
+}
+
+const localBackup: LocalBackup = {
+  schemaVersion: 1,
+  routines: [
+    {
+      id: 'routine:test',
+      name: 'Test Routine',
+      timing: standardRoutineTiming,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  ],
+  contentPacks: [],
+  participants: [
+    { id: 'participant:test', name: 'Jarno', createdAt: 1, updatedAt: 1 },
+  ],
+  preferences: {
+    ...defaultAppPreferences,
+    activeParticipantIds: ['participant:test'],
+  },
+}
+
 afterEach(() => {
   cleanup()
+  vi.clearAllMocks()
   vi.restoreAllMocks()
   Reflect.deleteProperty(window, 'speechSynthesis')
 })
@@ -58,6 +88,7 @@ describe('SettingsScreen', () => {
           onBack={vi.fn()}
           onParticipants={vi.fn()}
           onChange={onChange}
+          {...backupHandlers}
         />
       </ThemeProvider>,
     )
@@ -101,6 +132,7 @@ describe('SettingsScreen', () => {
           onBack={vi.fn()}
           onParticipants={vi.fn()}
           onChange={vi.fn().mockResolvedValue(undefined)}
+          {...backupHandlers}
         />
       </ThemeProvider>,
     )
@@ -139,6 +171,7 @@ describe('SettingsScreen', () => {
           onBack={vi.fn()}
           onParticipants={vi.fn()}
           onChange={onChange}
+          {...backupHandlers}
         />
       </ThemeProvider>,
     )
@@ -150,5 +183,48 @@ describe('SettingsScreen', () => {
         voiceId: null,
       }),
     )
+  })
+
+  it('validates a backup before showing and confirming replacement', async () => {
+    const onRestoreBackup = vi.fn().mockResolvedValue(undefined)
+    const { container } = render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <SettingsScreen
+          timerSoundsEnabled
+          spokenMotivationEnabled
+          allowOnlineVoices={false}
+          voiceId={null}
+          speechRate={1}
+          participantCount={0}
+          onBack={vi.fn()}
+          onParticipants={vi.fn()}
+          onChange={vi.fn().mockResolvedValue(undefined)}
+          onExportBackup={vi.fn()}
+          onRestoreBackup={onRestoreBackup}
+        />
+      </ThemeProvider>,
+    )
+
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')
+    expect(input).not.toBeNull()
+    fireEvent.change(input!, {
+      target: {
+        files: [
+          new File([JSON.stringify(localBackup)], 'garage-backup.json', {
+            type: 'application/json',
+          }),
+        ],
+      },
+    })
+
+    expect(
+      await screen.findByRole('heading', { name: 'Restore local backup?' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('1 user routines')).toBeInTheDocument()
+    expect(screen.getByText('1 participants')).toBeInTheDocument()
+    expect(onRestoreBackup).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Replace and restore' }))
+    await waitFor(() => expect(onRestoreBackup).toHaveBeenCalledWith(localBackup))
   })
 })

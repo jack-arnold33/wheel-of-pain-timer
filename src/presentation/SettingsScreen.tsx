@@ -1,11 +1,18 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
+import FileDownloadRoundedIcon from '@mui/icons-material/FileDownloadRounded'
 import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded'
+import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded'
 import VolumeUpRoundedIcon from '@mui/icons-material/VolumeUpRounded'
 import {
   Alert,
   Box,
   Button,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   FormControlLabel,
   InputLabel,
@@ -18,7 +25,11 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
+import {
+  parseLocalBackupFile,
+  type LocalBackup,
+} from '../domain/backup/localBackup'
 import type { AppPreferences } from '../domain/preferences/appPreferences'
 import {
   primeSpokenMotivation,
@@ -39,6 +50,8 @@ interface SettingsScreenProps extends AudioPreferencePatch {
   readonly onBack: () => void
   readonly onParticipants: () => void
   readonly onChange: (patch: Partial<AudioPreferencePatch>) => Promise<void>
+  readonly onExportBackup: () => Promise<LocalBackup>
+  readonly onRestoreBackup: (backup: LocalBackup) => Promise<void>
 }
 
 const speechRates = [
@@ -60,11 +73,19 @@ export function SettingsScreen({
   onBack,
   onParticipants,
   onChange,
+  onExportBackup,
+  onRestoreBackup,
 }: SettingsScreenProps) {
   const [voices, setVoices] = useState<readonly SpeechSynthesisVoice[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
   const [previewNotice, setPreviewNotice] = useState<string>()
+  const [backupBusy, setBackupBusy] = useState(false)
+  const [backupNotice, setBackupNotice] = useState<string>()
+  const [restorePreview, setRestorePreview] = useState<{
+    readonly fileName: string
+    readonly backup: LocalBackup
+  }>()
 
   useEffect(() => {
     const synthesis = speechSynthesis()
@@ -123,6 +144,46 @@ export function SettingsScreen({
     }
   }
 
+  const exportBackup = async () => {
+    setBackupBusy(true)
+    setError(undefined)
+    setBackupNotice(undefined)
+    try {
+      const backup = await onExportBackup()
+      const blob = new Blob([`${JSON.stringify(backup, null, 2)}\n`], {
+        type: 'application/json',
+      })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `wheel-of-pain-backup-${new Date().toISOString().slice(0, 10)}.json`
+      anchor.click()
+      URL.revokeObjectURL(url)
+      setBackupNotice('Backup downloaded. Keep the file somewhere safe.')
+    } catch {
+      setError('The local backup could not be exported. Try again.')
+    } finally {
+      setBackupBusy(false)
+    }
+  }
+
+  const inspectBackup = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (file === undefined) return
+    setBackupBusy(true)
+    setError(undefined)
+    setBackupNotice(undefined)
+    try {
+      const backup = await parseLocalBackupFile(file)
+      setRestorePreview({ fileName: file.name, backup })
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'The backup file is invalid.')
+    } finally {
+      setBackupBusy(false)
+    }
+  }
+
   return (
     <Box component="main" sx={{ minHeight: '100dvh', py: { xs: 3, sm: 6 } }}>
       <Container maxWidth="sm">
@@ -146,6 +207,7 @@ export function SettingsScreen({
 
           {error && <Alert severity="error">{error}</Alert>}
           {previewNotice && <Alert severity="info">{previewNotice}</Alert>}
+          {backupNotice && <Alert severity="success">{backupNotice}</Alert>}
           {selectedVoiceUnavailable && (
             <Alert severity="warning">
               The selected voice is unavailable. Spoken motivation will use an eligible system default.
@@ -287,8 +349,91 @@ export function SettingsScreen({
               </Button>
             </Stack>
           </Paper>
+
+          <Paper variant="outlined" sx={{ p: 3 }}>
+            <Stack spacing={2}>
+              <Typography variant="h5">Local backup</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Clearing browser data or removing the app may erase saved routines, Personalities, participants, and settings. Export a backup before destructive changes.
+              </Typography>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<FileDownloadRoundedIcon />}
+                  disabled={backupBusy}
+                  onClick={() => void exportBackup()}
+                  sx={{ flex: 1 }}
+                >
+                  Export backup
+                </Button>
+                <Button
+                  component="label"
+                  variant="outlined"
+                  startIcon={<UploadFileRoundedIcon />}
+                  disabled={backupBusy}
+                  sx={{ flex: 1 }}
+                >
+                  Restore backup
+                  <input
+                    hidden
+                    type="file"
+                    accept=".json,.wheelbackup.json,application/json"
+                    onChange={(event) => void inspectBackup(event)}
+                  />
+                </Button>
+              </Stack>
+            </Stack>
+          </Paper>
         </Stack>
       </Container>
+
+      <Dialog
+        open={restorePreview !== undefined}
+        onClose={() => !backupBusy && setRestorePreview(undefined)}
+        fullWidth
+      >
+        <DialogTitle>Restore local backup?</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <DialogContentText>
+              {restorePreview?.fileName} will completely replace the user data currently saved on this device. The protected Wheel of Pain routine and built-in Personality remain available.
+            </DialogContentText>
+            {restorePreview && (
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <Stack spacing={1}>
+                  <Typography>{restorePreview.backup.routines.length} user routines</Typography>
+                  <Typography>{restorePreview.backup.contentPacks.length} saved Personalities</Typography>
+                  <Typography>{restorePreview.backup.participants.length} participants</Typography>
+                  <Typography>All device preferences and attendance</Typography>
+                </Stack>
+              </Paper>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={backupBusy} onClick={() => setRestorePreview(undefined)}>
+            Cancel
+          </Button>
+          <Button
+            color="warning"
+            variant="contained"
+            disabled={backupBusy}
+            onClick={() => {
+              if (restorePreview === undefined) return
+              setBackupBusy(true)
+              setError(undefined)
+              void onRestoreBackup(restorePreview.backup)
+                .catch(() => {
+                  setError('The backup could not be restored. Current data was not changed.')
+                  setBackupBusy(false)
+                  setRestorePreview(undefined)
+                })
+            }}
+          >
+            {backupBusy ? 'Restoring…' : 'Replace and restore'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
