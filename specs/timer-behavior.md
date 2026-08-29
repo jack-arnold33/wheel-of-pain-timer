@@ -209,4 +209,4 @@ elapsed before it was skipped.
 
 ## Decisions still needed
 
-- Exact sound assets and reduced-motion presentation
+- Exact selectable timer-sound assets

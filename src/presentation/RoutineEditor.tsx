@@ -57,7 +57,13 @@ const formatDurationInput = (seconds: number) =>
     .padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
 
 const parseDuration = (value: string) => {
-  const match = /^(\d{1,2}):([0-5]\d)$/.exec(value.trim())
+  const trimmed = value.trim()
+  const compactMatch = /^(\d{1,4})$/.exec(trimmed)
+  const normalized =
+    compactMatch === null
+      ? trimmed
+      : `${compactMatch[1].slice(0, -2) || '0'}:${compactMatch[1].slice(-2).padStart(2, '0')}`
+  const match = /^(\d{1,2}):([0-5]\d)$/.exec(normalized)
   if (match === null) return undefined
   const minutes = Number(match[1])
   const seconds = Number(match[2])
@@ -198,9 +204,24 @@ export function RoutineEditor({
                         [field]: event.target.value,
                       }))
                     }
+                    onBlur={() => {
+                      const seconds = parseDuration(durations[field])
+                      if (seconds !== undefined) {
+                        setDurations((current) => ({
+                          ...current,
+                          [field]: formatDurationInput(seconds),
+                        }))
+                      }
+                    }}
                     error={parsed.fieldErrors[field] !== undefined}
-                    helperText={parsed.fieldErrors[field] ?? 'MM:SS'}
-                    slotProps={{ htmlInput: { inputMode: 'numeric' } }}
+                    helperText={parsed.fieldErrors[field] ?? 'MM:SS or digits (130 = 01:30)'}
+                    slotProps={{
+                      htmlInput: {
+                        inputMode: 'numeric',
+                        pattern: '[0-9:]*',
+                        autoComplete: 'off',
+                      },
+                    }}
                   />
                 ))}
               </Box>
@@ -226,7 +247,15 @@ export function RoutineEditor({
                     }
                     error={parsed.fieldErrors[field] !== undefined}
                     helperText={parsed.fieldErrors[field] ?? '1–99'}
-                    slotProps={{ htmlInput: { min: 1, max: 99, step: 1 } }}
+                    slotProps={{
+                      htmlInput: {
+                        min: 1,
+                        max: 99,
+                        step: 1,
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*',
+                      },
+                    }}
                   />
                 ))}
               </Box>
