@@ -17,6 +17,7 @@ import type {
 } from './domain/contentPacks/types'
 import type { Participant } from './domain/participants/types'
 import type { AppPreferences } from './domain/preferences/appPreferences'
+import type { LocalBackup } from './domain/backup/localBackup'
 import { standardRoutineTiming } from './domain/timer/standardRoutine'
 import { buildWorkoutSequence } from './domain/timer/sequence'
 import type { WorkoutState } from './domain/timer/types'
@@ -102,6 +103,8 @@ interface AppProps {
   updatePreferences?: (
     patch: Partial<AppPreferences>,
   ) => Promise<AppPreferences>
+  exportLocalBackup?: () => Promise<LocalBackup>
+  restoreLocalBackup?: (backup: LocalBackup) => Promise<void>
 }
 
 const loadStoredRoutines = async () => {
@@ -199,6 +202,17 @@ const updateStoredPreferences = async (patch: Partial<AppPreferences>) => {
   return preferencesRepository.update(patch)
 }
 
+const exportStoredLocalBackup = async () => {
+  const { localBackupService } = await import('./data/localBackupService')
+  return localBackupService.export()
+}
+
+const restoreStoredLocalBackup = async (backup: LocalBackup) => {
+  const { localBackupService } = await import('./data/localBackupService')
+  await localBackupService.restore(backup)
+  window.location.reload()
+}
+
 const contentPackConflict = (
   error: unknown,
 ): error is { readonly conflictingPack: ContentPack } =>
@@ -224,6 +238,8 @@ export function App({
   renameParticipant = renameStoredParticipant,
   deleteParticipant = deleteStoredParticipant,
   updatePreferences = updateStoredPreferences,
+  exportLocalBackup = exportStoredLocalBackup,
+  restoreLocalBackup = restoreStoredLocalBackup,
 }: AppProps) {
   const [screen, setScreen] = useState<Screen>('loading')
   const [routines, setRoutines] = useState<readonly Routine[]>([])
@@ -503,6 +519,8 @@ export function App({
               setSelectedVoiceId(saved.voiceId)
               setSpeechRate(saved.speechRate)
             }}
+            onExportBackup={exportLocalBackup}
+            onRestoreBackup={restoreLocalBackup}
           />
         </Suspense>
         <PwaUpdatePrompt activationAllowed />
