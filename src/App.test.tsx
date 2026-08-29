@@ -6,6 +6,7 @@ import { protectedStandardRoutine } from './domain/routines/protectedRoutine'
 import type { Routine } from './domain/routines/types'
 import type { ContentPack } from './domain/contentPacks/types'
 import type { Participant } from './domain/participants/types'
+import { defaultAppPreferences } from './domain/preferences/appPreferences'
 import { clearWorkoutCheckpoint } from './domain/timer/workoutPersistence'
 import { wheelOfPainTheme } from './presentation/themes/wheelOfPainTheme'
 
@@ -45,6 +46,39 @@ afterEach(() => {
 })
 
 describe('App workout flow', () => {
+  it('opens device settings from Home and persists audio changes', async () => {
+    const updatePreferences = vi.fn().mockImplementation(async (patch) => ({
+      ...defaultAppPreferences,
+      ...patch,
+    }))
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <App
+          loadRoutines={loadRoutines}
+          loadContentPacks={() =>
+            Promise.resolve({
+              packs: [],
+              selectedId: null,
+              timerSoundsEnabled: true,
+            })
+          }
+          updatePreferences={updatePreferences}
+        />
+      </ThemeProvider>,
+    )
+
+    await screen.findByRole('heading', { name: 'Routines' })
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('switch', { name: 'Timer sounds' }))
+
+    await waitFor(() =>
+      expect(updatePreferences).toHaveBeenCalledWith({ timerSoundsEnabled: false }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByRole('heading', { name: 'Routines' })).toBeInTheDocument()
+  })
+
   it('speaks the selected Personality with the active participant snapshot', async () => {
     const quickRoutine: Routine = {
       id: 'routine:spoken',
