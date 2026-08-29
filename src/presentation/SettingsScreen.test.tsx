@@ -93,6 +93,10 @@ describe('SettingsScreen', () => {
       </ThemeProvider>,
     )
 
+    expect(screen.getByRole('combobox', { name: 'Voice' })).toHaveTextContent(
+      'System Default',
+    )
+
     fireEvent.click(screen.getByRole('switch', { name: 'Timer sounds' }))
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith({ timerSoundsEnabled: false }),

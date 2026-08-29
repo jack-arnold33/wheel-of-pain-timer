@@ -60,6 +60,8 @@ const speechRates = [
   { label: 'Fast', value: 1.25 },
 ] as const
 
+const SYSTEM_DEFAULT_VOICE_VALUE = 'system-default'
+
 const speechSynthesis = () =>
   typeof window === 'undefined' ? undefined : window.speechSynthesis
 
@@ -242,13 +244,22 @@ export function SettingsScreen({
                 <Select
                   labelId="voice-label"
                   label="Voice"
-                  value={selectedVoiceUnavailable ? '' : (voiceId ?? '')}
+                  value={
+                    selectedVoiceUnavailable
+                      ? SYSTEM_DEFAULT_VOICE_VALUE
+                      : (voiceId ?? SYSTEM_DEFAULT_VOICE_VALUE)
+                  }
                   disabled={busy}
                   onChange={(event) =>
-                    void save({ voiceId: event.target.value === '' ? null : event.target.value })
+                    void save({
+                      voiceId:
+                        event.target.value === SYSTEM_DEFAULT_VOICE_VALUE
+                          ? null
+                          : event.target.value,
+                    })
                   }
                 >
-                  <MenuItem value="">System Default</MenuItem>
+                  <MenuItem value={SYSTEM_DEFAULT_VOICE_VALUE}>System Default</MenuItem>
                   {voices.map((voice) => {
                     const onDevice = voice.localService === true
                     return (
