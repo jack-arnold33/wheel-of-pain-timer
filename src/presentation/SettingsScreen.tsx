@@ -216,6 +216,23 @@ export function SettingsScreen({
 
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={2}>
+              <Typography variant="h5">People</Typography>
+              <Button
+                variant="outlined"
+                startIcon={<GroupsRoundedIcon />}
+                onClick={onParticipants}
+                sx={{ justifyContent: 'space-between' }}
+              >
+                Participants
+                <Typography component="span" color="text.secondary">
+                  {participantCount} saved
+                </Typography>
+              </Button>
+            </Stack>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: 3 }}>
+            <Stack spacing={2}>
               <Typography variant="h5">Audio</Typography>
               <FormControlLabel
                 control={
@@ -333,23 +350,6 @@ export function SettingsScreen({
                 }
                 label="Allow online voices"
               />
-            </Stack>
-          </Paper>
-
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack spacing={2}>
-              <Typography variant="h5">People</Typography>
-              <Button
-                variant="outlined"
-                startIcon={<GroupsRoundedIcon />}
-                onClick={onParticipants}
-                sx={{ justifyContent: 'space-between' }}
-              >
-                Participants
-                <Typography component="span" color="text.secondary">
-                  {participantCount} saved
-                </Typography>
-              </Button>
             </Stack>
           </Paper>
 

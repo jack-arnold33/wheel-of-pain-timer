@@ -96,6 +96,9 @@ describe('SettingsScreen', () => {
     expect(screen.getByRole('combobox', { name: 'Voice' })).toHaveTextContent(
       'System Default',
     )
+    const sectionHeadings = screen.getAllByRole('heading', { level: 5 })
+    expect(sectionHeadings[0]).toHaveTextContent('People')
+    expect(sectionHeadings[1]).toHaveTextContent('Audio')
 
     fireEvent.click(screen.getByRole('switch', { name: 'Timer sounds' }))
     await waitFor(() =>
