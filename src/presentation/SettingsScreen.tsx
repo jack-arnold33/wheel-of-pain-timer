@@ -215,7 +215,7 @@ export function SettingsScreen({
           )}
 
           <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack spacing={3}>
+            <Stack spacing={2}>
               <Typography variant="h5">Audio</Typography>
               <FormControlLabel
                 control={
@@ -227,9 +227,6 @@ export function SettingsScreen({
                 }
                 label="Timer sounds"
               />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: '-1rem !important' }}>
-                Countdown and phase-transition beeps.
-              </Typography>
               <FormControlLabel
                 control={
                   <Switch
@@ -240,10 +237,6 @@ export function SettingsScreen({
                 }
                 label="Spoken motivation"
               />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: '-1rem !important' }}>
-                Sayings from the selected Personality. Timer beeps remain independent.
-              </Typography>
-
               <FormControl fullWidth>
                 <InputLabel id="voice-label">Voice</InputLabel>
                 <Select
