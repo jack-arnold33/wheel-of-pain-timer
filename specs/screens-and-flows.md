@@ -208,5 +208,4 @@ Complete but does not speak the missed `finished` saying.
 
 ## Screens still to define
 
-- Exact duration-field input treatment on small screens
-- Exact reduced-motion treatment and sound selection
+- Exact selectable timer-sound assets

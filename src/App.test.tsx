@@ -298,8 +298,10 @@ describe('App workout flow', () => {
       target: { value: 'My Wheel' },
     })
     fireEvent.change(screen.getByLabelText('Work'), {
-      target: { value: '00:45' },
+      target: { value: '45' },
     })
+    fireEvent.blur(screen.getByLabelText('Work'))
+    expect(screen.getByLabelText('Work')).toHaveValue('00:45')
     fireEvent.click(screen.getByRole('button', { name: 'Save routine' }))
 
     await waitFor(() => expect(createRoutine).toHaveBeenCalledOnce())

@@ -35,6 +35,28 @@ export const wheelOfPainTheme = createTheme({
     borderRadius: 8,
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        '@media (prefers-reduced-motion: reduce)': {
+          '*, *::before, *::after': {
+            animationDuration: '0.01ms !important',
+            animationIterationCount: '1 !important',
+            scrollBehavior: 'auto !important',
+            transitionDuration: '0.01ms !important',
+          },
+        },
+      },
+    },
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focusVisible': {
+            outline: '3px solid var(--mui-palette-primary-main)',
+            outlineOffset: 2,
+          },
+        },
+      },
+    },
     MuiButton: {
       defaultProps: {
         disableElevation: true,
