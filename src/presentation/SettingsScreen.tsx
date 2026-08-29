@@ -60,6 +60,8 @@ const speechRates = [
   { label: 'Fast', value: 1.25 },
 ] as const
 
+const SYSTEM_DEFAULT_VOICE_VALUE = 'system-default'
+
 const speechSynthesis = () =>
   typeof window === 'undefined' ? undefined : window.speechSynthesis
 
@@ -86,6 +88,7 @@ export function SettingsScreen({
     readonly fileName: string
     readonly backup: LocalBackup
   }>()
+  const [confirmOnlineVoices, setConfirmOnlineVoices] = useState(false)
 
   useEffect(() => {
     const synthesis = speechSynthesis()
@@ -200,9 +203,6 @@ export function SettingsScreen({
             <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', sm: '3.5rem' } }}>
               Settings
             </Typography>
-            <Typography color="text.secondary">
-              Audio and voice choices stay on this device.
-            </Typography>
           </Stack>
 
           {error && <Alert severity="error">{error}</Alert>}
@@ -215,7 +215,24 @@ export function SettingsScreen({
           )}
 
           <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack spacing={3}>
+            <Stack spacing={2}>
+              <Typography variant="h5">People</Typography>
+              <Button
+                variant="outlined"
+                startIcon={<GroupsRoundedIcon />}
+                onClick={onParticipants}
+                sx={{ justifyContent: 'space-between' }}
+              >
+                Participants
+                <Typography component="span" color="text.secondary">
+                  {participantCount} saved
+                </Typography>
+              </Button>
+            </Stack>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: 3 }}>
+            <Stack spacing={2}>
               <Typography variant="h5">Audio</Typography>
               <FormControlLabel
                 control={
@@ -227,9 +244,6 @@ export function SettingsScreen({
                 }
                 label="Timer sounds"
               />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: '-1rem !important' }}>
-                Countdown and phase-transition beeps.
-              </Typography>
               <FormControlLabel
                 control={
                   <Switch
@@ -240,22 +254,27 @@ export function SettingsScreen({
                 }
                 label="Spoken motivation"
               />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: '-1rem !important' }}>
-                Sayings from the selected Personality. Timer beeps remain independent.
-              </Typography>
-
               <FormControl fullWidth>
                 <InputLabel id="voice-label">Voice</InputLabel>
                 <Select
                   labelId="voice-label"
                   label="Voice"
-                  value={selectedVoiceUnavailable ? '' : (voiceId ?? '')}
+                  value={
+                    selectedVoiceUnavailable
+                      ? SYSTEM_DEFAULT_VOICE_VALUE
+                      : (voiceId ?? SYSTEM_DEFAULT_VOICE_VALUE)
+                  }
                   disabled={busy}
                   onChange={(event) =>
-                    void save({ voiceId: event.target.value === '' ? null : event.target.value })
+                    void save({
+                      voiceId:
+                        event.target.value === SYSTEM_DEFAULT_VOICE_VALUE
+                          ? null
+                          : event.target.value,
+                    })
                   }
                 >
-                  <MenuItem value="">System Default</MenuItem>
+                  <MenuItem value={SYSTEM_DEFAULT_VOICE_VALUE}>System Default</MenuItem>
                   {voices.map((voice) => {
                     const onDevice = voice.localService === true
                     return (
@@ -316,6 +335,10 @@ export function SettingsScreen({
                     checked={allowOnlineVoices}
                     disabled={busy}
                     onChange={(_, checked) => {
+                      if (checked) {
+                        setConfirmOnlineVoices(true)
+                        return
+                      }
                       const clearOnlineSelection =
                         !checked && selectedVoice?.localService !== true
                       void save({
@@ -327,26 +350,6 @@ export function SettingsScreen({
                 }
                 label="Allow online voices"
               />
-              <Typography variant="body2" color="text.secondary">
-                When enabled, an individual saying and the participant name used to address it may be sent to the selected speech provider. Packs and rosters are never uploaded as collections.
-              </Typography>
-            </Stack>
-          </Paper>
-
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack spacing={2}>
-              <Typography variant="h5">People</Typography>
-              <Button
-                variant="outlined"
-                startIcon={<GroupsRoundedIcon />}
-                onClick={onParticipants}
-                sx={{ justifyContent: 'space-between' }}
-              >
-                Participants
-                <Typography component="span" color="text.secondary">
-                  {participantCount} saved
-                </Typography>
-              </Button>
             </Stack>
           </Paper>
 
@@ -386,6 +389,34 @@ export function SettingsScreen({
           </Paper>
         </Stack>
       </Container>
+
+      <Dialog
+        open={confirmOnlineVoices}
+        onClose={() => !busy && setConfirmOnlineVoices(false)}
+      >
+        <DialogTitle>Allow online voices?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            An individual saying and the participant name used to address it may be sent to the selected speech provider. Packs and rosters are never uploaded as collections.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={busy} onClick={() => setConfirmOnlineVoices(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disabled={busy}
+            onClick={() => {
+              void save({ allowOnlineVoices: true }).then(() =>
+                setConfirmOnlineVoices(false),
+              )
+            }}
+          >
+            Allow online voices
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={restorePreview !== undefined}

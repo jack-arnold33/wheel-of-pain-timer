@@ -42,7 +42,7 @@ const countdownSecond = (frame: TimerCueFrame) =>
 
 const applicableCountdownCue = (frame: TimerCueFrame): TimerCue[] => {
   const second = countdownSecond(frame)
-  return second >= 1 && second <= 5
+  return second >= 1 && second <= 3
     ? [{ kind: 'countdown', second }]
     : []
 }

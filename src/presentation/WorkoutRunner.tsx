@@ -218,6 +218,9 @@ export function WorkoutRunner({
   const primaryControlLabel = workout.status === 'running' || isResuming ? 'Pause' : 'Resume'
   const progress = Math.min(100, Math.max(0, (workout.elapsedInPhaseMs / phase.durationMs) * 100))
   const positionLines = phasePositionLines(phase, timing)
+  const nextLabel = followingPhase
+    ? `Next: ${phaseLabel(followingPhase.kind)}`
+    : 'Next: Complete'
 
   const pauseAt = (atMs: number) => {
     setClockMs(atMs)
@@ -288,6 +291,7 @@ export function WorkoutRunner({
         }}
       >
         <Stack
+          useFlexGap
           spacing={{ xs: 2, sm: 3 }}
           sx={{
             alignItems: 'stretch',
@@ -382,10 +386,40 @@ export function WorkoutRunner({
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1}
-            sx={{ justifyContent: 'space-between' }}
+            sx={{
+              justifyContent: 'space-between',
+              '@media (orientation: landscape) and (max-height: 600px)': {
+                display: 'grid',
+                gridTemplateColumns: '1fr auto 1fr',
+                alignItems: 'center',
+                columnGap: 2,
+              },
+            }}
           >
-            <Typography sx={{ fontWeight: 700 }}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                '@media (orientation: landscape) and (max-height: 600px)': {
+                  fontSize: '1.25rem',
+                  justifySelf: 'start',
+                },
+              }}
+            >
               {workIntervalsRemaining(workout)} work intervals remaining
+            </Typography>
+            <Typography
+              color="text.secondary"
+              sx={{
+                display: 'none',
+                '@media (orientation: landscape) and (max-height: 600px)': {
+                  display: 'block',
+                  fontSize: '1.25rem',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                },
+              }}
+            >
+              {nextLabel}
             </Typography>
             {positionLines.length > 0 && (
               <Stack
@@ -394,7 +428,17 @@ export function WorkoutRunner({
                 sx={{ alignItems: { xs: 'center', sm: 'flex-end' } }}
               >
                 {positionLines.map((line) => (
-                  <Typography key={line} variant="body2" color="text.secondary">
+                  <Typography
+                    key={line}
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      '@media (orientation: landscape) and (max-height: 600px)': {
+                        fontSize: '1.125rem',
+                        lineHeight: 1.35,
+                      },
+                    }}
+                  >
                     {line}
                   </Typography>
                 ))}
@@ -407,8 +451,16 @@ export function WorkoutRunner({
             spacing={2}
             sx={{ alignItems: 'center', justifyContent: 'center' }}
           >
-            <Typography variant="body2" color="text.secondary">
-              {followingPhase ? `Next: ${phaseLabel(followingPhase.kind)}` : 'Next: Complete'}
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                '@media (orientation: landscape) and (max-height: 600px)': {
+                  display: 'none',
+                },
+              }}
+            >
+              {nextLabel}
             </Typography>
             <Stack
               direction="row"

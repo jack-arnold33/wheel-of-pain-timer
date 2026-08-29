@@ -117,11 +117,11 @@ must not compete visually with the current phase, remaining time, or progress.
 
 ## Countdown and transition cues
 
-Each phase gives countdown cues at 5, 4, 3, 2, and 1 seconds remaining. A common
+Each phase gives countdown cues at 3, 2, and 1 seconds remaining. A common
 transition sound plays when the next phase begins; Work and Rest do not require
 different transition sounds. Visual state changes accompany audio cues, and
 the timer remains understandable when audio is muted or unavailable.
-When a phase is shorter than five seconds, only the remaining applicable
+When a phase is shorter than three seconds, only the remaining applicable
 countdown numbers are cued.
 
 Whole seconds are displayed using ceiling behavior. A 30-second phase begins
