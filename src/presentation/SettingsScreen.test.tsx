@@ -189,6 +189,47 @@ describe('SettingsScreen', () => {
     )
   })
 
+  it('explains online speech before saving consent', async () => {
+    const onChange = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <SettingsScreen
+          timerSoundsEnabled
+          spokenMotivationEnabled
+          allowOnlineVoices={false}
+          voiceId={null}
+          speechRate={1}
+          participantCount={0}
+          onBack={vi.fn()}
+          onParticipants={vi.fn()}
+          onChange={onChange}
+          {...backupHandlers}
+        />
+      </ThemeProvider>,
+    )
+
+    expect(
+      screen.queryByText('Audio and voice choices stay on this device.'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/An individual saying and the participant name/),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Allow online voices' }))
+    expect(
+      screen.getByRole('heading', { name: 'Allow online voices?' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/An individual saying and the participant name/),
+    ).toBeInTheDocument()
+    expect(onChange).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Allow online voices' }))
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({ allowOnlineVoices: true }),
+    )
+  })
+
   it('validates a backup before showing and confirming replacement', async () => {
     const onRestoreBackup = vi.fn().mockResolvedValue(undefined)
     const { container } = render(

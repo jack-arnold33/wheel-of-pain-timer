@@ -88,6 +88,7 @@ export function SettingsScreen({
     readonly fileName: string
     readonly backup: LocalBackup
   }>()
+  const [confirmOnlineVoices, setConfirmOnlineVoices] = useState(false)
 
   useEffect(() => {
     const synthesis = speechSynthesis()
@@ -201,9 +202,6 @@ export function SettingsScreen({
           <Stack spacing={1}>
             <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', sm: '3.5rem' } }}>
               Settings
-            </Typography>
-            <Typography color="text.secondary">
-              Audio and voice choices stay on this device.
             </Typography>
           </Stack>
 
@@ -320,6 +318,10 @@ export function SettingsScreen({
                     checked={allowOnlineVoices}
                     disabled={busy}
                     onChange={(_, checked) => {
+                      if (checked) {
+                        setConfirmOnlineVoices(true)
+                        return
+                      }
                       const clearOnlineSelection =
                         !checked && selectedVoice?.localService !== true
                       void save({
@@ -331,9 +333,6 @@ export function SettingsScreen({
                 }
                 label="Allow online voices"
               />
-              <Typography variant="body2" color="text.secondary">
-                When enabled, an individual saying and the participant name used to address it may be sent to the selected speech provider. Packs and rosters are never uploaded as collections.
-              </Typography>
             </Stack>
           </Paper>
 
@@ -390,6 +389,34 @@ export function SettingsScreen({
           </Paper>
         </Stack>
       </Container>
+
+      <Dialog
+        open={confirmOnlineVoices}
+        onClose={() => !busy && setConfirmOnlineVoices(false)}
+      >
+        <DialogTitle>Allow online voices?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            An individual saying and the participant name used to address it may be sent to the selected speech provider. Packs and rosters are never uploaded as collections.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={busy} onClick={() => setConfirmOnlineVoices(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disabled={busy}
+            onClick={() => {
+              void save({ allowOnlineVoices: true }).then(() =>
+                setConfirmOnlineVoices(false),
+              )
+            }}
+          >
+            Allow online voices
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={restorePreview !== undefined}
