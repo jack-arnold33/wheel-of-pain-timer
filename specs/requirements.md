@@ -50,7 +50,7 @@ reused for a different behavior.
   round, and exercise position.
 - **T-010:** Play/Pause remains visible throughout an active workout; Skip and
   End Workout are secondary actions.
-- **T-011:** Countdown cues begin with five seconds remaining, and a phase
+- **T-011:** Countdown cues begin with three seconds remaining, and a phase
   transition has an audible and visual cue.
 - **T-012:** While an active workout is visible, the app requests a screen wake
   lock, retains it while paused, and reports when the capability is unavailable

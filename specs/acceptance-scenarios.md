@@ -182,15 +182,15 @@ And pressing Pause during the countdown cancels it and leaves the phase paused
 **Requirements:** T-001, T-005, T-011, A-002
 
 ```gherkin
-Given a timed phase has more than five seconds remaining
-When it reaches each of 5, 4, 3, 2, and 1 seconds remaining
+Given a timed phase has more than three seconds remaining
+When it reaches each of 3, 2, and 1 seconds remaining
 Then one countdown cue is produced for that number when Timer sounds is enabled
 And a visual countdown state communicates the same information
 And the display uses ceiling behavior and never lingers at 00:00
 When the next non-omitted phase begins
 Then one transition sound and visual phase change occur
 
-Scenario: A phase shorter than five seconds has only applicable cues
+Scenario: A phase shorter than three seconds has only applicable cues
   Given a timed phase is configured for 3 seconds
   When it runs normally
   Then it produces countdown cues for 3, 2, and 1 only

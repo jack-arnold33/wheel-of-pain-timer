@@ -16,7 +16,7 @@ const frame = (
 })
 
 describe('timer cues', () => {
-  it.each([5, 4, 3, 2, 1])('produces one cue at %i seconds', (second) => {
+  it.each([3, 2, 1])('produces one cue at %i seconds', (second) => {
     expect(
       timerCuesBetween(
         frame((second + 1) * 1_000, 0),
@@ -25,8 +25,8 @@ describe('timer cues', () => {
     ).toEqual([{ kind: 'countdown', second }])
   })
 
-  it('does not cue outside the final five seconds or repeat a second', () => {
-    expect(timerCuesBetween(frame(7_000, 0), frame(6_000, 100))).toEqual([])
+  it('does not cue outside the final three seconds or repeat a second', () => {
+    expect(timerCuesBetween(frame(5_000, 0), frame(4_000, 100))).toEqual([])
     expect(timerCuesBetween(frame(4_900, 0), frame(4_100, 100))).toEqual([])
   })
 
