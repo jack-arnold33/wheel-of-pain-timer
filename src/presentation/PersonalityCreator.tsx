@@ -54,7 +54,9 @@ const categoryPresentation: Record<
 }
 
 const lineCount = (value: string) =>
-  value.split(/\r?\n/u).filter((line) => line.trim().length > 0).length
+  value
+    .split(/\r?\n/u)
+    .filter((line) => line.trim().replace(/^•\s*/u, '').length > 0).length
 
 export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps) {
   const [draft, setDraft] = useState(loadPersonalityAuthoringDraft)
@@ -135,7 +137,7 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
             </Typography>
             <Typography color="text.secondary">
               {draft.step === 'review'
-                ? 'One saying per line. Edit anything before saving.'
+                ? 'Review each saying and edit anything before saving.'
                 : 'Shape an idea here, then use ChatGPT to write the sayings.'}
             </Typography>
           </Stack>
@@ -254,7 +256,8 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
                     <TextField
                       fullWidth
                       multiline
-                      minRows={4}
+                      minRows={6}
+                      maxRows={12}
                       label={`${categoryPresentation[category].label} sayings`}
                       value={draft.sayings[category]}
                       onChange={(event) =>
@@ -263,7 +266,7 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
                           sayings: { ...current.sayings, [category]: event.target.value },
                         }))
                       }
-                      helperText="One saying per line"
+                      helperText="Each bullet is one saying. Bullets are not saved or spoken."
                     />
                   </Stack>
                 </Paper>
