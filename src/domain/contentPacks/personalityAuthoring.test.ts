@@ -27,6 +27,10 @@ describe('Personality authoring', () => {
     expect(prompt).toContain('Themes, recurring jokes, or group context: The ceremonial kettlebell')
     expect(prompt).toContain('Avoid: Comments about appearance')
     expect(prompt).toContain('Do not include participant names or name placeholders')
+    expect(prompt).toContain('Return a raw JSON object, not a quoted or escaped JSON string')
+    expect(prompt).toContain('Do not add backslashes at line endings')
+    expect(prompt).toContain('Include both closing braces')
+    expect(prompt).toContain('verify that the complete response is valid JSON')
   })
 
   it('parses JSON copied with a Markdown fence', () => {

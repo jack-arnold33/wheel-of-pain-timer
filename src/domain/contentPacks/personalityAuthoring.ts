@@ -157,7 +157,9 @@ export function buildPersonalityPrompt(
     '  }',
     '}',
     '',
-    'Every array item must be a JSON string of 240 characters or fewer. Do not include explanations or code fences.',
+    'Every array item must be a JSON string of 240 characters or fewer.',
+    'Return a raw JSON object, not a quoted or escaped JSON string. Do not add backslashes at line endings or escape the JSON object as text. Include both closing braces so the response can be parsed directly with JSON.parse.',
+    'Do not include explanations or code fences. Before responding, verify that the complete response is valid JSON.',
   ].join('\n')
 }
 
