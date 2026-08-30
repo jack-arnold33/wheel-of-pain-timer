@@ -133,6 +133,13 @@ describe('ContentPackLibrary', () => {
     ).toContain('Dry and theatrical')
 
     fireEvent.change(screen.getByLabelText('Paste ChatGPT response'), {
+      target: { value: 'Replace this draft.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Clear pasted response' }))
+    expect(screen.getByLabelText('Paste ChatGPT response')).toHaveValue('')
+    expect(screen.getByRole('button', { name: 'Review sayings' })).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('Paste ChatGPT response'), {
       target: {
         value:
           '```json\n{"schemaVersion":1,"name":"Tuesday Chaos","sayings":{"work":["Go."],"cycleRest":["Breathe."],"finished":["Done."]}}\n```',

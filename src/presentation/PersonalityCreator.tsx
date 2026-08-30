@@ -1,5 +1,6 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded'
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import {
   Alert,
   Box,
@@ -210,15 +211,30 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
 
               <Divider>then</Divider>
 
-              <TextField
-                fullWidth
-                multiline
-                minRows={9}
-                label="Paste ChatGPT response"
-                placeholder='Paste the generated JSON here. Plain text with one work saying per line also works.'
-                value={draft.response}
-                onChange={(event) => update('response', event.target.value)}
-              />
+              <Stack spacing={1}>
+                <Button
+                  color="error"
+                  startIcon={<DeleteOutlineRoundedIcon />}
+                  disabled={draft.response.length === 0}
+                  onClick={() => {
+                    update('response', '')
+                    setError(undefined)
+                    setNotice(undefined)
+                  }}
+                  sx={{ alignSelf: 'flex-end' }}
+                >
+                  Clear pasted response
+                </Button>
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={9}
+                  label="Paste ChatGPT response"
+                  placeholder='Paste the generated JSON here. Plain text with one work saying per line also works.'
+                  value={draft.response}
+                  onChange={(event) => update('response', event.target.value)}
+                />
+              </Stack>
               <Button
                 variant="contained"
                 disabled={draft.response.trim().length === 0}
