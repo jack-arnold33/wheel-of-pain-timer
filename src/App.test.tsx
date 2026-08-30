@@ -171,6 +171,17 @@ describe('App workout flow', () => {
     )
 
     await openProtectedRoutine()
+    expect(screen.getByText('Workout setup')).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('button', { name: 'Choose Personality' })).getByTestId(
+        'ChevronRightRoundedIcon',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('button', { name: 'Choose Participants' })).getByTestId(
+        'ChevronRightRoundedIcon',
+      ),
+    ).toBeInTheDocument()
     expect(screen.getByText('1 active')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Choose Participants' }))
     expect(

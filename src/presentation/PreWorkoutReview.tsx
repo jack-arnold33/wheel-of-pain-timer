@@ -1,4 +1,7 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
+import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded'
+import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded'
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded'
 import {
   Alert,
@@ -123,28 +126,90 @@ export function PreWorkoutReview({
                 {durationLabel(timing.cooldownSeconds)} cooldown
               </Typography>
               <Divider />
-              <Button
-                color="inherit"
-                aria-label="Choose Personality"
-                onClick={onChoosePersonality}
-                sx={{ justifyContent: 'space-between', textTransform: 'none' }}
-              >
-                <Typography>Personality</Typography>
-                <Typography color="text.secondary">
-                  {personalityName ?? 'None'}
+              <Stack spacing={1}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Workout setup
                 </Typography>
-              </Button>
-              <Button
-                color="inherit"
-                aria-label="Choose Participants"
-                onClick={onChooseParticipants}
-                sx={{ justifyContent: 'space-between', textTransform: 'none' }}
-              >
-                <Typography>Participants</Typography>
-                <Typography color="text.secondary">
-                  {activeParticipantCount} active
-                </Typography>
-              </Button>
+                <Stack spacing={0}>
+                  <Button
+                    color="inherit"
+                    aria-label="Choose Personality"
+                    onClick={onChoosePersonality}
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns:
+                        '24px minmax(0, 1fr) minmax(0, auto) 18px',
+                      columnGap: 1,
+                      justifyContent: 'stretch',
+                      minHeight: 58,
+                      px: 1,
+                      py: 1,
+                      borderRadius: 1.5,
+                      color: 'text.primary',
+                      textTransform: 'none',
+                      '&:hover': { bgcolor: 'action.hover' },
+                      '&:active': { bgcolor: 'action.selected' },
+                    }}
+                  >
+                    <AutoAwesomeRoundedIcon color="primary" sx={{ fontSize: 22 }} />
+                    <Typography sx={{ fontWeight: 700, textAlign: 'left' }}>
+                      Personality
+                    </Typography>
+                    <Typography
+                      color="text.secondary"
+                      sx={{
+                        minWidth: 0,
+                        maxWidth: { xs: 130, sm: 220 },
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {personalityName ?? 'None'}
+                    </Typography>
+                    <ChevronRightRoundedIcon color="primary" sx={{ fontSize: 20 }} />
+                  </Button>
+                  <Button
+                    color="inherit"
+                    aria-label="Choose Participants"
+                    onClick={onChooseParticipants}
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns:
+                        '24px minmax(0, 1fr) minmax(0, auto) 18px',
+                      columnGap: 1,
+                      justifyContent: 'stretch',
+                      minHeight: 58,
+                      px: 1,
+                      py: 1,
+                      borderTop: 1,
+                      borderColor: 'divider',
+                      borderRadius: 0,
+                      color: 'text.primary',
+                      textTransform: 'none',
+                      '&:hover': { bgcolor: 'action.hover' },
+                      '&:active': { bgcolor: 'action.selected' },
+                    }}
+                  >
+                    <GroupsRoundedIcon color="primary" sx={{ fontSize: 22 }} />
+                    <Typography sx={{ fontWeight: 700, textAlign: 'left' }}>
+                      Participants
+                    </Typography>
+                    <Typography color="text.secondary">
+                      {activeParticipantCount} active
+                    </Typography>
+                    <ChevronRightRoundedIcon color="primary" sx={{ fontSize: 20 }} />
+                  </Button>
+                </Stack>
+              </Stack>
               <Button variant="contained" size="large" onClick={onPlay}>
                 Play
               </Button>
