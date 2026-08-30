@@ -53,11 +53,14 @@ The primary creation path is **Create Personality** in the Personality library.
 The user supplies a name and optional guidance for tone, themes or inside jokes,
 and subjects to avoid. The app creates a prompt that the user can copy to an AI
 assistant. The app does not contact the assistant or upload this guidance.
-The prompt explicitly requests a complete raw JSON object rather than quoted or
-escaped JSON, forbids line-continuation backslashes, and asks the assistant to
-use ordinary spaces rather than HTML whitespace entities and verify that the
-response is valid JSON before returning it. The paste parser normalizes common
-HTML whitespace entities introduced by rich-text copying before validation.
+The prompt explicitly requests exactly one `json` code block containing a
+complete raw JSON object rather than quoted or escaped JSON, with nothing
+outside the block. This supports reliable use of an assistant's Copy code
+action. It forbids line-continuation backslashes and asks the assistant to use
+ordinary spaces rather than HTML whitespace entities and verify that the
+content inside the block is valid JSON before returning it. The paste parser
+normalizes common HTML whitespace entities introduced by rich-text copying
+before validation.
 
 After returning to the app, the user pastes the generated response. Version 1
 accepts the documented JSON object, including JSON copied inside a Markdown code
