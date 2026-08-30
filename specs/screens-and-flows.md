@@ -153,6 +153,18 @@ originating pre-workout screen. Pack inspection shows the pack name, category
 counts, total saying count, and that it is saved on this device; sayings need
 not be presented on the active workout screen.
 
+**Create Personality** opens a phone-first authoring screen. The user enters a
+name and optional tone, theme or inside-joke context, and subjects to avoid.
+**Copy prompt for ChatGPT** copies a self-contained schema-aware prompt while
+also showing it for manual copying. The app does not open or contact ChatGPT.
+The user returns, pastes JSON or plain text, and chooses **Review sayings**.
+
+Review uses plain-language category names, shows one saying per editable line,
+and explains when each category is spoken. **Save & select** validates, stores,
+selects, and returns to the originating pre-workout screen. The draft persists
+locally through app switching and reload until a successful save. File import
+is a secondary action in the library and retains its existing behavior.
+
 Import errors remain in the import flow, identify the invalid field or limit,
 and do not change saved data. A name or identity conflict offers Replace, Save
 a Copy with a distinct name, or Cancel only after the incoming pack validates.

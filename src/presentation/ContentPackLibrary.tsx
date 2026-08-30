@@ -1,4 +1,5 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
+import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import FileDownloadRoundedIcon from '@mui/icons-material/FileDownloadRounded'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded'
@@ -23,11 +24,13 @@ import {
 import { useState, type ChangeEvent } from 'react'
 import { importContentPackFile } from '../domain/contentPacks/importContentPack'
 import { isBuiltInContentPack } from '../domain/contentPacks/builtInContentPacks'
+import { clearPersonalityAuthoringDraft } from '../domain/contentPacks/personalityAuthoring'
 import {
   contentPackCategories,
   type ContentPack,
   type ContentPackDraft,
 } from '../domain/contentPacks/types'
+import { PersonalityCreator } from './PersonalityCreator'
 
 export type ContentPackImportResult =
   | { readonly status: 'saved'; readonly pack: ContentPack }
@@ -94,8 +97,10 @@ export function ContentPackLibrary({
   const [conflict, setConflict] = useState<{
     readonly draft: ContentPackDraft
     readonly existing: ContentPack
+    readonly fromCreator: boolean
   }>()
   const [copyName, setCopyName] = useState('')
+  const [creating, setCreating] = useState(false)
 
   const run = async (action: () => Promise<void>) => {
     setBusy(true)
@@ -117,10 +122,30 @@ export function ContentPackLibrary({
       const draft = await importContentPackFile(file)
       const result = await onImport(draft)
       if (result.status === 'conflict') {
-        setConflict({ draft, existing: result.existing })
+        setConflict({ draft, existing: result.existing, fromCreator: false })
         setCopyName(`${draft.name} Copy`)
       }
     })
+  }
+
+  const saveCreatedPack = async (draft: ContentPackDraft): Promise<boolean> => {
+    const result = await onImport(draft)
+    if (result.status === 'conflict') {
+      setConflict({ draft, existing: result.existing, fromCreator: true })
+      setCopyName(`${draft.name} Copy`)
+      setCreating(false)
+      return false
+    }
+    return true
+  }
+
+  if (creating) {
+    return (
+      <PersonalityCreator
+        onCancel={() => setCreating(false)}
+        onSave={saveCreatedPack}
+      />
+    )
   }
 
   return (
@@ -142,20 +167,30 @@ export function ContentPackLibrary({
           {storageNotice && <Alert severity="warning">{storageNotice}</Alert>}
           {error && <Alert severity="error">{error}</Alert>}
 
-          <Button
-            component="label"
-            variant="contained"
-            startIcon={<UploadFileRoundedIcon />}
-            disabled={busy}
-          >
-            Import pack
-            <input
-              hidden
-              type="file"
-              accept=".txt,.timerpack.json,text/plain,application/json"
-              onChange={(event) => void importFile(event)}
-            />
-          </Button>
+          <Stack spacing={1.5}>
+            <Button
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              disabled={busy}
+              onClick={() => setCreating(true)}
+            >
+              Create Personality
+            </Button>
+            <Button
+              component="label"
+              variant="outlined"
+              startIcon={<UploadFileRoundedIcon />}
+              disabled={busy}
+            >
+              Import file
+              <input
+                hidden
+                type="file"
+                accept=".txt,.timerpack.json,text/plain,application/json"
+                onChange={(event) => void importFile(event)}
+              />
+            </Button>
+          </Stack>
 
           <Stack spacing={2} aria-label="Content packs">
             <Button
@@ -339,6 +374,7 @@ export function ContentPackLibrary({
               void run(async () => {
                 if (!conflict) return
                 await onReplace(conflict.existing.id, conflict.draft)
+                if (conflict.fromCreator) clearPersonalityAuthoringDraft()
               })
             }
           >
@@ -352,7 +388,13 @@ export function ContentPackLibrary({
                 if (!conflict) return
                 const result = await onImport({ ...conflict.draft, name: copyName })
                 if (result.status === 'conflict') {
-                  setConflict({ draft: { ...conflict.draft, name: copyName }, existing: result.existing })
+                  setConflict({
+                    draft: { ...conflict.draft, name: copyName },
+                    existing: result.existing,
+                    fromCreator: conflict.fromCreator,
+                  })
+                } else if (conflict.fromCreator) {
+                  clearPersonalityAuthoringDraft()
                 }
               })
             }
