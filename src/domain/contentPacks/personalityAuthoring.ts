@@ -166,14 +166,17 @@ export function authoringDraftFromPack(
   current: PersonalityAuthoringDraft,
   pack: ContentPackDraft,
 ): PersonalityAuthoringDraft {
+  const formatSayings = (sayings: readonly string[] | undefined): string =>
+    sayings?.map((saying) => `• ${saying}`).join('\n\n') ?? ''
+
   return {
     ...current,
     step: 'review',
     name: pack.name,
     sayings: {
-      work: (pack.sayings.work ?? pack.sayings.general)?.join('\n') ?? '',
-      cycleRest: pack.sayings.cycleRest?.join('\n') ?? '',
-      finished: pack.sayings.finished?.join('\n') ?? '',
+      work: formatSayings(pack.sayings.work ?? pack.sayings.general),
+      cycleRest: formatSayings(pack.sayings.cycleRest),
+      finished: formatSayings(pack.sayings.finished),
     },
   }
 }
@@ -187,7 +190,9 @@ export function contentPackFromAuthoringDraft(
     sayings: Object.fromEntries(
       personalityAuthoringCategories.map((category) => [
         category,
-        draft.sayings[category].split(/\r?\n/u),
+        draft.sayings[category]
+          .split(/\r?\n/u)
+          .map((saying) => saying.trim().replace(/^•\s*/u, '')),
       ]),
     ),
   })

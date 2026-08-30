@@ -77,6 +77,9 @@ describe('Personality authoring', () => {
       extensions: {},
     })
 
+    expect(draft.sayings.work).toBe('• First.\n\n• Second.')
+    expect(draft.sayings.cycleRest).toBe('• Breathe.')
+
     expect(contentPackFromAuthoringDraft(draft)).toEqual({
       schemaVersion: 1,
       name: 'Editable',

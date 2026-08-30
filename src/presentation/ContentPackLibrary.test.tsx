@@ -141,9 +141,9 @@ describe('ContentPackLibrary', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Review sayings' }))
 
     expect(screen.getByRole('heading', { name: 'Review Personality' })).toBeInTheDocument()
-    expect(screen.getByLabelText('During work sayings')).toHaveValue('Go.')
+    expect(screen.getByLabelText('During work sayings')).toHaveValue('• Go.')
     fireEvent.change(screen.getByLabelText('During work sayings'), {
-      target: { value: 'Go.\nKeep moving.' },
+      target: { value: '• Go.\n\n• Keep moving.' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Save & select' }))
 
