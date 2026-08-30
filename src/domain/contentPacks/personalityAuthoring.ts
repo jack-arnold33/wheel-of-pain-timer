@@ -100,11 +100,14 @@ const fencedPayload = (value: string): string => {
   return (match?.[1] ?? value).trim()
 }
 
+const normalizeCopiedWhitespace = (value: string): string =>
+  value.replace(/(?:&#x20;|&#32;|&nbsp;)/giu, ' ')
+
 export function parsePastedPersonality(
   value: string,
   fallbackName: string,
 ): ContentPackDraft {
-  const payload = fencedPayload(value)
+  const payload = normalizeCopiedWhitespace(fencedPayload(value))
   if (payload.length === 0) {
     throw new InvalidContentPackError('Paste the response from ChatGPT first.')
   }
@@ -158,7 +161,7 @@ export function buildPersonalityPrompt(
     '}',
     '',
     'Every array item must be a JSON string of 240 characters or fewer.',
-    'Return a raw JSON object, not a quoted or escaped JSON string. Do not add backslashes at line endings or escape the JSON object as text. Include both closing braces so the response can be parsed directly with JSON.parse.',
+    'Return a raw JSON object, not a quoted or escaped JSON string. Use ordinary spaces, not HTML entities such as &#x20; or &nbsp;. Do not add backslashes at line endings or escape the JSON object as text. Include both closing braces so the response can be parsed directly with JSON.parse.',
     'Do not include explanations or code fences. Before responding, verify that the complete response is valid JSON.',
   ].join('\n')
 }

@@ -11,7 +11,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   authoringDraftFromPack,
   buildPersonalityPrompt,
@@ -62,9 +62,15 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
   const [notice, setNotice] = useState<string>()
   const [showPrompt, setShowPrompt] = useState(false)
   const [busy, setBusy] = useState(false)
+  const errorRef = useRef<HTMLDivElement>(null)
   const prompt = useMemo(() => buildPersonalityPrompt(draft), [draft])
 
   useEffect(() => savePersonalityAuthoringDraft(draft), [draft])
+  useEffect(() => {
+    if (error !== undefined) {
+      errorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+    }
+  }, [error])
 
   const update = <Key extends keyof PersonalityAuthoringDraft>(
     key: Key,
@@ -134,7 +140,7 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
             </Typography>
           </Stack>
 
-          {error && <Alert severity="error">{error}</Alert>}
+          {error && <Alert ref={errorRef} severity="error">{error}</Alert>}
           {notice && <Alert severity="success">{notice}</Alert>}
 
           {draft.step === 'ideas' ? (
