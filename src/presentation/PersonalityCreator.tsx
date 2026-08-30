@@ -35,10 +35,6 @@ const categoryPresentation: Record<
   PersonalityAuthoringCategory,
   { readonly label: string; readonly description: string }
 > = {
-  general: {
-    label: 'General fallback',
-    description: 'Used when a more specific category has no sayings.',
-  },
   work: {
     label: 'During work',
     description: 'Spoken at the beginning of each work round.',
@@ -217,7 +213,7 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
                 multiline
                 minRows={9}
                 label="Paste ChatGPT response"
-                placeholder='Paste the generated JSON here. Plain text with one saying per line also works.'
+                placeholder='Paste the generated JSON here. Plain text with one work saying per line also works.'
                 value={draft.response}
                 onChange={(event) => update('response', event.target.value)}
               />

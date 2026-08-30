@@ -5,7 +5,6 @@ export const PERSONALITY_AUTHORING_DRAFT_KEY =
   'wheel-of-pain:personality-authoring-draft:v1'
 
 export const personalityAuthoringCategories = [
-  'general',
   'work',
   'cycleRest',
   'finished',
@@ -34,7 +33,6 @@ export const emptyPersonalityAuthoringDraft = (): PersonalityAuthoringDraft => (
   avoid: '',
   response: '',
   sayings: {
-    general: '',
     work: '',
     cycleRest: '',
     finished: '',
@@ -63,7 +61,6 @@ export function loadPersonalityAuthoringDraft(
       avoid: text(parsed.avoid),
       response: text(parsed.response),
       sayings: {
-        general: text(sayings.general),
         work: text(sayings.work),
         cycleRest: text(sayings.cycleRest),
         finished: text(sayings.finished),
@@ -116,7 +113,7 @@ export function parsePastedPersonality(
     return normalizeContentPack({
       schemaVersion: CONTENT_PACK_SCHEMA_VERSION,
       name: fallbackName,
-      sayings: { general: payload.split(/\r?\n/u) },
+      sayings: { work: payload.split(/\r?\n/u) },
     })
   }
 
@@ -146,14 +143,13 @@ export function buildPersonalityPrompt(
     '',
     'Write short phrases that sound natural when spoken aloud. Be creative, encouraging, and consistent with the requested tone. Do not include participant names or name placeholders; the app adds a participant name automatically. Do not use Markdown, emoji, or stage directions in the sayings.',
     '',
-    'Generate exactly 10 general sayings, 20 work sayings, 8 cycle-rest sayings, and 5 finished sayings.',
+    'Generate exactly 20 work sayings, 8 cycle-rest sayings, and 5 finished sayings.',
     '',
     'Return only valid JSON with exactly this structure:',
     '{',
     '  "schemaVersion": 1,',
     `  "name": ${JSON.stringify(draft.name.trim())},`,
     '  "sayings": {',
-    '    "general": ["general-purpose saying", "..."],',
     '    "work": ["saying for the beginning of a work round", "..."],',
     '    "cycleRest": ["saying for the beginning of a longer cycle rest", "..."],',
     '    "finished": ["saying for normal workout completion", "..."]',
@@ -175,8 +171,7 @@ export function authoringDraftFromPack(
     step: 'review',
     name: pack.name,
     sayings: {
-      general: pack.sayings.general?.join('\n') ?? '',
-      work: pack.sayings.work?.join('\n') ?? '',
+      work: (pack.sayings.work ?? pack.sayings.general)?.join('\n') ?? '',
       cycleRest: pack.sayings.cycleRest?.join('\n') ?? '',
       finished: pack.sayings.finished?.join('\n') ?? '',
     },

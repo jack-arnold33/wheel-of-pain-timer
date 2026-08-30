@@ -61,10 +61,17 @@ HTML whitespace entities introduced by rich-text copying before validation.
 
 After returning to the app, the user pastes the generated response. Version 1
 accepts the documented JSON object, including JSON copied inside a Markdown code
-fence. Plain pasted text is also accepted as one general-purpose saying per
-non-empty line. The user reviews and may edit every category before choosing
+fence. Plain pasted text is also accepted as one work saying per non-empty
+line. New authoring presents only `work`, `cycleRest`, and `finished`; it does
+not request or create fallback `general` sayings. The user reviews and may edit every category before choosing
 **Save & select**. Saving uses the same validation, conflict handling, local
 storage, and automatic selection as file import.
+
+The v1 schema continues to accept `general` for backward compatibility with
+existing packs and plain-text file imports. It remains an internal fallback for
+those packs rather than a category shown during new Personality authoring. If a
+legacy pasted JSON object contains general sayings but no work sayings, the
+creator moves those sayings into Work for review rather than discarding them.
 
 The unfinished authoring draft is saved locally as fields change so that mobile
 operating systems may discard and later reload the PWA while the user switches
