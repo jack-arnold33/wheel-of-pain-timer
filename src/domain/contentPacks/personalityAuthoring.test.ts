@@ -1,0 +1,83 @@
+import { afterEach, describe, expect, it } from 'vitest'
+import {
+  PERSONALITY_AUTHORING_DRAFT_KEY,
+  authoringDraftFromPack,
+  buildPersonalityPrompt,
+  contentPackFromAuthoringDraft,
+  emptyPersonalityAuthoringDraft,
+  loadPersonalityAuthoringDraft,
+  parsePastedPersonality,
+  savePersonalityAuthoringDraft,
+} from './personalityAuthoring'
+
+afterEach(() => localStorage.clear())
+
+describe('Personality authoring', () => {
+  it('builds an exact, context-aware prompt without participant placeholders', () => {
+    const prompt = buildPersonalityPrompt({
+      ...emptyPersonalityAuthoringDraft(),
+      name: 'Tuesday Chaos',
+      tone: 'Dry and theatrical',
+      themes: 'The ceremonial kettlebell',
+      avoid: 'Comments about appearance',
+    })
+
+    expect(prompt).toContain('"name": "Tuesday Chaos"')
+    expect(prompt).toContain('Tone: Dry and theatrical')
+    expect(prompt).toContain('Themes, recurring jokes, or group context: The ceremonial kettlebell')
+    expect(prompt).toContain('Avoid: Comments about appearance')
+    expect(prompt).toContain('Do not include participant names or name placeholders')
+  })
+
+  it('parses JSON copied with a Markdown fence', () => {
+    const pack = parsePastedPersonality(
+      'Here you go:\n```json\n{"schemaVersion":1,"name":"Phone Crew","sayings":{"work":["Go."],"finished":["Done."]}}\n```',
+      'Ignored fallback',
+    )
+
+    expect(pack).toEqual({
+      schemaVersion: 1,
+      name: 'Phone Crew',
+      sayings: { work: ['Go.'], finished: ['Done.'] },
+      extensions: {},
+    })
+  })
+
+  it('accepts plain pasted lines as general sayings', () => {
+    expect(parsePastedPersonality('Move.\nAgain.\n', 'Quick Pack')).toMatchObject({
+      name: 'Quick Pack',
+      sayings: { general: ['Move.', 'Again.'] },
+    })
+  })
+
+  it('round-trips an editable categorized draft through pack validation', () => {
+    const draft = authoringDraftFromPack(emptyPersonalityAuthoringDraft(), {
+      schemaVersion: 1,
+      name: 'Editable',
+      sayings: { work: ['First.', 'Second.'], cycleRest: ['Breathe.'] },
+      extensions: {},
+    })
+
+    expect(contentPackFromAuthoringDraft(draft)).toEqual({
+      schemaVersion: 1,
+      name: 'Editable',
+      sayings: { work: ['First.', 'Second.'], cycleRest: ['Breathe.'] },
+      extensions: {},
+    })
+  })
+
+  it('persists an unfinished mobile draft and recovers it safely', () => {
+    const draft = {
+      ...emptyPersonalityAuthoringDraft(),
+      name: 'Survives App Switching',
+      response: '{"unfinished":true}',
+    }
+    savePersonalityAuthoringDraft(draft)
+
+    expect(localStorage.getItem(PERSONALITY_AUTHORING_DRAFT_KEY)).not.toBeNull()
+    expect(loadPersonalityAuthoringDraft()).toEqual(draft)
+
+    localStorage.setItem(PERSONALITY_AUTHORING_DRAFT_KEY, '{')
+    expect(loadPersonalityAuthoringDraft()).toEqual(emptyPersonalityAuthoringDraft())
+  })
+})

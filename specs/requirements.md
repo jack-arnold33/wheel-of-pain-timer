@@ -105,6 +105,15 @@ reused for a different behavior.
 - **C-016:** A protected generic starter Personality is included with the app
   so spoken motivation can be used without importing a pack. It can be selected
   or inspected but not renamed, exported, or removed.
+- **C-017:** The user can create a Personality on the current device by copying
+  an app-generated prompt to an AI assistant, pasting the response, reviewing
+  and editing categorized sayings, and choosing Save & select. The app does not
+  contact the assistant or transmit the authoring fields itself.
+- **C-018:** Pasted authoring content accepts a valid v1 JSON object with or
+  without a Markdown code fence, or plain text as general sayings. It uses the
+  same validation and conflict rules as file import.
+- **C-019:** An unfinished Personality authoring draft is saved locally as it
+  changes and is recovered after the PWA reloads. Successful save clears it.
 
 ## Local storage and privacy
 

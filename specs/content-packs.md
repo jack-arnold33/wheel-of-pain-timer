@@ -47,6 +47,25 @@ details such as IndexedDB do not need to be exposed to ordinary users.
 
 ## Supported MVP formats
 
+### Phone-first authoring
+
+The primary creation path is **Create Personality** in the Personality library.
+The user supplies a name and optional guidance for tone, themes or inside jokes,
+and subjects to avoid. The app creates a prompt that the user can copy to an AI
+assistant. The app does not contact the assistant or upload this guidance.
+
+After returning to the app, the user pastes the generated response. Version 1
+accepts the documented JSON object, including JSON copied inside a Markdown code
+fence. Plain pasted text is also accepted as one general-purpose saying per
+non-empty line. The user reviews and may edit every category before choosing
+**Save & select**. Saving uses the same validation, conflict handling, local
+storage, and automatic selection as file import.
+
+The unfinished authoring draft is saved locally as fields change so that mobile
+operating systems may discard and later reload the PWA while the user switches
+to an AI assistant. Successfully saving clears that authoring draft. File import
+remains available as the secondary interchange workflow.
+
 ### Plain text
 
 A UTF-8 `.txt` file contains one general-purpose saying per non-empty line.
@@ -208,4 +227,4 @@ is atomic and the protected preset remains available afterward.
 - Encrypted packs
 - Cloud synchronization
 - Direct PWA share-target integration
-- Pack authoring and collaborative editing inside the app
+- Collaborative editing inside the app

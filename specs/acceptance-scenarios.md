@@ -451,6 +451,33 @@ And analytics or tracking is not required for any core operation
 
 ## Content-pack lifecycle
 
+### Create a Personality with help from an AI assistant on a phone
+
+**Requirements:** C-002, C-003, C-006, C-011, C-017, C-018, C-019
+
+```gherkin
+Given the user starts Create Personality on a phone
+And enters a name and optional tone, themes, and subjects to avoid
+When the user chooses Copy prompt for ChatGPT
+Then a schema-aware authoring prompt is copied or shown for manual copying
+And the app does not contact ChatGPT or transmit the authoring fields
+And the unfinished draft is saved on this device
+When the PWA reloads after the user switches apps
+Then the unfinished draft is recovered
+When the user pastes valid v1 JSON with or without a Markdown code fence
+And reviews or edits the categorized sayings
+And chooses Save & select
+Then the same content-pack validation and conflict rules are applied
+And the Personality is saved locally, selected, and shown on pre-workout
+And the unfinished authoring draft is cleared
+```
+
+```gherkin
+Given the user is creating a Personality
+When the user pastes non-empty plain text with one saying per line
+Then the lines are normalized into the general category for review
+```
+
 ### Import a valid plain-text pack locally
 
 **Requirements:** C-001, C-002, C-003, C-004, C-011
