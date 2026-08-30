@@ -29,6 +29,7 @@ describe('Personality authoring', () => {
     expect(prompt).toContain('Do not include participant names or name placeholders')
     expect(prompt).toContain('Return a raw JSON object, not a quoted or escaped JSON string')
     expect(prompt).toContain('Do not add backslashes at line endings')
+    expect(prompt).toContain('Use ordinary spaces, not HTML entities')
     expect(prompt).toContain('Include both closing braces')
     expect(prompt).toContain('verify that the complete response is valid JSON')
   })
@@ -51,6 +52,18 @@ describe('Personality authoring', () => {
     expect(parsePastedPersonality('Move.\nAgain.\n', 'Quick Pack')).toMatchObject({
       name: 'Quick Pack',
       sayings: { general: ['Move.', 'Again.'] },
+    })
+  })
+
+  it('normalizes HTML whitespace entities introduced while copying JSON', () => {
+    const pack = parsePastedPersonality(
+      '{\n&#x20; "schemaVersion": 1,\n&#32; "name": "Entity Copy",\n&nbsp; "sayings": {"work": ["Go."]}\n}',
+      'Ignored fallback',
+    )
+
+    expect(pack).toMatchObject({
+      name: 'Entity Copy',
+      sayings: { work: ['Go.'] },
     })
   })
 
