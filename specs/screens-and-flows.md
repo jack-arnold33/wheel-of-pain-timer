@@ -158,9 +158,13 @@ name and optional tone, theme or inside-joke context, and subjects to avoid.
 **Copy prompt for ChatGPT** copies a self-contained schema-aware prompt while
 also showing it for manual copying. The app does not open or contact ChatGPT.
 The user returns, pastes JSON or plain text, and chooses **Review sayings**.
+**Clear pasted response** empties only the response field so the complete AI
+output can be replaced without clearing the name or authoring guidance.
 
 Review uses plain-language category names, shows one saying per editable line,
-and explains when each category is spoken. **Save & select** validates, stores,
+and explains when each category is spoken. Editor-only bullets and spacing make
+individual sayings visually distinct without becoming part of saved or spoken
+content. **Save & select** validates, stores,
 selects, and returns to the originating pre-workout screen. The draft persists
 locally through app switching and reload until a successful save. File import
 is a secondary action in the library and retains its existing behavior.

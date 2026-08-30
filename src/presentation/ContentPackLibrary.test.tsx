@@ -133,6 +133,13 @@ describe('ContentPackLibrary', () => {
     ).toContain('Dry and theatrical')
 
     fireEvent.change(screen.getByLabelText('Paste ChatGPT response'), {
+      target: { value: 'Replace this draft.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Clear pasted response' }))
+    expect(screen.getByLabelText('Paste ChatGPT response')).toHaveValue('')
+    expect(screen.getByRole('button', { name: 'Review sayings' })).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('Paste ChatGPT response'), {
       target: {
         value:
           '```json\n{"schemaVersion":1,"name":"Tuesday Chaos","sayings":{"work":["Go."],"cycleRest":["Breathe."],"finished":["Done."]}}\n```',
@@ -141,9 +148,9 @@ describe('ContentPackLibrary', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Review sayings' }))
 
     expect(screen.getByRole('heading', { name: 'Review Personality' })).toBeInTheDocument()
-    expect(screen.getByLabelText('During work sayings')).toHaveValue('Go.')
+    expect(screen.getByLabelText('During work sayings')).toHaveValue('• Go.')
     fireEvent.change(screen.getByLabelText('During work sayings'), {
-      target: { value: 'Go.\nKeep moving.' },
+      target: { value: '• Go.\n\n• Keep moving.' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Save & select' }))
 
@@ -200,8 +207,7 @@ describe('ContentPackLibrary', () => {
       step: 'review',
       name: pack.name,
       sayings: {
-        general: 'A replacement.',
-        work: '',
+        work: 'A replacement.',
         cycleRest: '',
         finished: '',
       },
@@ -230,7 +236,7 @@ describe('ContentPackLibrary', () => {
 
     await waitFor(() => expect(onReplace).toHaveBeenCalledWith(
       pack.id,
-      expect.objectContaining({ name: pack.name, sayings: { general: ['A replacement.'] } }),
+      expect.objectContaining({ name: pack.name, sayings: { work: ['A replacement.'] } }),
     ))
     await waitFor(() =>
       expect(localStorage.getItem(PERSONALITY_AUTHORING_DRAFT_KEY)).toBeNull(),

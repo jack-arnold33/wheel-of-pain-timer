@@ -1,5 +1,6 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded'
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import {
   Alert,
   Box,
@@ -11,7 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   authoringDraftFromPack,
   buildPersonalityPrompt,
@@ -35,10 +36,6 @@ const categoryPresentation: Record<
   PersonalityAuthoringCategory,
   { readonly label: string; readonly description: string }
 > = {
-  general: {
-    label: 'General fallback',
-    description: 'Used when a more specific category has no sayings.',
-  },
   work: {
     label: 'During work',
     description: 'Spoken at the beginning of each work round.',
@@ -54,7 +51,9 @@ const categoryPresentation: Record<
 }
 
 const lineCount = (value: string) =>
-  value.split(/\r?\n/u).filter((line) => line.trim().length > 0).length
+  value
+    .split(/\r?\n/u)
+    .filter((line) => line.trim().replace(/^•\s*/u, '').length > 0).length
 
 export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps) {
   const [draft, setDraft] = useState(loadPersonalityAuthoringDraft)
@@ -62,9 +61,15 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
   const [notice, setNotice] = useState<string>()
   const [showPrompt, setShowPrompt] = useState(false)
   const [busy, setBusy] = useState(false)
+  const errorRef = useRef<HTMLDivElement>(null)
   const prompt = useMemo(() => buildPersonalityPrompt(draft), [draft])
 
   useEffect(() => savePersonalityAuthoringDraft(draft), [draft])
+  useEffect(() => {
+    if (error !== undefined) {
+      errorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+    }
+  }, [error])
 
   const update = <Key extends keyof PersonalityAuthoringDraft>(
     key: Key,
@@ -129,12 +134,12 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
             </Typography>
             <Typography color="text.secondary">
               {draft.step === 'review'
-                ? 'One saying per line. Edit anything before saving.'
+                ? 'Review each saying and edit anything before saving.'
                 : 'Shape an idea here, then use ChatGPT to write the sayings.'}
             </Typography>
           </Stack>
 
-          {error && <Alert severity="error">{error}</Alert>}
+          {error && <Alert ref={errorRef} severity="error">{error}</Alert>}
           {notice && <Alert severity="success">{notice}</Alert>}
 
           {draft.step === 'ideas' ? (
@@ -206,15 +211,30 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
 
               <Divider>then</Divider>
 
-              <TextField
-                fullWidth
-                multiline
-                minRows={9}
-                label="Paste ChatGPT response"
-                placeholder='Paste the generated JSON here. Plain text with one saying per line also works.'
-                value={draft.response}
-                onChange={(event) => update('response', event.target.value)}
-              />
+              <Stack spacing={1}>
+                <Button
+                  color="error"
+                  startIcon={<DeleteOutlineRoundedIcon />}
+                  disabled={draft.response.length === 0}
+                  onClick={() => {
+                    update('response', '')
+                    setError(undefined)
+                    setNotice(undefined)
+                  }}
+                  sx={{ alignSelf: 'flex-end' }}
+                >
+                  Clear pasted response
+                </Button>
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={9}
+                  label="Paste ChatGPT response"
+                  placeholder='Paste the generated JSON here. Plain text with one work saying per line also works.'
+                  value={draft.response}
+                  onChange={(event) => update('response', event.target.value)}
+                />
+              </Stack>
               <Button
                 variant="contained"
                 disabled={draft.response.trim().length === 0}
@@ -248,7 +268,8 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
                     <TextField
                       fullWidth
                       multiline
-                      minRows={4}
+                      minRows={6}
+                      maxRows={12}
                       label={`${categoryPresentation[category].label} sayings`}
                       value={draft.sayings[category]}
                       onChange={(event) =>
@@ -257,7 +278,7 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
                           sayings: { ...current.sayings, [category]: event.target.value },
                         }))
                       }
-                      helperText="One saying per line"
+                      helperText="Each bullet is one saying. Bullets are not saved or spoken."
                     />
                   </Stack>
                 </Paper>

@@ -110,8 +110,10 @@ reused for a different behavior.
   and editing categorized sayings, and choosing Save & select. The app does not
   contact the assistant or transmit the authoring fields itself.
 - **C-018:** Pasted authoring content accepts a valid v1 JSON object with or
-  without a Markdown code fence, or plain text as general sayings. It uses the
-  same validation and conflict rules as file import.
+  without a Markdown code fence, or plain text as work sayings. New authoring
+  presents and creates only work, cycleRest, and finished sayings; `general`
+  remains supported for backward compatibility with existing and plain-text
+  file packs. It uses the same validation and conflict rules as file import.
 - **C-019:** An unfinished Personality authoring draft is saved locally as it
   changes and is recovered after the PWA reloads. Successful save clears it.
 
