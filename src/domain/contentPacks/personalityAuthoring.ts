@@ -145,7 +145,9 @@ export function buildPersonalityPrompt(
     '',
     'Generate exactly 20 work sayings, 8 cycle-rest sayings, and 5 finished sayings.',
     '',
-    'Return only valid JSON with exactly this structure:',
+    'Return exactly one fenced code block marked json. Do not write anything before or after the code block.',
+    'Inside that code block, return valid JSON with exactly this structure:',
+    '```json',
     '{',
     '  "schemaVersion": 1,',
     `  "name": ${JSON.stringify(draft.name.trim())},`,
@@ -155,10 +157,11 @@ export function buildPersonalityPrompt(
     '    "finished": ["saying for normal workout completion", "..."]',
     '  }',
     '}',
+    '```',
     '',
     'Every array item must be a JSON string of 240 characters or fewer.',
     'Return a raw JSON object, not a quoted or escaped JSON string. Use ordinary spaces, not HTML entities such as &#x20; or &nbsp;. Do not add backslashes at line endings or escape the JSON object as text. Include both closing braces so the response can be parsed directly with JSON.parse.',
-    'Do not include explanations or code fences. Before responding, verify that the complete response is valid JSON.',
+    'Before responding, verify that the complete content inside the code block is valid JSON. The response must consist only of that code block.',
   ].join('\n')
 }
 
