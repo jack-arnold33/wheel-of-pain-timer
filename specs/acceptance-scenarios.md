@@ -475,7 +475,8 @@ And the unfinished authoring draft is cleared
 ```gherkin
 Given the user is creating a Personality
 When the user pastes non-empty plain text with one saying per line
-Then the lines are normalized into the general category for review
+Then the lines are normalized into the work category for review
+And general is not presented as a new-authoring category
 ```
 
 ### Import a valid plain-text pack locally

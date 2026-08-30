@@ -32,6 +32,8 @@ describe('Personality authoring', () => {
     expect(prompt).toContain('Use ordinary spaces, not HTML entities')
     expect(prompt).toContain('Include both closing braces')
     expect(prompt).toContain('verify that the complete response is valid JSON')
+    expect(prompt).not.toContain('"general"')
+    expect(prompt).not.toContain('general sayings')
   })
 
   it('parses JSON copied with a Markdown fence', () => {
@@ -48,10 +50,10 @@ describe('Personality authoring', () => {
     })
   })
 
-  it('accepts plain pasted lines as general sayings', () => {
+  it('accepts plain pasted lines as work sayings', () => {
     expect(parsePastedPersonality('Move.\nAgain.\n', 'Quick Pack')).toMatchObject({
       name: 'Quick Pack',
-      sayings: { general: ['Move.', 'Again.'] },
+      sayings: { work: ['Move.', 'Again.'] },
     })
   })
 
@@ -83,6 +85,21 @@ describe('Personality authoring', () => {
       name: 'Editable',
       sayings: { work: ['First.', 'Second.'], cycleRest: ['Breathe.'] },
       extensions: {},
+    })
+  })
+
+  it('moves a legacy general-only paste into work for new authoring', () => {
+    const draft = authoringDraftFromPack(emptyPersonalityAuthoringDraft(), {
+      schemaVersion: 1,
+      name: 'Legacy Paste',
+      sayings: { general: ['Keep moving.'] },
+      extensions: {},
+    })
+
+    expect(draft.sayings).toEqual({
+      work: '• Keep moving.',
+      cycleRest: '',
+      finished: '',
     })
   })
 

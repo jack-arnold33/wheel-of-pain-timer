@@ -207,8 +207,7 @@ describe('ContentPackLibrary', () => {
       step: 'review',
       name: pack.name,
       sayings: {
-        general: 'A replacement.',
-        work: '',
+        work: 'A replacement.',
         cycleRest: '',
         finished: '',
       },
@@ -237,7 +236,7 @@ describe('ContentPackLibrary', () => {
 
     await waitFor(() => expect(onReplace).toHaveBeenCalledWith(
       pack.id,
-      expect.objectContaining({ name: pack.name, sayings: { general: ['A replacement.'] } }),
+      expect.objectContaining({ name: pack.name, sayings: { work: ['A replacement.'] } }),
     ))
     await waitFor(() =>
       expect(localStorage.getItem(PERSONALITY_AUTHORING_DRAFT_KEY)).toBeNull(),
