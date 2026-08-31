@@ -124,14 +124,24 @@ controls, timer states, and accessibility semantics independent of that theme.
 Themes may supply visual tokens and decorative assets; they do not supply
 workout logic or user content.
 
-MVP may include only the default theme. When only one theme is available,
-Settings need not show a redundant theme selector. If additional built-in
-themes are added later, an **Appearance** setting lists them by name and stores
-the selected stable theme identifier as a device-local preference. The choice
-applies across all screens and is included with preferences in backup and
-restore. If a restored or previously selected identifier is unavailable, the
-app uses the default theme and reports the fallback in Settings without
-blocking timer use.
+Settings begins with an **Appearance** section containing responsive visual
+previews for four built-in themes:
+
+- **Wheel of Pain**: warm bronze and charcoal
+- **Cold Steel**: industrial blue-black and ice blue
+- **Neon Circuit**: deep indigo with cyan and magenta
+- **Day Shift**: warm daylight surfaces and safety red
+
+Choosing a preview stores its stable identifier as a device-local preference
+and applies the theme immediately across all screens. The choice is included
+with preferences in backup and restore. If a restored or previously selected
+identifier is unavailable, the app uses Wheel of Pain and reports the fallback
+in Settings without blocking timer use.
+
+Wheel of Pain's display font is packaged with the app. The other themes may
+load a theme-specific public font while online. Settings explains this boundary,
+and every optional theme retains a readable fallback so font loading never
+becomes a dependency for offline timer use.
 
 ## Routine editor
 
