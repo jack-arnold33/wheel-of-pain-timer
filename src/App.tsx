@@ -16,7 +16,10 @@ import type {
   ContentPackDraft,
 } from './domain/contentPacks/types'
 import type { Participant } from './domain/participants/types'
-import type { AppPreferences } from './domain/preferences/appPreferences'
+import {
+  defaultAppPreferences,
+  type AppPreferences,
+} from './domain/preferences/appPreferences'
 import type { LocalBackup } from './domain/backup/localBackup'
 import { standardRoutineTiming } from './domain/timer/standardRoutine'
 import { buildWorkoutSequence } from './domain/timer/sequence'
@@ -36,7 +39,7 @@ import { WorkoutRunner } from './presentation/WorkoutRunner'
 import { formatClock } from './presentation/timerPresentation'
 import { primeTimerAudio } from './presentation/timerAudio'
 import { primeSpokenMotivation } from './presentation/spokenMotivation'
-import type { AudioPreferencePatch } from './presentation/SettingsScreen'
+import type { SettingsPreferencePatch } from './presentation/SettingsScreen'
 import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeLock'
 
 type Screen =
@@ -74,6 +77,8 @@ interface EditorState {
 
 interface AppProps {
   timerSoundsEnabled?: boolean
+  themeId?: string
+  onPreferencesChanged?: (preferences: AppPreferences) => void
   loadRoutines?: () => Promise<readonly Routine[]>
   createRoutine?: (input: RoutineInput) => Promise<UserRoutine>
   updateRoutine?: (id: string, input: RoutineInput) => Promise<UserRoutine>
@@ -222,6 +227,8 @@ const contentPackConflict = (
 
 export function App({
   timerSoundsEnabled: initialTimerSoundsEnabled = true,
+  themeId = defaultAppPreferences.themeId,
+  onPreferencesChanged,
   loadRoutines = loadStoredRoutines,
   createRoutine = createStoredRoutine,
   updateRoutine = updateStoredRoutine,
@@ -500,6 +507,7 @@ export function App({
           }
         >
           <SettingsScreen
+            themeId={themeId}
             timerSoundsEnabled={timerSoundsEnabled}
             spokenMotivationEnabled={spokenMotivationEnabled}
             allowOnlineVoices={allowOnlineVoices}
@@ -511,13 +519,14 @@ export function App({
               setParticipantReturnScreen('settings')
               setScreen('participants')
             }}
-            onChange={async (patch: Partial<AudioPreferencePatch>) => {
+            onChange={async (patch: Partial<SettingsPreferencePatch>) => {
               const saved = await updatePreferences(patch)
               setTimerSoundsEnabled(saved.timerSoundsEnabled)
               setSpokenMotivationEnabled(saved.spokenMotivationEnabled)
               setAllowOnlineVoices(saved.allowOnlineVoices)
               setSelectedVoiceId(saved.voiceId)
               setSpeechRate(saved.speechRate)
+              onPreferencesChanged?.(saved)
             }}
             onExportBackup={exportLocalBackup}
             onRestoreBackup={restoreLocalBackup}

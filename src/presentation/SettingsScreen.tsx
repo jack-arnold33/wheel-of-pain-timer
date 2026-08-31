@@ -1,4 +1,5 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
 import FileDownloadRoundedIcon from '@mui/icons-material/FileDownloadRounded'
 import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded'
 import UploadFileRoundedIcon from '@mui/icons-material/UploadFileRounded'
@@ -7,6 +8,7 @@ import {
   Alert,
   Box,
   Button,
+  ButtonBase,
   Container,
   Dialog,
   DialogActions,
@@ -35,6 +37,7 @@ import {
   primeSpokenMotivation,
   speakMotivation,
 } from './spokenMotivation'
+import { availableThemes, resolveTheme } from './themes/registry'
 
 export type AudioPreferencePatch = Pick<
   AppPreferences,
@@ -45,11 +48,15 @@ export type AudioPreferencePatch = Pick<
   | 'speechRate'
 >
 
+export type SettingsPreferencePatch = AudioPreferencePatch &
+  Pick<AppPreferences, 'themeId'>
+
 interface SettingsScreenProps extends AudioPreferencePatch {
+  readonly themeId?: string
   readonly participantCount: number
   readonly onBack: () => void
   readonly onParticipants: () => void
-  readonly onChange: (patch: Partial<AudioPreferencePatch>) => Promise<void>
+  readonly onChange: (patch: Partial<SettingsPreferencePatch>) => Promise<void>
   readonly onExportBackup: () => Promise<LocalBackup>
   readonly onRestoreBackup: (backup: LocalBackup) => Promise<void>
 }
@@ -66,6 +73,7 @@ const speechSynthesis = () =>
   typeof window === 'undefined' ? undefined : window.speechSynthesis
 
 export function SettingsScreen({
+  themeId = 'wheel-of-pain',
   timerSoundsEnabled,
   spokenMotivationEnabled,
   allowOnlineVoices,
@@ -111,7 +119,7 @@ export function SettingsScreen({
     (selectedVoice === undefined ||
       (!allowOnlineVoices && selectedVoice.localService !== true))
 
-  const save = async (patch: Partial<AudioPreferencePatch>) => {
+  const save = async (patch: Partial<SettingsPreferencePatch>) => {
     setBusy(true)
     setError(undefined)
     setPreviewNotice(undefined)
@@ -123,6 +131,9 @@ export function SettingsScreen({
       setBusy(false)
     }
   }
+
+  const resolvedTheme = resolveTheme(themeId)
+  const themeFallback = resolvedTheme.id !== themeId
 
   const preview = () => {
     setPreviewNotice(undefined)
@@ -213,6 +224,98 @@ export function SettingsScreen({
               The selected voice is unavailable. Spoken motivation will use an eligible system default.
             </Alert>
           )}
+
+          {themeFallback && (
+            <Alert severity="warning">
+              The saved appearance is unavailable. {resolvedTheme.name} is being used instead.
+            </Alert>
+          )}
+
+          <Paper variant="outlined" sx={{ p: 3 }}>
+            <Stack spacing={2}>
+              <Stack spacing={0.5}>
+                <Typography id="appearance-heading" variant="h5">
+                  Appearance
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Optional theme fonts need a network connection. The timer remains usable with a fallback font offline.
+                </Typography>
+              </Stack>
+              <Box
+                role="radiogroup"
+                aria-labelledby="appearance-heading"
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gap: 1.5,
+                }}
+              >
+                {availableThemes.map((definition) => {
+                  const selected = definition.id === resolvedTheme.id
+                  return (
+                    <ButtonBase
+                      key={definition.id}
+                      role="radio"
+                      aria-checked={selected}
+                      aria-label={`Use ${definition.name} theme`}
+                      disabled={busy}
+                      onClick={() => void save({ themeId: definition.id })}
+                      sx={{
+                        display: 'block',
+                        border: '2px solid',
+                        borderColor: selected ? 'primary.main' : 'divider',
+                        borderRadius: 1,
+                        overflow: 'hidden',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          minHeight: 72,
+                          p: 1.5,
+                          color: definition.preview.text,
+                          bgcolor: definition.preview.background,
+                          borderBottom: '12px solid',
+                          borderBottomColor: definition.preview.primary,
+                        }}
+                      >
+                        <Typography
+                          component="span"
+                          sx={{
+                            display: 'block',
+                            fontFamily: definition.theme.typography.h5.fontFamily,
+                            fontSize: '1.25rem',
+                            fontWeight: 800,
+                          }}
+                        >
+                          {definition.name}
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          p: 1.5,
+                          bgcolor: definition.preview.paper,
+                          color: definition.preview.text,
+                          minHeight: 94,
+                        }}
+                      >
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          sx={{ alignItems: 'flex-start' }}
+                        >
+                          <Typography variant="body2" sx={{ flex: 1, opacity: 0.8 }}>
+                            {definition.description}
+                          </Typography>
+                          {selected && <CheckRoundedIcon color="primary" aria-hidden />}
+                        </Stack>
+                      </Box>
+                    </ButtonBase>
+                  )
+                })}
+              </Box>
+            </Stack>
+          </Paper>
 
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={2}>
