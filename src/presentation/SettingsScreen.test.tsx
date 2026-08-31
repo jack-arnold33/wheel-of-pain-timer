@@ -97,8 +97,9 @@ describe('SettingsScreen', () => {
       'System Default',
     )
     const sectionHeadings = screen.getAllByRole('heading', { level: 5 })
-    expect(sectionHeadings[0]).toHaveTextContent('People')
-    expect(sectionHeadings[1]).toHaveTextContent('Audio')
+    expect(sectionHeadings[0]).toHaveTextContent('Appearance')
+    expect(sectionHeadings[1]).toHaveTextContent('People')
+    expect(sectionHeadings[2]).toHaveTextContent('Audio')
 
     fireEvent.click(screen.getByRole('switch', { name: 'Timer sounds' }))
     await waitFor(() =>
@@ -115,6 +116,63 @@ describe('SettingsScreen', () => {
       { allowOnlineVoices: false, voiceId: null, rate: 1 },
     )
     expect(screen.getByText('2 saved')).toBeInTheDocument()
+  })
+
+  it('shows visual theme choices and persists the selected stable identifier', async () => {
+    const onChange = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <SettingsScreen
+          themeId="wheel-of-pain"
+          timerSoundsEnabled
+          spokenMotivationEnabled
+          allowOnlineVoices={false}
+          voiceId={null}
+          speechRate={1}
+          participantCount={0}
+          onBack={vi.fn()}
+          onParticipants={vi.fn()}
+          onChange={onChange}
+          {...backupHandlers}
+        />
+      </ThemeProvider>,
+    )
+
+    expect(screen.getByRole('radio', { name: 'Use Wheel of Pain theme' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    expect(screen.getAllByRole('radio')).toHaveLength(4)
+    fireEvent.click(screen.getByRole('radio', { name: 'Use Cold Steel theme' }))
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({ themeId: 'cold-steel' }),
+    )
+  })
+
+  it('reports when an unavailable saved theme falls back safely', () => {
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <SettingsScreen
+          themeId="retired-theme"
+          timerSoundsEnabled
+          spokenMotivationEnabled
+          allowOnlineVoices={false}
+          voiceId={null}
+          speechRate={1}
+          participantCount={0}
+          onBack={vi.fn()}
+          onParticipants={vi.fn()}
+          onChange={vi.fn().mockResolvedValue(undefined)}
+          {...backupHandlers}
+        />
+      </ThemeProvider>,
+    )
+
+    expect(
+      screen.getByText(
+        'The saved appearance is unavailable. Wheel of Pain is being used instead.',
+      ),
+    ).toBeInTheDocument()
   })
 
   it('labels online voices and keeps them unavailable without consent', async () => {

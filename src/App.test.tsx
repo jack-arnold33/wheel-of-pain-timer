@@ -79,6 +79,37 @@ describe('App workout flow', () => {
     expect(screen.getByRole('heading', { name: 'Routines' })).toBeInTheDocument()
   })
 
+  it('propagates a saved appearance change to the root theme owner', async () => {
+    const onPreferencesChanged = vi.fn()
+    const updatePreferences = vi.fn().mockImplementation(async (patch) => ({
+      ...defaultAppPreferences,
+      ...patch,
+    }))
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <App
+          loadRoutines={loadRoutines}
+          themeId="wheel-of-pain"
+          updatePreferences={updatePreferences}
+          onPreferencesChanged={onPreferencesChanged}
+        />
+      </ThemeProvider>,
+    )
+
+    await screen.findByRole('heading', { name: 'Routines' })
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    fireEvent.click(
+      await screen.findByRole('radio', { name: 'Use Day Shift theme' }),
+    )
+
+    await waitFor(() =>
+      expect(updatePreferences).toHaveBeenCalledWith({ themeId: 'day-shift' }),
+    )
+    expect(onPreferencesChanged).toHaveBeenCalledWith(
+      expect.objectContaining({ themeId: 'day-shift' }),
+    )
+  })
+
   it('speaks the selected Personality with the active participant snapshot', async () => {
     const quickRoutine: Routine = {
       id: 'routine:spoken',
