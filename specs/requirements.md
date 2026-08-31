@@ -138,6 +138,10 @@ reused for a different behavior.
   routines, packs, preferences, and participants. Restore shows the proposed
   replacement, validates the complete backup, and atomically replaces user data
   without replacing the app-supplied protected preset.
+- **D-009:** Activating an optional built-in theme may request that theme's
+  public font resources from a font provider. The request contains no routine,
+  content-pack, participant, or spoken-saying data, and unavailable font
+  resources do not block app or timer use.
 
 ## PWA and offline operation
 
@@ -172,11 +176,17 @@ reused for a different behavior.
   may define visual tokens and decorative assets, but it does not change screen
   structure, control meaning, timer behavior, stored routines, or content-pack
   behavior. Every theme must continue to satisfy A-001 through A-004.
-- **A-009:** MVP may ship with only one built-in default theme and need not show
-  a theme selector in that state. The active theme is represented by a stable
-  identifier in device-local preferences so additional built-in themes can be
-  offered later without changing timer or content data. An unavailable theme
-  identifier falls back to the default theme without blocking app use.
+- **A-009:** The app provides the built-in Wheel of Pain, Cold Steel, Neon
+  Circuit, and Day Shift themes in an Appearance selector. The active theme is
+  represented by a stable identifier in device-local preferences, applies
+  across every screen, and is included in backup and restore. An unavailable
+  identifier falls back to Wheel of Pain, reports the fallback in Settings, and
+  never blocks app use.
+- **A-010:** Wheel of Pain's display font is packaged with the application.
+  Optional built-in theme fonts may load from the network only while their
+  theme is active and use readable system-font fallbacks when offline or
+  unavailable. Timer numerals and essential controls remain legible throughout
+  font loading and fallback.
 
 ## Acceptance scenarios
 

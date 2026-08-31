@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Decision date:** 2026-08-27
-- **Last amended:** 2026-08-27 (adopt Material UI for components and themes)
+- **Last amended:** 2026-08-31 (record built-in themes and font delivery)
 - **Scope:** Wheel of Pain Timer MVP
 - **Evidence:** [`pwa-risk-lab-findings.md`](pwa-risk-lab-findings.md)
 
@@ -55,6 +55,15 @@ under the stable identifier required by A-009. The registry supplies the theme
 to the root `ThemeProvider`. Adding a built-in theme must not change screen
 structure, component meaning, timer behavior, or stored domain data. If a
 stored identifier is unavailable, the registry supplies the built-in default.
+The registry currently provides Wheel of Pain, Cold Steel, Neon Circuit, and
+Day Shift plus preview metadata for the Settings selector.
+
+Barlow Condensed weights used by Wheel of Pain are packaged WOFF2 application
+assets and precached with the application shell. Optional theme definitions may
+identify a public font stylesheet that the root presentation layer loads only
+while that theme is active. Every optional font stack ends in local system-font
+fallbacks; loading or retaining a remote font is not part of the offline
+application guarantee.
 
 ## Runtime model
 
@@ -104,6 +113,9 @@ stored identifier is unavailable, the registry supplies the built-in default.
 - Theme configuration may change appearance and decorative assets, but it must
   not encode workout state transitions or make essential meaning depend on
   color or animation.
+- Optional theme font providers receive an ordinary public asset request when
+  the corresponding theme is active. No private workout or participant content
+  is included, and font-provider availability is never required for timer use.
 - Native-only capabilities are unavailable unless this decision is revisited.
 
 ## Not selected

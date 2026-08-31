@@ -727,22 +727,14 @@ Scenario: User explicitly allows online voices
 
 ## Presentation and accessibility
 
-### Theme support is extensible and safe with a one-theme MVP
+### Built-in themes are selectable, persistent, and safe
 
-**Requirements:** A-001, A-002, A-003, A-004, A-008, A-009, D-001, D-008
+**Requirements:** A-001, A-002, A-003, A-004, A-008, A-009, A-010, D-001, D-008, D-009
 
 ```gherkin
-Scenario: MVP has only its default theme
-  Given only the built-in default theme is available
-  When the user uses any app screen
-  Then the default theme is applied consistently
-  And Settings need not show a theme selector
-  And screen structure, control meaning, and timer behavior remain independent
-    of theme-specific decoration
-
-Scenario: A later release provides another built-in theme
-  Given more than one built-in theme is available
-  When the user selects a different theme in Appearance
+Scenario Outline: Select a built-in theme
+  Given Appearance shows Wheel of Pain, Cold Steel, Neon Circuit, and Day Shift
+  When the user selects <theme>
   Then the selected stable theme identifier is stored in local preferences
   And the theme applies across app screens without changing routine, pack, or
     active-workout data
@@ -750,12 +742,27 @@ Scenario: A later release provides another built-in theme
   And all essential states and controls continue to satisfy the same contrast,
     non-color, readability, and reduced-motion requirements
 
+  Examples:
+    | theme         |
+    | Wheel of Pain |
+    | Cold Steel    |
+    | Neon Circuit  |
+    | Day Shift     |
+
 Scenario: A selected theme is unavailable
   Given stored preferences refer to a theme identifier the app cannot provide
   When the app loads those preferences
   Then the built-in default theme is used
   And Settings reports the fallback
   And the app and timer remain usable
+
+Scenario: An optional theme font is unavailable
+  Given Cold Steel, Neon Circuit, or Day Shift is selected
+  And its public font resource cannot be loaded
+  When the app is used offline
+  Then a readable system-font fallback is used
+  And essential timer content and controls remain legible and usable
+  And no routine, pack, participant, or saying data is sent in a font request
 ```
 
 ### The landscape timer remains TV-readable

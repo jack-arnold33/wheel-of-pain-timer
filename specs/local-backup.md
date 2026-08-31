@@ -55,6 +55,12 @@ Content-pack entries use the stored version 1 pack fields: `id`,
 `schemaVersion`, `name`, `sayings`, `extensions`, `createdAt`, and `updatedAt`.
 Participant entries use `id`, `name`, `createdAt`, and `updatedAt`.
 
+Version 1 recognizes the built-in theme identifiers `wheel-of-pain`,
+`cold-steel`, `neon-circuit`, and `day-shift`. A backup may still contain an
+unknown string for forward compatibility; restore preserves it, while the app
+uses Wheel of Pain and reports the fallback until that identifier becomes
+available or the user selects another theme.
+
 ## Validation and replacement
 
 - Every collection and preference field is required.

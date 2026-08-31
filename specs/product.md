@@ -5,8 +5,10 @@
 - Product name: **Wheel of Pain Timer**
 - Repository name: `wheel-of-pain-timer`
 - Name inspiration: the group's workouts and *Conan the Barbarian*
-- Initial theme: playful garage workouts with an optional 1980s
-  sword-and-sorcery visual style
+- Default theme: **Wheel of Pain**, a playful garage-workout interpretation of
+  1980s sword-and-sorcery
+- Additional built-in themes: **Cold Steel**, **Neon Circuit**, and
+  **Day Shift**
 - Voice: encouraging, ridiculous, affectionate, and never cruel
 
 Display-name refinements can be made without changing the product specification.
@@ -33,7 +35,10 @@ decision are recorded in
 product direction without turning the disposable risk-lab code into production
 scaffolding. The application UI uses React with TypeScript and Material UI;
 MUI's component and theme systems provide the shared presentation foundation
-while timer and persistence behavior remain independent of the UI library.
+while timer and persistence behavior remain independent of the UI library. The
+default display font is packaged for offline use. Optional built-in themes may
+request public font assets when online and must retain readable system-font
+fallbacks when those assets are unavailable.
 
 ## Intended users
 
@@ -67,8 +72,8 @@ Version 1 does not require accounts or a centralized list of users.
 - Provide audible and visual timer cues
 - Keep the display awake when supported
 - Store routines and preferences locally
-- Use a themeable presentation system; MVP may ship with only one built-in
-  theme and no theme picker
+- Offer Wheel of Pain, Cold Steel, Neon Circuit, and Day Shift as selectable
+  built-in themes with a device-local preference and safe default fallback
 - Configure a device-local participant roster for spoken motivation
 - Import, select, and remove local-first content packs
 - Save imported content packs on the current device for later selection or
@@ -86,7 +91,7 @@ Version 1 does not require accounts or a centralized list of users.
 - Apple Health integration
 - Social feeds, leaderboards, or workout analytics
 - Complex nested workout programming
-- Shipping multiple selectable themes or user-authored themes
+- User-authored themes or arbitrary custom color and font editing
 
 ## Success criteria
 
@@ -107,11 +112,12 @@ Version 1 does not require accounts or a centralized list of users.
 - Adding a built-in theme does not require changes to timer behavior, routine
   data, content packs, or screen semantics, and every theme preserves the same
   accessibility requirements.
+- Selecting an optional theme never makes the timer depend on a network-loaded
+  font; a readable fallback remains available offline.
 
 ## Open product decisions
 
-- Exact retro visual direction: sword-and-sorcery workout tape, cassette deck,
-  VHS, arcade, or a restrained mixture
+- Whether to add more built-in themes or user-authored appearance controls
 - Whether to add built-in routine presets beyond **Wheel of Pain**
 - Whether a workout operator can temporarily suppress sayings mid-session
 - Which voice and sound cues are both desirable and reliable on iOS

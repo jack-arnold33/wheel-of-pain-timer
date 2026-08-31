@@ -7,9 +7,30 @@ rest intervals and runs as an installable web app on a phone.
 
 ## Project status
 
-The product specification, PWA delivery model, and initial technical baseline
-are accepted. MVP implementation is underway. Product choices are final only
-when recorded in the specifications.
+The documented MVP is implemented. The product specification, PWA delivery
+model, and technical baseline are accepted, and the automated test and
+production build suites cover the repository implementation. Release validation
+on the supported physical iPhone, Home Screen launch modes, and a mirrored
+display remains required before calling a deployment supported.
+
+Product choices are final only when recorded in the specifications.
+
+## Included features
+
+- A protected **Wheel of Pain** routine plus locally saved custom routines
+- Accurate pause, resume, skip, completion, and interrupted-workout recovery
+- Essential timer audio, optional spoken Personalities, and participant rotation
+- Local-first Personality authoring, import, selection, and management
+- Portable backup and atomic restore of user routines, packs, participants,
+  attendance, and preferences
+- Four selectable appearances: **Wheel of Pain**, **Cold Steel**,
+  **Neon Circuit**, and **Day Shift**
+- Installable PWA delivery with offline application resources, safe update
+  activation, and capability notices
+
+The default Wheel of Pain display font is packaged with the application.
+Optional theme fonts are requested only when their theme is active and fall
+back to usable system fonts without blocking offline timer operation.
 
 ## Development
 
