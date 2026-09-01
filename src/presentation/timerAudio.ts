@@ -70,17 +70,17 @@ const countdownTone = (
   startsAt: number,
 ) => {
   if (second === 3) {
-    tone(context, 700, startsAt, 0.16, 0.38)
+    tone(context, 700, startsAt, 0.16, 0.62)
     return
   }
   if (second === 2) {
-    tone(context, 880, startsAt, 0.18, 0.44)
+    tone(context, 880, startsAt, 0.18, 0.7)
     return
   }
 
   // The last warning is longer, louder, and harmonically richer so it remains
   // recognizable when music and workout noise mask a simple sine tone.
-  tone(context, 1_100, startsAt, 0.26, 0.52)
+  tone(context, 1_100, startsAt, 0.26, 0.76)
   tone(context, 1_650, startsAt, 0.2, 0.18)
 }
 
@@ -94,9 +94,11 @@ export function playTimerCues(cues: readonly TimerCue[]) {
   let startsAt = context.currentTime
   for (const cue of cues) {
     if (cue.kind === 'transition') {
-      tone(context, 880, startsAt, 0.13, 0.48)
-      tone(context, 1_320, startsAt + 0.14, 0.2, 0.56)
-      startsAt += 0.38
+      tone(context, 880, startsAt, 0.16, 0.75)
+      tone(context, 1_760, startsAt, 0.13, 0.14)
+      tone(context, 1_320, startsAt + 0.17, 0.28, 0.85)
+      tone(context, 2_640, startsAt + 0.17, 0.22, 0.1)
+      startsAt += 0.48
     } else {
       countdownTone(context, cue.second, startsAt)
       startsAt += 0.3

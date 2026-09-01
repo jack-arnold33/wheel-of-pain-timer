@@ -85,7 +85,7 @@ describe('timer audio', () => {
     ])
 
     expect(audio.frequencies).toEqual([700, 880, 1_100, 1_650])
-    expect(audio.peakGains).toEqual([0.38, 0.44, 0.52, 0.18])
+    expect(audio.peakGains).toEqual([0.62, 0.7, 0.76, 0.18])
     expect(audio.durations).toHaveLength(4)
     expect(audio.durations[0]).toBeCloseTo(0.16)
     expect(audio.durations[1]).toBeCloseTo(0.18)
@@ -93,16 +93,18 @@ describe('timer audio', () => {
     expect(audio.durations[3]).toBeCloseTo(0.2)
   })
 
-  it('uses a strong two-tone transition cue', async () => {
+  it('uses a strong harmonic two-tone transition cue', async () => {
     const audio = installAudioContext()
     const { playTimerCues } = await import('./timerAudio')
 
     playTimerCues([{ kind: 'transition' }])
 
-    expect(audio.frequencies).toEqual([880, 1_320])
-    expect(audio.peakGains).toEqual([0.48, 0.56])
-    expect(audio.durations).toHaveLength(2)
-    expect(audio.durations[0]).toBeCloseTo(0.13)
-    expect(audio.durations[1]).toBeCloseTo(0.2)
+    expect(audio.frequencies).toEqual([880, 1_760, 1_320, 2_640])
+    expect(audio.peakGains).toEqual([0.75, 0.14, 0.85, 0.1])
+    expect(audio.durations).toHaveLength(4)
+    expect(audio.durations[0]).toBeCloseTo(0.16)
+    expect(audio.durations[1]).toBeCloseTo(0.13)
+    expect(audio.durations[2]).toBeCloseTo(0.28)
+    expect(audio.durations[3]).toBeCloseTo(0.22)
   })
 })
