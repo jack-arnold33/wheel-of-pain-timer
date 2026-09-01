@@ -46,13 +46,14 @@ function tone(
   frequency: number,
   startsAt: number,
   durationSeconds: number,
+  peakGain: number,
 ) {
   const oscillator = context.createOscillator()
   const gain = context.createGain()
   oscillator.type = 'sine'
   oscillator.frequency.setValueAtTime(frequency, startsAt)
   gain.gain.setValueAtTime(0.0001, startsAt)
-  gain.gain.exponentialRampToValueAtTime(0.18, startsAt + 0.01)
+  gain.gain.exponentialRampToValueAtTime(peakGain, startsAt + 0.01)
   gain.gain.exponentialRampToValueAtTime(
     0.0001,
     startsAt + durationSeconds,
@@ -61,6 +62,26 @@ function tone(
   gain.connect(context.destination)
   oscillator.start(startsAt)
   oscillator.stop(startsAt + durationSeconds)
+}
+
+const countdownTone = (
+  context: AudioContext,
+  second: number,
+  startsAt: number,
+) => {
+  if (second === 3) {
+    tone(context, 700, startsAt, 0.16, 0.38)
+    return
+  }
+  if (second === 2) {
+    tone(context, 880, startsAt, 0.18, 0.44)
+    return
+  }
+
+  // The last warning is longer, louder, and harmonically richer so it remains
+  // recognizable when music and workout noise mask a simple sine tone.
+  tone(context, 1_100, startsAt, 0.26, 0.52)
+  tone(context, 1_650, startsAt, 0.2, 0.18)
 }
 
 export function playTimerCues(cues: readonly TimerCue[]) {
@@ -73,12 +94,12 @@ export function playTimerCues(cues: readonly TimerCue[]) {
   let startsAt = context.currentTime
   for (const cue of cues) {
     if (cue.kind === 'transition') {
-      tone(context, 880, startsAt, 0.1)
-      tone(context, 1_320, startsAt + 0.11, 0.14)
-      startsAt += 0.3
+      tone(context, 880, startsAt, 0.13, 0.48)
+      tone(context, 1_320, startsAt + 0.14, 0.2, 0.56)
+      startsAt += 0.38
     } else {
-      tone(context, cue.second === 1 ? 1_100 : 760, startsAt, 0.09)
-      startsAt += 0.12
+      countdownTone(context, cue.second, startsAt)
+      startsAt += 0.3
     }
   }
 }
