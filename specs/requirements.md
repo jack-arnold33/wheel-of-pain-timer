@@ -47,8 +47,8 @@ reused for a different behavior.
   not silently create an incorrect timer state.
 - **T-008:** The active workout emphasizes the current phase and remaining time
   in portrait and landscape layouts, including when mirrored to a television.
-- **T-009:** The app shows work intervals remaining plus the current cycle,
-  round, and exercise position.
+- **T-009:** The app shows total scheduled workout time remaining, work
+  intervals left, and the current cycle, round, and exercise position.
 - **T-010:** Play/Pause remains visible throughout an active workout; Skip and
   End Workout are secondary actions.
 - **T-011:** Countdown cues play at three, two, and one seconds remaining. The

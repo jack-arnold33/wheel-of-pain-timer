@@ -27,10 +27,6 @@ export function formatClock(milliseconds: number): string {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-export function nextPhase(phases: readonly WorkoutPhase[], phaseIndex: number): WorkoutPhase | undefined {
-  return phases[phaseIndex + 1]
-}
-
 export function workIntervalsRemaining(state: WorkoutState): number {
   if (state.status === 'complete') return 0
   return state.phases

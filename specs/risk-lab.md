@@ -338,10 +338,9 @@ Use a neutral layout containing only representative product hierarchy:
 
 1. Large remaining time
 2. Current phase
-3. Work intervals remaining
+3. Total workout time remaining with work intervals left immediately below it
 4. Cycle, round, and exercise position
-5. Next phase
-6. Play/Pause plus secondary Skip and End controls
+5. Play/Pause plus secondary Skip and End controls
 
 This fixture validates information density and safe placement, not final visual
 design.
