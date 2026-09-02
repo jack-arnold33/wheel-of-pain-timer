@@ -4,9 +4,9 @@ import { buildWorkoutSequence } from '../domain/timer/sequence'
 import { standardRoutineTiming } from '../domain/timer/standardRoutine'
 import {
   formatClock,
-  nextPhase,
   phaseLabel,
   phasePositionLines,
+  remainingScheduledMs,
   workIntervalsRemaining,
 } from './timerPresentation'
 
@@ -33,7 +33,16 @@ describe('timer presentation', () => {
     expect(workIntervalsRemaining(firstWork)).toBe(47)
   })
 
-  it('presents position and next-phase context', () => {
+  it('totals the current phase remainder and every future phase', () => {
+    const initial = startWorkout(phases, 0)
+    const elapsed = { ...initial, phaseIndex: 1, elapsedInPhaseMs: 5_000 }
+
+    expect(remainingScheduledMs(elapsed)).toBe(
+      phases.slice(1).reduce((total, phase) => total + phase.durationMs, 0) - 5_000,
+    )
+  })
+
+  it('presents position context', () => {
     const firstWork = phases[1]
     expect(firstWork).toBeDefined()
     if (firstWork === undefined) return
@@ -43,6 +52,5 @@ describe('timer presentation', () => {
       'Round 1 of 4',
       'Cycle 1 of 4',
     ])
-    expect(nextPhase(phases, 1)?.kind).toBe('exerciseRest')
   })
 })

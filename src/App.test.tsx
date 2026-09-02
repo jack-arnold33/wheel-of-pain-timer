@@ -468,6 +468,11 @@ describe('App workout flow', () => {
 
     expect(screen.getByRole('heading', { name: 'Work' })).toBeInTheDocument()
     expect(screen.getByLabelText('Time remaining')).toHaveTextContent('00:10')
+    expect(screen.getByLabelText('Workout time remaining')).toHaveTextContent(
+      '00:10 remaining',
+    )
+    expect(screen.getByText('0 intervals left')).toBeInTheDocument()
+    expect(screen.queryByText(/^Next:/u)).not.toBeInTheDocument()
   })
 
   it('launches the protected routine and guards ending it', async () => {
@@ -479,6 +484,11 @@ describe('App workout flow', () => {
 
     expect(screen.getByRole('heading', { name: 'Prepare' })).toBeInTheDocument()
     expect(screen.getByLabelText('Time remaining')).toHaveTextContent('00:10')
+    expect(screen.getByLabelText('Workout time remaining')).toHaveTextContent(
+      '41:10 remaining',
+    )
+    expect(screen.getByText('48 intervals left')).toBeInTheDocument()
+    expect(screen.queryByText(/^Next:/u)).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
     expect(screen.getByText('Paused')).toBeInTheDocument()

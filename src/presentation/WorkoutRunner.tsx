@@ -36,7 +36,6 @@ import type { Participant } from '../domain/participants/types'
 import { MotivationSession } from '../domain/motivation/session'
 import {
   formatClock,
-  nextPhase,
   phaseLabel,
   phasePositionLines,
   remainingScheduledMs,
@@ -289,15 +288,12 @@ export function WorkoutRunner({
   if (phase === undefined) return null
 
   const remainingMs = remainingPhaseMs(workout)
-  const followingPhase = nextPhase(workout.phases, workout.phaseIndex)
+  const workoutRemainingMs = remainingScheduledMs(workout)
   const isPaused = workout.status === 'paused'
   const isResuming = workout.status === 'resuming'
   const primaryControlLabel = workout.status === 'running' || isResuming ? 'Pause' : 'Resume'
   const progress = Math.min(100, Math.max(0, (workout.elapsedInPhaseMs / phase.durationMs) * 100))
   const positionLines = phasePositionLines(phase, timing)
-  const nextLabel = followingPhase
-    ? `Next: ${phaseLabel(followingPhase.kind)}`
-    : 'Next: Complete'
 
   const pauseAt = (atMs: number) => {
     setClockMs(atMs)
@@ -467,37 +463,37 @@ export function WorkoutRunner({
               justifyContent: 'space-between',
               '@media (orientation: landscape) and (max-height: 600px)': {
                 display: 'grid',
-                gridTemplateColumns: '1fr auto 1fr',
+                gridTemplateColumns: '1fr 1fr',
                 alignItems: 'center',
                 columnGap: 2,
               },
             }}
           >
-            <Typography
+            <Stack
+              spacing={0}
               sx={{
-                fontWeight: 700,
+                alignItems: { xs: 'center', sm: 'flex-start' },
                 '@media (orientation: landscape) and (max-height: 600px)': {
-                  fontSize: '1.25rem',
                   justifySelf: 'start',
+                  alignItems: 'flex-start',
                 },
               }}
             >
-              {workIntervalsRemaining(workout)} work intervals remaining
-            </Typography>
-            <Typography
-              color="text.secondary"
-              sx={{
-                display: 'none',
-                '@media (orientation: landscape) and (max-height: 600px)': {
-                  display: 'block',
-                  fontSize: '1.25rem',
-                  fontWeight: 600,
+              <Typography
+                aria-label="Workout time remaining"
+                sx={{
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                  fontWeight: 800,
+                  fontVariantNumeric: 'tabular-nums',
                   whiteSpace: 'nowrap',
-                },
-              }}
-            >
-              {nextLabel}
-            </Typography>
+                }}
+              >
+                {formatClock(workoutRemainingMs)} remaining
+              </Typography>
+              <Typography color="text.secondary" sx={{ fontWeight: 700 }}>
+                {workIntervalsRemaining(workout)} intervals left
+              </Typography>
+            </Stack>
             {positionLines.length > 0 && (
               <Stack
                 spacing={0}
@@ -528,17 +524,6 @@ export function WorkoutRunner({
             spacing={2}
             sx={{ alignItems: 'center', justifyContent: 'center' }}
           >
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                '@media (orientation: landscape) and (max-height: 600px)': {
-                  display: 'none',
-                },
-              }}
-            >
-              {nextLabel}
-            </Typography>
             <Stack
               direction="row"
               spacing={1}

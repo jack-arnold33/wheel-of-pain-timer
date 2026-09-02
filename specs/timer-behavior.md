@@ -98,12 +98,16 @@ The visual hierarchy is:
 
 1. Remaining time for the current phase
 2. Current phase: Prepare, Work, Rest, Cycle Rest, Cooldown, or Complete
-3. Work intervals remaining
-4. Current cycle, round, and exercise position
-5. Next phase
+3. Total scheduled workout time remaining
+4. Work intervals left
+5. Current cycle, round, and exercise position
 6. Workout controls
 
-Work intervals remaining excludes a currently active work interval. It
+Total workout time remaining includes the unelapsed portion of the current
+phase and every scheduled future phase. It does not decrease while paused or
+during the resume countdown, and skipped phase time is removed immediately.
+
+Work intervals left excludes a currently active work interval. It
 decreases when a new Work phase begins and does not change during the rest that
 follows. Cycle, round, and exercise position provide supporting context.
 
@@ -111,9 +115,6 @@ Exercise names are neither configured nor displayed.
 
 The active-screen label **Rest** denotes the configured Exercise Rest phase;
 **Cycle Rest** identifies the longer between-cycle phase.
-
-The next phase appears as secondary information, for example `Next: Rest`. It
-must not compete visually with the current phase, remaining time, or progress.
 
 ## Countdown cues and phase transitions
 

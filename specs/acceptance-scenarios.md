@@ -54,7 +54,7 @@ Round 4: Work A -> Rest -> Work B -> Rest -> Work C -> Cycle Rest
 ```
 
 The final cycle substitutes `Complete` for the final `Cycle Rest`. On entry to
-the first Work, Work intervals remaining is 47; on entry to the last Work it is
+the first Work, intervals left is 47; on entry to the last Work it is
 0. The displayed cycle, round, and exercise position match the active Work or
 the Work most recently completed during its following rest.
 
@@ -804,7 +804,7 @@ Scenario: An optional theme font is unavailable
 Given an active workout is shown in landscape and mirrored to a television
 When the phase or progress changes
 Then remaining time and current phase dominate the display
-And Work intervals remaining, cycle, round, exercise position, and Next are legible
+And total workout time remaining, intervals left, cycle, round, and exercise position are legible
 And Play/Pause remains visible while Skip Phase and End Workout remain secondary
 And no essential meaning depends only on color, sound, or animation
 And reduced-motion preference removes or reduces decorative motion without
