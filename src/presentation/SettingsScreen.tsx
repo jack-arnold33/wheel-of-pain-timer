@@ -117,6 +117,7 @@ export function SettingsScreen({
   const [apiKey, setApiKey] = useState('')
   const [acknowledgeLocalKey, setAcknowledgeLocalKey] = useState(false)
   const [credentialBusy, setCredentialBusy] = useState(false)
+  const [configureOnlineVoice, setConfigureOnlineVoice] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -237,6 +238,7 @@ export function SettingsScreen({
       await openAiCredentialRepository.remove()
       setCredential({ configured: false })
       setApiKey('')
+      setConfigureOnlineVoice(false)
       if (allowOnlineVoices) await save({ allowOnlineVoices: false, voiceId: null })
       setPreviewNotice('OpenAI API key removed from this device.')
     } catch {
@@ -535,17 +537,20 @@ export function SettingsScreen({
               <FormControl>
                 <RadioGroup
                   aria-label="Motivational voice output"
-                  value={allowOnlineVoices ? 'openai' : 'device'}
+                  value={allowOnlineVoices || configureOnlineVoice ? 'openai' : 'device'}
                   onChange={(_, value) => {
                     if (value === 'openai') {
-                      setConfirmOnlineVoices(true)
+                      setConfigureOnlineVoice(true)
                       return
                     }
+                    setConfigureOnlineVoice(false)
                     appAudioPlayer.cancelSpeech()
-                    void save({
-                      allowOnlineVoices: false,
-                      voiceId: null,
-                    })
+                    if (allowOnlineVoices) {
+                      void save({
+                        allowOnlineVoices: false,
+                        voiceId: null,
+                      })
+                    }
                   }}
                 >
                   <FormControlLabel
@@ -565,7 +570,7 @@ export function SettingsScreen({
                   />
                   <FormControlLabel
                     value="openai"
-                    disabled={busy || credentialBusy || !credential.configured}
+                    disabled={busy || credentialBusy}
                     control={<Radio />}
                     label={
                       <Box>
@@ -580,58 +585,71 @@ export function SettingsScreen({
                   />
                 </RadioGroup>
               </FormControl>
-              {!credential.configured && (
-                <Alert severity="info">
-                  Save an OpenAI API key below to make the TV voice option available.
-                </Alert>
-              )}
-              <Alert severity="warning">
-                Use a dedicated OpenAI project with a small hard spending limit and alert.
-                OpenAI recommends keeping API keys on a server; this personal-use app stores
-                the key in this device&apos;s IndexedDB instead.
-              </Alert>
-              <Typography variant="body2">
-                {credential.configured
-                  ? `Key configured on this device · ends in ${credential.lastFour}`
-                  : 'No OpenAI API key is configured on this device.'}
-              </Typography>
-              <TextField
-                label={credential.configured ? 'Replacement OpenAI API key' : 'OpenAI API key'}
-                type="password"
-                autoComplete="off"
-                value={apiKey}
-                disabled={credentialBusy}
-                onChange={(event) => setApiKey(event.target.value)}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={acknowledgeLocalKey}
+              {(allowOnlineVoices || configureOnlineVoice) && (
+                <Stack spacing={2}>
+                  {!credential.configured && (
+                    <Alert severity="info">
+                      Enter and save an OpenAI API key below to continue.
+                    </Alert>
+                  )}
+                  <Alert severity="warning">
+                    Use a dedicated OpenAI project with a small hard spending limit and alert.
+                    OpenAI recommends keeping API keys on a server; this personal-use app stores
+                    the key in this device&apos;s IndexedDB instead.
+                  </Alert>
+                  <Typography variant="body2">
+                    {credential.configured
+                      ? `Key configured on this device · ends in ${credential.lastFour}`
+                      : 'No OpenAI API key is configured on this device.'}
+                  </Typography>
+                  <TextField
+                    label={credential.configured ? 'Replacement OpenAI API key' : 'OpenAI API key'}
+                    type="password"
+                    autoComplete="off"
+                    value={apiKey}
                     disabled={credentialBusy}
-                    onChange={(_, checked) => setAcknowledgeLocalKey(checked)}
+                    onChange={(event) => setApiKey(event.target.value)}
                   />
-                }
-                label="I understand this key stays on this device and can be read by code running as this app."
-              />
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                <Button
-                  variant="contained"
-                  disabled={credentialBusy || !acknowledgeLocalKey || apiKey.trim().length === 0}
-                  onClick={() => void saveApiKey()}
-                >
-                  {credential.configured ? 'Replace key' : 'Save on this device'}
-                </Button>
-                {credential.configured && (
-                  <Button
-                    color="error"
-                    variant="outlined"
-                    disabled={credentialBusy}
-                    onClick={() => void removeApiKey()}
-                  >
-                    Remove key
-                  </Button>
-                )}
-              </Stack>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={acknowledgeLocalKey}
+                        disabled={credentialBusy}
+                        onChange={(_, checked) => setAcknowledgeLocalKey(checked)}
+                      />
+                    }
+                    label="I understand this key stays on this device and can be read by code running as this app."
+                  />
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                    <Button
+                      variant="contained"
+                      disabled={credentialBusy || !acknowledgeLocalKey || apiKey.trim().length === 0}
+                      onClick={() => void saveApiKey()}
+                    >
+                      {credential.configured ? 'Replace key' : 'Save on this device'}
+                    </Button>
+                    {credential.configured && !allowOnlineVoices && (
+                      <Button
+                        variant="contained"
+                        disabled={credentialBusy}
+                        onClick={() => setConfirmOnlineVoices(true)}
+                      >
+                        Enable TV voice
+                      </Button>
+                    )}
+                    {credential.configured && (
+                      <Button
+                        color="error"
+                        variant="outlined"
+                        disabled={credentialBusy}
+                        onClick={() => void removeApiKey()}
+                      >
+                        Remove key
+                      </Button>
+                    )}
+                  </Stack>
+                </Stack>
+              )}
             </Stack>
           </Paper>
 
@@ -674,7 +692,9 @@ export function SettingsScreen({
 
       <Dialog
         open={confirmOnlineVoices}
-        onClose={() => !busy && setConfirmOnlineVoices(false)}
+        onClose={() => {
+          if (!busy) setConfirmOnlineVoices(false)
+        }}
       >
         <DialogTitle>Enable TV-compatible online voice?</DialogTitle>
         <DialogContent>

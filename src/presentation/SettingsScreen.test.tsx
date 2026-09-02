@@ -273,7 +273,7 @@ describe('SettingsScreen', () => {
     )
   })
 
-  it('explains why TV voice cannot be selected until a key is saved', async () => {
+  it('reveals OpenAI key and consent controls only after TV voice is selected', async () => {
     const onChange = vi.fn().mockResolvedValue(undefined)
     render(
       <ThemeProvider theme={wheelOfPainTheme}>
@@ -292,11 +292,23 @@ describe('SettingsScreen', () => {
       </ThemeProvider>,
     )
 
+    const onlineChoice = await screen.findByRole('radio', {
+      name: /TV voice through OpenAI/,
+    })
+    expect(onlineChoice).toBeEnabled()
+    expect(screen.queryByLabelText('OpenAI API key')).not.toBeInTheDocument()
     expect(
-      await screen.findByRole('radio', { name: /TV voice through OpenAI/ }),
-    ).toBeDisabled()
+      screen.queryByRole('checkbox', { name: /I understand this key/ }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(onlineChoice)
+
+    expect(screen.getByLabelText('OpenAI API key')).toBeInTheDocument()
     expect(
-      screen.getByText('Save an OpenAI API key below to make the TV voice option available.'),
+      screen.getByRole('checkbox', { name: /I understand this key/ }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Enter and save an OpenAI API key below to continue.'),
     ).toBeInTheDocument()
     expect(onChange).not.toHaveBeenCalled()
   })
@@ -328,8 +340,9 @@ describe('SettingsScreen', () => {
       screen.queryByText(/An individual saying and the participant name/),
     ).not.toBeInTheDocument()
 
-    await screen.findByText(/ends in abcd/)
     fireEvent.click(screen.getByRole('radio', { name: /TV voice through OpenAI/ }))
+    await screen.findByText(/ends in abcd/)
+    fireEvent.click(screen.getByRole('button', { name: 'Enable TV voice' }))
     expect(
       screen.getByRole('heading', { name: 'Enable TV-compatible online voice?' }),
     ).toBeInTheDocument()
@@ -363,6 +376,7 @@ describe('SettingsScreen', () => {
       </ThemeProvider>,
     )
 
+    fireEvent.click(await screen.findByRole('radio', { name: /TV voice through OpenAI/ }))
     const saveButton = screen.getByRole('button', { name: 'Save on this device' })
     expect(saveButton).toBeDisabled()
     fireEvent.change(screen.getByLabelText('OpenAI API key'), {

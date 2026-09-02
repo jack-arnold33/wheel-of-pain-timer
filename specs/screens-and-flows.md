@@ -97,9 +97,10 @@ Audio settings are:
 - **Speech speed**, with Slow, Normal, and Fast choices and Normal as default
 - **Voice output**, an explicit choice between **Device voice** (free, offline,
   and not guaranteed to follow the television route) and **TV voice through
-  OpenAI** (internet and API credit required). The OpenAI choice is unavailable
-  until a key is saved, with the requirement explained beside the choice. Its
-  confirmation serves as the explicit privacy opt-in.
+  OpenAI** (internet and API credit required). Selecting the OpenAI choice
+  reveals its key storage, acknowledgment, and enablement controls; those
+  controls remain hidden while Device voice is selected. Its confirmation
+  serves as the explicit privacy opt-in.
 
 The device path lists System Default plus on-device voices exposed by the
 browser. Browser-identified online voices are not presented as TV-compatible.
