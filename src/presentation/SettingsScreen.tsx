@@ -1,4 +1,5 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
+import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
 import FileDownloadRoundedIcon from '@mui/icons-material/FileDownloadRounded'
 import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded'
@@ -70,8 +71,10 @@ interface SettingsScreenProps extends AudioPreferencePatch {
   readonly themeId?: string
   readonly voiceInstructions?: string
   readonly participantCount: number
+  readonly personalityCount?: number
   readonly onBack: () => void
   readonly onParticipants: () => void
+  readonly onPersonalities?: () => void
   readonly onChange: (patch: Partial<SettingsPreferencePatch>) => Promise<void>
   readonly onExportBackup: () => Promise<LocalBackup>
   readonly onRestoreBackup: (backup: LocalBackup) => Promise<void>
@@ -97,8 +100,10 @@ export function SettingsScreen({
   speechRate,
   voiceInstructions = DEFAULT_VOICE_INSTRUCTIONS,
   participantCount,
+  personalityCount = 0,
   onBack,
   onParticipants,
+  onPersonalities = () => undefined,
   onChange,
   onExportBackup,
   onRestoreBackup,
@@ -413,7 +418,7 @@ export function SettingsScreen({
 
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={2}>
-              <Typography variant="h5">People</Typography>
+              <Typography variant="h5">Workout setup</Typography>
               <Button
                 variant="outlined"
                 startIcon={<GroupsRoundedIcon />}
@@ -423,6 +428,17 @@ export function SettingsScreen({
                 Participants
                 <Typography component="span" color="text.secondary">
                   {participantCount} saved
+                </Typography>
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<AutoAwesomeRoundedIcon />}
+                onClick={onPersonalities}
+                sx={{ justifyContent: 'space-between' }}
+              >
+                Personalities
+                <Typography component="span" color="text.secondary">
+                  {personalityCount} available
                 </Typography>
               </Button>
             </Stack>

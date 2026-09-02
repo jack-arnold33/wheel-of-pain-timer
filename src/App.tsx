@@ -46,7 +46,8 @@ type Screen =
   | 'loading'
   | 'home'
   | 'editor'
-  | 'contentPacks'
+  | 'personalityManager'
+  | 'personalityPicker'
   | 'participants'
   | 'settings'
   | 'preworkout'
@@ -60,6 +61,10 @@ const RoutineEditor = lazy(async () => {
 const ContentPackLibrary = lazy(async () => {
   const module = await import('./presentation/ContentPackLibrary')
   return { default: module.ContentPackLibrary }
+})
+const PersonalityPicker = lazy(async () => {
+  const module = await import('./presentation/PersonalityPicker')
+  return { default: module.PersonalityPicker }
 })
 const ParticipantAttendance = lazy(async () => {
   const module = await import('./presentation/ParticipantAttendance')
@@ -159,12 +164,12 @@ const selectStoredContentPack = async (id: string | null) => {
 
 const importStoredContentPack = async (draft: ContentPackDraft) => {
   const { contentPackService } = await import('./data/contentPackService')
-  return contentPackService.importAndSelect(draft)
+  return contentPackService.create(draft)
 }
 
 const replaceStoredContentPack = async (id: string, draft: ContentPackDraft) => {
   const { contentPackService } = await import('./data/contentPackService')
-  return contentPackService.replaceAndSelect(id, draft)
+  return contentPackService.replace(id, draft)
 }
 
 const renameStoredContentPack = async (id: string, name: string) => {
@@ -518,11 +523,13 @@ export function App({
                 ?.voiceInstructions
             }
             participantCount={participants.length}
+            personalityCount={contentPacks.length}
             onBack={() => setScreen(settingsReturnScreen)}
             onParticipants={() => {
               setParticipantReturnScreen('settings')
               setScreen('participants')
             }}
+            onPersonalities={() => setScreen('personalityManager')}
             onChange={async (patch: Partial<SettingsPreferencePatch>) => {
               const saved = await updatePreferences(patch)
               setTimerSoundsEnabled(saved.timerSoundsEnabled)
@@ -592,9 +599,7 @@ export function App({
     )
   }
 
-  if (selectedRoutine === undefined) return null
-
-  if (screen === 'contentPacks') {
+  if (screen === 'personalityManager') {
     return (
       <>
         <Suspense
@@ -606,20 +611,12 @@ export function App({
         >
           <ContentPackLibrary
             packs={contentPacks}
-            selectedId={selectedContentPackId}
             storageNotice={contentPackNotice}
-            onBack={() => setScreen('preworkout')}
-            onSelect={async (id) => {
-              await selectContentPack(id)
-              setSelectedContentPackId(id)
-              setScreen('preworkout')
-            }}
+            onBack={() => setScreen('settings')}
             onImport={async (draft): Promise<ContentPackImportResult> => {
               try {
                 const saved = await importContentPack(draft)
                 setContentPacks((current) => [...current, saved])
-                setSelectedContentPackId(saved.id)
-                setScreen('preworkout')
                 return { status: 'saved', pack: saved }
               } catch (error) {
                 if (contentPackConflict(error)) {
@@ -633,8 +630,6 @@ export function App({
               setContentPacks((current) =>
                 current.map((pack) => (pack.id === saved.id ? saved : pack)),
               )
-              setSelectedContentPackId(saved.id)
-              setScreen('preworkout')
             }}
             onRename={async (id, name) => {
               const renamed = await renameContentPack(id, name)
@@ -648,6 +643,35 @@ export function App({
               await deleteContentPack(id, selected)
               setContentPacks((current) => current.filter((pack) => pack.id !== id))
               if (selected) setSelectedContentPackId(null)
+            }}
+          />
+        </Suspense>
+        <PwaUpdatePrompt activationAllowed />
+      </>
+    )
+  }
+
+  if (selectedRoutine === undefined) return null
+
+  if (screen === 'personalityPicker') {
+    return (
+      <>
+        <Suspense
+          fallback={
+            <Box sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+              <CircularProgress aria-label="Loading Personality picker" />
+            </Box>
+          }
+        >
+          <PersonalityPicker
+            packs={contentPacks}
+            selectedId={selectedContentPackId}
+            storageNotice={contentPackNotice}
+            onBack={() => setScreen('preworkout')}
+            onSelect={async (id) => {
+              await selectContentPack(id)
+              setSelectedContentPackId(id)
+              setScreen('preworkout')
             }}
           />
         </Suspense>
@@ -812,7 +836,7 @@ export function App({
         personalityName={
           contentPacks.find(({ id }) => id === selectedContentPackId)?.name ?? null
         }
-        onChoosePersonality={() => setScreen('contentPacks')}
+        onChoosePersonality={() => setScreen('personalityPicker')}
         activeParticipantCount={activeParticipantIds.length}
         onChooseParticipants={() => {
           setParticipantReturnScreen('preworkout')

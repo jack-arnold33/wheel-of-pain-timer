@@ -468,9 +468,10 @@ When the PWA reloads after the user switches apps
 Then the unfinished draft is recovered
 When the user pastes valid v1 JSON with or without a Markdown code fence
 And reviews or edits the AI voice instructions and categorized sayings
-And chooses Save & select
+And chooses Save Personality
 Then the same content-pack validation and conflict rules are applied
-And the Personality is saved locally, selected, and shown on pre-workout
+And the Personality is saved locally and shown in the Settings library
+And the current pre-workout Personality selection is unchanged
 And the unfinished authoring draft is cleared
 ```
 
@@ -487,17 +488,17 @@ And the built-in default voice instructions are used
 **Requirements:** C-001, C-002, C-003, C-004, C-011
 
 ```gherkin
-Given the user is on a routine's pre-workout screen
+Given the user is in the Settings Personality library
 And tuesday-chaos.txt is UTF-8 with at least one valid non-empty line
 When the user imports it through the device file picker
 Then it is validated and normalized locally into the general category
 And its initial display name is Tuesday Chaos
 And it is saved on this device without a persistence question or upload
-And it becomes the selected Personality
-And the same pre-workout screen is restored
+And it becomes available in the pre-workout Personality picker
+And the current Personality selection is unchanged
 ```
 
-### Import and select valid structured categories
+### Import valid structured categories
 
 **Requirements:** C-001, C-003, C-010, C-011, C-014, C-015
 
@@ -505,7 +506,7 @@ And the same pre-workout screen is restored
 Given a .timerpack.json file has schemaVersion 1, a valid name, and valid
   general, work, cycleRest, or finished categories within every limit
 When the user imports it
-Then the normalized pack is saved and selected atomically
+Then the normalized pack is saved without changing the current selection
 And supplied voice instructions are trimmed and preserved when present
 And the built-in default voice instructions are assigned when the field is absent
 And its supported categories are available offline
@@ -559,16 +560,17 @@ And the user may explicitly Replace, Save a Copy with a distinct name, or Cancel
 And only the selected confirmed action is committed atomically
 ```
 
-### Select, rename, inspect, export, and remove a pack
+### Select and manage a pack
 
 **Requirements:** C-003, C-005, C-008, C-009
 
 ```gherkin
 Given at least one pack is saved on this device
-When the user selects it from the pack library
+When the user selects it from the pre-workout Personality picker
 Then it becomes the current pre-workout Personality
 And it remains available after an offline reopen
-When the user renames it to a valid non-conflicting name
+When the user opens the Personality library from Settings
+And the user renames it to a valid non-conflicting name
 Then its sayings and identity are unchanged
 When the user inspects it
 Then its name, category counts, total count, and privacy status are shown

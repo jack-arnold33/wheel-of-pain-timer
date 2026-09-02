@@ -34,8 +34,7 @@ as a collection, and disabling the opt-in stops future online speech requests.
 - Parse and validate the file locally.
 - Save the normalized pack in IndexedDB.
 - Make it available offline for later workouts.
-- Select the newly imported pack and return to the originating pre-workout
-  screen.
+- Leave the current workout Personality unchanged.
 - Allow the user to remove or export it.
 
 MVP does not provide a session-only import mode. Every successfully imported
@@ -49,7 +48,8 @@ details such as IndexedDB do not need to be exposed to ordinary users.
 
 ### Phone-first authoring
 
-The primary creation path is **Create Personality** in the Personality library.
+The primary creation path is **Create Personality** in the Settings Personality
+library.
 The user supplies a name and optional guidance for tone, themes or inside jokes,
 and subjects to avoid. The app creates a prompt that the user can copy to an AI
 assistant. The app does not contact the assistant or upload this guidance.
@@ -69,9 +69,10 @@ accepts the documented JSON object, including JSON copied inside a Markdown code
 fence. Plain pasted text is also accepted as one work saying per non-empty
 line. New authoring presents only `work`, `cycleRest`, and `finished`; it does
 not request or create fallback `general` sayings. The user reviews and may edit
-the AI voice instructions and every category before choosing **Save & select**.
-Saving uses the same validation, conflict handling, local storage, and automatic
-selection as file import.
+the AI voice instructions and every category before choosing **Save
+Personality**. Saving uses the same validation, conflict handling, and local
+storage as file import. Neither creation nor import changes the current workout
+selection.
 
 The v1 schema continues to accept `general` for backward compatibility with
 existing packs and plain-text file imports. It remains an internal fallback for
@@ -154,9 +155,11 @@ Its required `name` field is authoritative rather than the filename.
 - Zero or one pack is active for an MVP workout.
 - The pre-workout screen shows the selected pack in a compact **Personality**
   row, or clearly shows that no pack is selected.
-- Changing Personality opens the pack library; selecting or importing a pack
-  returns to the same pre-workout screen.
-- A newly imported pack becomes the selected Personality automatically.
+- Changing Personality opens a focused picker containing None and the packs
+  already available on the device. Selecting an option returns to the same
+  pre-workout screen.
+- Creating, importing, inspecting, renaming, exporting, and removing packs are
+  managed from Settings rather than the pre-workout picker.
 - Sayings are selected from the category matching the current workout moment.
 - If the matching specific category is absent or empty, selection falls back to
   `general`. If neither contains a saying, that announcement is skipped.
