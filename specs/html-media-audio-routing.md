@@ -463,7 +463,9 @@ speech preparation, and media playback must remain.
 
 - Create and retain one element per packaged cue so the browser can load the
   sources before a workout begins.
-- Use a separate retained element for prepared speech.
+- Use two retained speech elements: one may play the current announcement
+  while the other prepares the next announcement. Loading or replacing the
+  prepared element must never pause the active element.
 - Set `preload = "auto"` and call `load()` while preparing the pre-workout
   screen. Readiness is best effort; starting the workout must not wait on it.
 - Set the available audio-session hint to playback as the existing code does,
@@ -494,8 +496,8 @@ speech preparation, and media playback must remain.
   missed cues. Only cues selected from a current contiguous visible frame may
   reach the player.
 - Every object URL is revoked after completion, cancellation, replacement, or
-  disposal. Prepared speech is bounded to one current announcement and is not
-  persisted in IndexedDB or included in backup.
+  disposal. Speech is bounded to one active and one prepared announcement and
+  is not persisted in IndexedDB or included in backup.
 
 ## Speech preparation and stale-result handling
 
@@ -505,9 +507,9 @@ such as the first Work of round 3, Cycle Rest 2, or Complete.
 
 1. When Play starts the workout, select the first saying and participant using
    the newly initialized workout rotation and begin preparing that announcement.
-2. After a prepared announcement is consumed or skipped, begin preparing the
-   next scheduled announcement. Keep no more than one current announcement
-   prepared or in flight.
+2. After a prepared announcement starts or is skipped, begin preparing the
+   next scheduled announcement on the standby element. Keep no more than one
+   announcement active and one next announcement prepared or in flight.
 3. Buffer the complete response and validate that its content type is an
    allowed audio type and its size is within a documented limit.
 4. Accept it only if the operation is still current and its target event has
