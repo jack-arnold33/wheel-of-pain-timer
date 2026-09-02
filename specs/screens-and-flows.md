@@ -83,34 +83,36 @@ Completion.
 
 ## Settings
 
-Settings contains the explicit opt-in for online speech synthesis. The option
-explains that an individual saying and the participant name used to address it
-may be sent to a speech provider when spoken. This permission is not requested
-within the pre-workout or active workout flow.
+Settings contains the explicit opt-in for TV-compatible online speech. The
+option explains that one saying and the participant name used to address it
+may be sent to OpenAI. This permission is not requested within the pre-workout
+or active workout flow.
 
 Audio settings are:
 
 - **Timer sounds**, on by default, for countdown and transition cues
 - **Spoken motivation**, on by default when a Personality is selected
-- **Voice**, defaulting to the system voice
+- **Voice**, defaulting to the device System Default or OpenAI Alloy when the
+  TV-compatible path is enabled
 - **Speech speed**, with Slow, Normal, and Fast choices and Normal as default
-- **Allow online voices**, off by default and serving as the explicit privacy
-  opt-in
+- **Send one saying at a time to OpenAI for speech**, off by default and
+  serving as the explicit privacy opt-in
 
-The Voice screen lists System Default plus the voices currently exposed by the
-browser, grouped or labeled as on-device and online where that distinction is
-available. Online choices are unavailable until Allow Online Voices is enabled.
-Each voice has a preview action that speaks generic built-in text rather than
-private pack content, such as `The Wheel of Pain awaits.`
+The device path lists System Default plus on-device voices exposed by the
+browser. Browser-identified online voices are not presented as TV-compatible.
+The OpenAI path presents a small supported voice allowlist and plays its media
+through `HTMLAudioElement`. Each path previews generic built-in text rather
+than private pack content, such as `The Wheel of Pain awaits.`
 
-When Allow Online Voices is off, speech must not use a voice identified as
-online. If the browser does not provide enough information to honor that rule,
-the app reports the limitation instead of sending text without consent.
+The online control remains unavailable until Settings reports a locally saved
+OpenAI project key. Key entry is password-masked, requires acknowledgement of
+the client-side storage risk, and provides save, replace, test, and remove
+actions. Only a redacted configured state is shown after saving; the key is not
+included in local backup.
 
-If a selected voice is no longer available, speech falls back to an eligible
-System Default under the current online-voice policy and Settings reports the
-fallback. If no eligible default exists, spoken motivation is unavailable.
-Pitch adjustment is not part of MVP.
+If a selected device voice is no longer available, speech falls back to an
+eligible System Default and Settings reports the fallback. If an OpenAI voice
+identifier is unavailable, Alloy is used. Pitch adjustment is not part of MVP.
 
 Settings also provides a **Participants** roster. The user can add, rename, and
 remove names stored on the current device. The roster is optional and applies

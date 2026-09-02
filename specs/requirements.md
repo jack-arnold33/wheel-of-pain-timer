@@ -142,6 +142,10 @@ reused for a different behavior.
   public font resources from a font provider. The request contains no routine,
   content-pack, participant, or spoken-saying data, and unavailable font
   resources do not block app or timer use.
+- **D-010:** A user-supplied OpenAI project API key is stored only in a
+  dedicated device-local credential record. It is excluded from preferences,
+  backup, restore, logs, service-worker messages, and build output, and can be
+  replaced or removed from Settings.
 
 ## PWA and offline operation
 
@@ -170,8 +174,9 @@ reused for a different behavior.
 - **A-006:** Motivational sayings may be spoken instead of displayed on the
   active timer and never replace essential visual or audible timer cues.
 - **A-007:** Timer sounds and spoken motivation can be enabled independently.
-  Voice selection offers browser-exposed choices, a generic preview, speech
-  speed, and a safe System Default fallback.
+  Settings distinguishes a device voice, whose media route is not promised,
+  from an explicitly enabled OpenAI-generated voice played through HTML media.
+  Both paths use generic preview text and offer supported speech speeds.
 - **A-008:** App presentation is provided by named, replaceable themes. A theme
   may define visual tokens and decorative assets, but it does not change screen
   structure, control meaning, timer behavior, stored routines, or content-pack
