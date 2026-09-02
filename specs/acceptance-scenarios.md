@@ -737,6 +737,13 @@ Scenario: Prepare zero never delays Work
   Then the first announcement is skipped
   And Work starts on time
   And the late result is never replayed
+
+Scenario: Preparing the next saying does not cut off the current saying
+  Given a generated saying is playing for the current workout target
+  When the next scheduled saying finishes generating
+  Then it is loaded on the standby speech element
+  And the current saying continues until it ends or a timer or workout action
+    intentionally cancels it
 ```
 
 ## Presentation and accessibility

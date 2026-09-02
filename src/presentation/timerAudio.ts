@@ -29,6 +29,25 @@ interface PlayerEnvironment {
   readonly configureAudioSession: () => void
 }
 
+interface PreparedSpeech {
+  readonly targetId: string
+  readonly url: string
+  readonly element: MediaElement
+  ready: boolean
+  readyListener?: EventListener
+  errorListener?: EventListener
+  resolveReady?: (ready: boolean) => void
+  readyTimeout?: number
+}
+
+interface ActiveSpeech {
+  readonly targetId: string
+  readonly url: string
+  readonly element: MediaElement
+  readonly endedListener: EventListener
+  readonly errorListener: EventListener
+}
+
 const configurePlaybackAudioSession = () => {
   const audioSession = (navigator as AudioSessionNavigator).audioSession
   if (audioSession === undefined) return
@@ -62,15 +81,11 @@ const blockedPlayback = (error: unknown): AudioPlaybackResult =>
 
 export class HtmlAudioPlayer {
   private readonly cues = new Map<string, MediaElement>()
-  private readonly speech: MediaElement
+  private readonly speechElements: readonly [MediaElement, MediaElement]
   private cueOperation = 0
   private activeCue?: MediaElement
-  private speechPlaying = false
-  private preparedSpeech?: { targetId: string; url: string; ready: boolean }
-  private speechReadyListener?: EventListener
-  private speechErrorListener?: EventListener
-  private resolveSpeechReady?: (ready: boolean) => void
-  private speechReadyTimeout?: number
+  private activeSpeech?: ActiveSpeech
+  private preparedSpeech?: PreparedSpeech
 
   constructor(private readonly environment: PlayerEnvironment = browserEnvironment) {
     for (const source of Object.values(TIMER_CUE_ASSETS)) {
@@ -78,8 +93,8 @@ export class HtmlAudioPlayer {
       element.preload = 'auto'
       this.cues.set(source, element)
     }
-    this.speech = environment.createAudio()
-    this.speech.preload = 'auto'
+    this.speechElements = [environment.createAudio(), environment.createAudio()]
+    for (const element of this.speechElements) element.preload = 'auto'
   }
 
   async prime(): Promise<void> {
@@ -138,46 +153,46 @@ export class HtmlAudioPlayer {
   }
 
   prepareSpeech(targetId: string, blob: Blob): Promise<boolean> {
-    this.cancelSpeech()
+    this.cancelPreparedSpeech()
+    const element = this.speechElements.find(
+      (candidate) => candidate !== this.activeSpeech?.element,
+    )
+    if (element === undefined) return Promise.resolve(false)
     const url = this.environment.createObjectUrl(blob)
-    this.speech.src = url
-    const initiallyReady = this.speech.readyState >= 3
-    this.preparedSpeech = { targetId, url, ready: initiallyReady }
+    element.src = url
+    const initiallyReady = element.readyState >= 3
+    const prepared: PreparedSpeech = {
+      targetId,
+      url,
+      element,
+      ready: initiallyReady,
+    }
+    this.preparedSpeech = prepared
 
     if (initiallyReady) {
-      this.speech.load()
+      element.load()
       return Promise.resolve(true)
     }
 
     return new Promise((resolve) => {
-      this.resolveSpeechReady = resolve
+      prepared.resolveReady = resolve
       const markReady: EventListener = () => {
-        if (this.preparedSpeech?.url !== url) return
-        this.preparedSpeech.ready = true
-        if (this.speechReadyTimeout !== undefined) {
-          window.clearTimeout(this.speechReadyTimeout)
-          this.speechReadyTimeout = undefined
-        }
-        this.resolveSpeechReady?.(true)
-        this.resolveSpeechReady = undefined
+        if (this.preparedSpeech !== prepared) return
+        prepared.ready = true
+        this.clearPreparedReadiness(prepared)
+        resolve(true)
       }
       const reject: EventListener = () => {
-        if (this.preparedSpeech?.url !== url) return
-        if (this.speechReadyTimeout !== undefined) {
-          window.clearTimeout(this.speechReadyTimeout)
-          this.speechReadyTimeout = undefined
-        }
-        this.resolveSpeechReady?.(false)
-        this.resolveSpeechReady = undefined
-        this.cancelSpeech()
+        if (this.preparedSpeech !== prepared) return
+        this.cancelPreparedSpeech()
       }
-      this.speechReadyListener = markReady
-      this.speechErrorListener = reject
-      this.speech.addEventListener('canplay', markReady)
-      this.speech.addEventListener('canplaythrough', markReady)
-      this.speech.addEventListener('error', reject, { once: true })
-      this.speechReadyTimeout = window.setTimeout(reject, 5_000)
-      this.speech.load()
+      prepared.readyListener = markReady
+      prepared.errorListener = reject
+      element.addEventListener('canplay', markReady)
+      element.addEventListener('canplaythrough', markReady)
+      element.addEventListener('error', reject, { once: true })
+      prepared.readyTimeout = window.setTimeout(reject, 5_000)
+      element.load()
     })
   }
 
@@ -190,37 +205,37 @@ export class HtmlAudioPlayer {
   async playPreparedSpeech(targetId: string): Promise<AudioPlaybackResult> {
     const prepared = this.preparedSpeech
     if (prepared === undefined || prepared.targetId !== targetId || !prepared.ready) {
-      if (prepared?.targetId === targetId) this.cancelSpeech()
+      if (prepared?.targetId === targetId) this.cancelPreparedSpeech()
       return 'not-ready'
     }
 
-    this.speech.currentTime = 0
+    this.clearPreparedReadiness(prepared)
+    this.preparedSpeech = undefined
+    this.cancelActiveSpeech()
+    const finish: EventListener = () => this.releaseActiveSpeech(active)
+    const active: ActiveSpeech = {
+      targetId,
+      url: prepared.url,
+      element: prepared.element,
+      endedListener: finish,
+      errorListener: finish,
+    }
+    this.activeSpeech = active
+    active.element.addEventListener('ended', finish, { once: true })
+    active.element.addEventListener('error', finish, { once: true })
+    active.element.currentTime = 0
     try {
-      await this.speech.play()
-      this.speechPlaying = true
-      const revoke: EventListener = () => {
-        this.speechPlaying = false
-        this.releasePreparedSpeech(prepared.url)
-      }
-      this.speech.addEventListener('ended', revoke, { once: true })
-      return 'started'
+      await active.element.play()
+      return this.activeSpeech === active ? 'started' : 'not-ready'
     } catch (error) {
-      this.releasePreparedSpeech(prepared.url)
+      this.releaseActiveSpeech(active)
       return blockedPlayback(error)
     }
   }
 
   cancelSpeech(): void {
-    this.speech.pause()
-    this.speechPlaying = false
-    this.resolveSpeechReady?.(false)
-    this.resolveSpeechReady = undefined
-    if (this.speechReadyTimeout !== undefined) {
-      window.clearTimeout(this.speechReadyTimeout)
-      this.speechReadyTimeout = undefined
-    }
-    const url = this.preparedSpeech?.url
-    if (url !== undefined) this.releasePreparedSpeech(url)
+    this.cancelActiveSpeech()
+    this.cancelPreparedSpeech()
   }
 
   dispose(): void {
@@ -229,23 +244,50 @@ export class HtmlAudioPlayer {
     for (const cue of this.cues.values()) cue.pause()
   }
 
-  private releasePreparedSpeech(url: string): void {
-    if (this.preparedSpeech?.url !== url) return
-    if (this.speechReadyListener !== undefined) {
-      this.speech.removeEventListener('canplay', this.speechReadyListener)
-      this.speech.removeEventListener('canplaythrough', this.speechReadyListener)
+  private clearPreparedReadiness(prepared: PreparedSpeech): void {
+    if (prepared.readyTimeout !== undefined) {
+      window.clearTimeout(prepared.readyTimeout)
+      prepared.readyTimeout = undefined
     }
-    if (this.speechErrorListener !== undefined) {
-      this.speech.removeEventListener('error', this.speechErrorListener)
+    if (prepared.readyListener !== undefined) {
+      prepared.element.removeEventListener('canplay', prepared.readyListener)
+      prepared.element.removeEventListener('canplaythrough', prepared.readyListener)
+      prepared.readyListener = undefined
     }
+    if (prepared.errorListener !== undefined) {
+      prepared.element.removeEventListener('error', prepared.errorListener)
+      prepared.errorListener = undefined
+    }
+    prepared.resolveReady = undefined
+  }
+
+  private cancelPreparedSpeech(): void {
+    const prepared = this.preparedSpeech
+    if (prepared === undefined) return
     this.preparedSpeech = undefined
-    this.speechReadyListener = undefined
-    this.speechErrorListener = undefined
-    this.environment.revokeObjectUrl(url)
+    prepared.resolveReady?.(false)
+    this.clearPreparedReadiness(prepared)
+    prepared.element.pause()
+    this.environment.revokeObjectUrl(prepared.url)
+  }
+
+  private cancelActiveSpeech(): void {
+    const active = this.activeSpeech
+    if (active === undefined) return
+    active.element.pause()
+    this.releaseActiveSpeech(active)
+  }
+
+  private releaseActiveSpeech(active: ActiveSpeech): void {
+    if (this.activeSpeech !== active) return
+    this.activeSpeech = undefined
+    active.element.removeEventListener('ended', active.endedListener)
+    active.element.removeEventListener('error', active.errorListener)
+    this.environment.revokeObjectUrl(active.url)
   }
 
   private interruptActiveSpeech(): void {
-    if (this.speechPlaying) this.cancelSpeech()
+    this.cancelActiveSpeech()
   }
 
   private waitForCueEnd(element: MediaElement): Promise<void> {

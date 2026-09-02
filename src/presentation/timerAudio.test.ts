@@ -18,6 +18,7 @@ class FakeAudio extends EventTarget {
 const setup = () => {
   const elements: FakeAudio[] = []
   const revoked: string[] = []
+  let objectUrl = 0
   const configureAudioSession = vi.fn()
   const player = new HtmlAudioPlayer({
     createAudio: (src) => {
@@ -27,13 +28,14 @@ const setup = () => {
       elements.push(audio)
       return audio
     },
-    createObjectUrl: () => 'blob:prepared',
+    createObjectUrl: () => `blob:prepared-${++objectUrl}`,
     revokeObjectUrl: (url) => revoked.push(url),
     configureAudioSession,
   })
   const bySource = (source: string) =>
     elements.find((element) => element.src === source) as FakeAudio
-  return { player, elements, bySource, revoked, configureAudioSession }
+  const speechElements = elements.slice(Object.keys(TIMER_CUE_ASSETS).length)
+  return { player, elements, speechElements, bySource, revoked, configureAudioSession }
 }
 
 describe('HTML timer audio', () => {
@@ -81,30 +83,64 @@ describe('HTML timer audio', () => {
 
   it('gives an essential cue priority over prepared speech', async () => {
     const audio = setup()
+    const speech = audio.speechElements[0]
     audio.player.prepareSpeech('work:1', new Blob(['audio']))
     await audio.player.playPreparedSpeech('work:1')
     await audio.player.playCues([{ kind: 'countdown', second: 1 }])
-    expect(audio.elements.at(-1)?.pause).toHaveBeenCalled()
-    expect(audio.revoked).toEqual(['blob:prepared'])
+    expect(speech.pause).toHaveBeenCalled()
+    expect(audio.revoked).toEqual(['blob:prepared-1'])
   })
 
   it('plays a ready prepared clip once and revokes it when it ends', async () => {
     const audio = setup()
-    const speech = audio.elements.at(-1) as FakeAudio
+    const speech = audio.speechElements[0]
     audio.player.prepareSpeech('work:1', new Blob(['audio']))
     await expect(audio.player.playPreparedSpeech('work:1')).resolves.toBe('started')
     speech.dispatchEvent(new Event('ended'))
-    expect(audio.revoked).toEqual(['blob:prepared'])
+    expect(audio.revoked).toEqual(['blob:prepared-1'])
     await expect(audio.player.playPreparedSpeech('work:1')).resolves.toBe('not-ready')
+  })
+
+  it('prepares the next clip without interrupting active speech', async () => {
+    const audio = setup()
+    const [active, standby] = audio.speechElements
+    audio.player.prepareSpeech('work:1', new Blob(['first']))
+    await expect(audio.player.playPreparedSpeech('work:1')).resolves.toBe('started')
+
+    await expect(
+      audio.player.prepareSpeech('work:2', new Blob(['second'])),
+    ).resolves.toBe(true)
+
+    expect(active.pause).not.toHaveBeenCalled()
+    expect(standby.src).toBe('blob:prepared-2')
+    expect(audio.revoked).toEqual([])
+
+    active.dispatchEvent(new Event('ended'))
+    expect(audio.revoked).toEqual(['blob:prepared-1'])
+    await expect(audio.player.playPreparedSpeech('work:2')).resolves.toBe('started')
+  })
+
+  it('cancels both active and prepared speech when the workout context changes', async () => {
+    const audio = setup()
+    const [active, standby] = audio.speechElements
+    audio.player.prepareSpeech('work:1', new Blob(['first']))
+    await audio.player.playPreparedSpeech('work:1')
+    await audio.player.prepareSpeech('work:2', new Blob(['second']))
+
+    audio.player.cancelSpeech()
+
+    expect(active.pause).toHaveBeenCalled()
+    expect(standby.pause).toHaveBeenCalled()
+    expect(audio.revoked).toEqual(['blob:prepared-1', 'blob:prepared-2'])
   })
 
   it('skips and revokes a target that is not media-ready', async () => {
     const audio = setup()
-    const speech = audio.elements.at(-1) as FakeAudio
+    const speech = audio.speechElements[0]
     speech.readyState = 0
     audio.player.prepareSpeech('work:1', new Blob(['audio']))
     await expect(audio.player.playPreparedSpeech('work:1')).resolves.toBe('not-ready')
     expect(speech.play).not.toHaveBeenCalled()
-    expect(audio.revoked).toEqual(['blob:prepared'])
+    expect(audio.revoked).toEqual(['blob:prepared-1'])
   })
 })
