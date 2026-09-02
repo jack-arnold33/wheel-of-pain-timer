@@ -9,6 +9,7 @@ import {
   parsePastedPersonality,
   savePersonalityAuthoringDraft,
 } from './personalityAuthoring'
+import { DEFAULT_VOICE_INSTRUCTIONS } from './validation'
 
 afterEach(() => localStorage.clear())
 
@@ -27,6 +28,9 @@ describe('Personality authoring', () => {
     expect(prompt).toContain('Themes, recurring jokes, or group context: The ceremonial kettlebell')
     expect(prompt).toContain('Avoid: Comments about appearance')
     expect(prompt).toContain('Do not include participant names or name placeholders')
+    expect(prompt).toContain('"voiceInstructions"')
+    expect(prompt).toContain('tone, energy, pacing, emphasis, and emotional style')
+    expect(prompt).toContain('no more than 500 characters')
     expect(prompt).toContain('Return a raw JSON object, not a quoted or escaped JSON string')
     expect(prompt).toContain('Do not add backslashes at line endings')
     expect(prompt).toContain('Use ordinary spaces, not HTML entities')
@@ -42,13 +46,14 @@ describe('Personality authoring', () => {
 
   it('parses JSON copied with a Markdown fence', () => {
     const pack = parsePastedPersonality(
-      'Here you go:\n```json\n{"schemaVersion":1,"name":"Phone Crew","sayings":{"work":["Go."],"finished":["Done."]}}\n```',
+      'Here you go:\n```json\n{"schemaVersion":1,"name":"Phone Crew","voiceInstructions":"Sound playful and quick.","sayings":{"work":["Go."],"finished":["Done."]}}\n```',
       'Ignored fallback',
     )
 
     expect(pack).toEqual({
       schemaVersion: 1,
       name: 'Phone Crew',
+      voiceInstructions: 'Sound playful and quick.',
       sayings: { work: ['Go.'], finished: ['Done.'] },
       extensions: {},
     })
@@ -69,6 +74,7 @@ describe('Personality authoring', () => {
 
     expect(pack).toMatchObject({
       name: 'Entity Copy',
+      voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
       sayings: { work: ['Go.'] },
     })
   })
@@ -77,16 +83,19 @@ describe('Personality authoring', () => {
     const draft = authoringDraftFromPack(emptyPersonalityAuthoringDraft(), {
       schemaVersion: 1,
       name: 'Editable',
+      voiceInstructions: 'Sound dry and theatrical.',
       sayings: { work: ['First.', 'Second.'], cycleRest: ['Breathe.'] },
       extensions: {},
     })
 
     expect(draft.sayings.work).toBe('• First.\n\n• Second.')
     expect(draft.sayings.cycleRest).toBe('• Breathe.')
+    expect(draft.voiceInstructions).toBe('Sound dry and theatrical.')
 
     expect(contentPackFromAuthoringDraft(draft)).toEqual({
       schemaVersion: 1,
       name: 'Editable',
+      voiceInstructions: 'Sound dry and theatrical.',
       sayings: { work: ['First.', 'Second.'], cycleRest: ['Breathe.'] },
       extensions: {},
     })
@@ -96,6 +105,7 @@ describe('Personality authoring', () => {
     const draft = authoringDraftFromPack(emptyPersonalityAuthoringDraft(), {
       schemaVersion: 1,
       name: 'Legacy Paste',
+      voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
       sayings: { general: ['Keep moving.'] },
       extensions: {},
     })

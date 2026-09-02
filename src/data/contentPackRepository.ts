@@ -26,16 +26,28 @@ export class ContentPackNotFoundError extends Error {
   }
 }
 
-const copyPack = (record: ContentPackRecord): ContentPack => ({
-  ...record,
-  sayings: Object.fromEntries(
-    Object.entries(record.sayings).map(([category, sayings]) => [
-      category,
-      [...sayings],
-    ]),
-  ),
-  extensions: structuredClone(record.extensions),
-})
+const copyPack = (record: ContentPackRecord): ContentPack => {
+  const normalized = normalizeContentPack({
+    ...record.extensions,
+    schemaVersion: record.schemaVersion,
+    name: record.name,
+    voiceInstructions: record.voiceInstructions,
+    sayings: record.sayings,
+  })
+  return {
+    ...normalized,
+    id: record.id,
+    sayings: Object.fromEntries(
+      Object.entries(normalized.sayings).map(([category, sayings]) => [
+        category,
+        [...sayings],
+      ]),
+    ),
+    extensions: structuredClone(normalized.extensions),
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  }
+}
 
 const createPackId = () => `pack:${crypto.randomUUID()}`
 const normalizeDraft = (draft: ContentPackDraft) =>
@@ -43,6 +55,7 @@ const normalizeDraft = (draft: ContentPackDraft) =>
     ...draft.extensions,
     schemaVersion: draft.schemaVersion,
     name: draft.name,
+    voiceInstructions: draft.voiceInstructions,
     sayings: draft.sayings,
   })
 

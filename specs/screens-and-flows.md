@@ -165,9 +165,9 @@ routine requires confirmation that names the routine and returns to Home.
 
 The library is opened from the pre-workout Personality row and shows None plus
 saved packs. Selecting a pack or completing a valid import returns to the
-originating pre-workout screen. Pack inspection shows the pack name, category
-counts, total saying count, and that it is saved on this device; sayings need
-not be presented on the active workout screen.
+originating pre-workout screen. Pack inspection shows the pack name, AI voice
+instructions, category counts, total saying count, and that it is saved on this
+device; sayings need not be presented on the active workout screen.
 
 **Create Personality** opens a phone-first authoring screen. The user enters a
 name and optional tone, theme or inside-joke context, and subjects to avoid.
@@ -177,13 +177,14 @@ The user returns, pastes JSON or plain text, and chooses **Review sayings**.
 **Clear pasted response** empties only the response field so the complete AI
 output can be replaced without clearing the name or authoring guidance.
 
-Review uses plain-language category names, shows one saying per editable line,
-and explains when each category is spoken. Editor-only bullets and spacing make
-individual sayings visually distinct without becoming part of saved or spoken
-content. **Save & select** validates, stores,
-selects, and returns to the originating pre-workout screen. The draft persists
-locally through app switching and reload until a successful save. File import
-is a secondary action in the library and retains its existing behavior.
+Review provides an editable AI voice-instructions field, uses plain-language
+category names, shows one saying per editable line, and explains when each
+category is spoken. Editor-only bullets and spacing make individual sayings
+visually distinct without becoming part of saved or spoken content. **Save &
+select** validates, stores, selects, and returns to the originating pre-workout
+screen. The draft persists locally through app switching and reload until a
+successful save. File import is a secondary action in the library and retains
+its existing behavior.
 
 Import errors remain in the import flow, identify the invalid field or limit,
 and do not change saved data. A name or identity conflict offers Replace, Save

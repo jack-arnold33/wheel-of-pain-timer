@@ -121,7 +121,11 @@ export function WorkoutRunner({
     return new OnlineMotivationController(
       phases,
       motivationSession,
-      { voice: selectedVoice, speed: motivation.speech.rate },
+      {
+        voice: selectedVoice,
+        speed: motivation.speech.rate,
+        voiceInstructions: motivation.pack.voiceInstructions,
+      },
       (code) => {
         setMotivationNotice(
           code === 'authentication' || code === 'not-configured'

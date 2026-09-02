@@ -142,6 +142,39 @@ describe('SettingsScreen', () => {
     expect(screen.getByText('2 saved')).toBeInTheDocument()
   })
 
+  it('previews the selected Personality voice instructions online', async () => {
+    credentialMocks.status.mockResolvedValue({ configured: true, lastFour: 'abcd' })
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <SettingsScreen
+          timerSoundsEnabled
+          spokenMotivationEnabled
+          allowOnlineVoices
+          voiceId="alloy"
+          speechRate={1}
+          voiceInstructions="Sound dry, theatrical, and encouraging."
+          participantCount={0}
+          onBack={vi.fn()}
+          onParticipants={vi.fn()}
+          onChange={vi.fn()}
+          {...backupHandlers}
+        />
+      </ThemeProvider>,
+    )
+
+    await screen.findByText(/ends in abcd/u)
+    fireEvent.click(screen.getByRole('button', { name: 'Test TV-compatible voice' }))
+
+    await waitFor(() =>
+      expect(onlineSpeechMocks.createOpenAiSpeech).toHaveBeenCalledWith({
+        text: 'The Wheel of Pain awaits.',
+        voice: 'alloy',
+        speed: 1,
+        voiceInstructions: 'Sound dry, theatrical, and encouraging.',
+      }),
+    )
+  })
+
   it('shows visual theme choices and persists the selected stable identifier', async () => {
     const onChange = vi.fn().mockResolvedValue(undefined)
     render(

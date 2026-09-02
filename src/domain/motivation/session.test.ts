@@ -7,6 +7,7 @@ const pack: ContentPack = {
   id: 'pack:test',
   schemaVersion: 1,
   name: 'Test',
+  voiceInstructions: 'Sound upbeat and direct.',
   sayings: {
     general: ['General one.', 'General two.'],
     work: ['Work now.'],

@@ -105,8 +105,8 @@ and played by `HTMLAudioElement`.
 The initial integration is deliberately OpenAI-specific:
 
 - Request: one selected saying, the optional selected participant prefix,
-  configured OpenAI model and voice, MP3 response format, and supported speech
-  rate.
+  the selected Personality's voice instructions, configured OpenAI model and
+  voice, MP3 response format, and supported speech rate.
 - Response: one playable audio file plus its content type; no streaming is
   required for MVP.
 - Credentials: a project-scoped key is entered after deployment and is never
@@ -115,9 +115,11 @@ The initial integration is deliberately OpenAI-specific:
   participant name, API key, Authorization header, or response bytes.
 
 The app may request this response only when online speech consent is enabled.
-It must not send an entire Personality, participant roster, routine, or workout
-history. Revoking consent cancels pending requests, discards prepared blobs,
-and prevents new requests.
+It must not send an entire Personality, its saying collection, participant
+roster, routine, or workout history. Sending the selected Personality's bounded
+voice instructions with one utterance is part of the consented request.
+Revoking consent cancels pending requests, discards prepared blobs, and prevents
+new requests.
 
 Local browser speech may remain as an explicitly labeled fallback, but the UI
 must not imply that it will follow the television media route. If no generated
@@ -219,15 +221,19 @@ Content-Type: application/json
   "model": "<validated speech model>",
   "input": "Jarno! Form first. Complaining second.",
   "voice": "<configured voice>",
+  "instructions": "<fixed exact-reading rules plus selected Personality delivery style>",
   "response_format": "mp3",
   "speed": 1
 }
 ```
 
-The module accepts only the selected utterance, not a Personality, participant
-roster, routine, or history. It validates an `audio/mpeg` response, rejects an
-empty or oversized body, uses an abortable timeout, and returns only a Blob or a
-bounded product error. Provider error bodies are not retained or displayed.
+The module accepts only the selected utterance and bounded Personality voice
+instructions, not the pack's saying collection, participant roster, routine, or
+history. It prepends non-editable rules requiring the model to read the supplied
+text exactly, pronounce a participant name clearly, and finish the sentence.
+It validates an `audio/mpeg` response, rejects an empty or oversized body, uses
+an abortable timeout, and returns only a Blob or a bounded product error.
+Provider error bodies are not retained or displayed.
 
 Do not implement another provider abstraction now. If the product later moves
 to ElevenLabs or another service, replace this isolated module and revise the
@@ -315,6 +321,7 @@ interface SpeechProvider {
 
 interface ProviderSpeechRequest {
   readonly text: string
+  readonly deliveryInstructions: string
   readonly voiceProfileId: string
   readonly locale: string
   readonly rate: number
@@ -334,9 +341,10 @@ or error body to the client.
 
 For example:
 
-- The OpenAI adapter translates `text` to `input`, selects its configured
-  model and voice, requests MP3, sends Bearer authentication, and maps the
-  product rate to the provider's supported speed.
+- The OpenAI adapter translates `text` to `input`, maps
+  `deliveryInstructions` to `instructions`, selects its configured model and
+  voice, requests MP3, sends Bearer authentication, and maps the product rate
+  to the provider's supported speed.
 - The ElevenLabs adapter places the mapped voice ID in the endpoint path,
   translates `text` and the configured model into its request body, selects an
   MP3 output format, sends `xi-api-key`, and maps the product rate only through
@@ -369,11 +377,11 @@ configuration rather than silently changing that profile to an arbitrary
 voice. The product may initially expose only `coach-default`; a small stable
 catalog is easier to preserve across vendors than every voice a vendor offers.
 
-Rate and locale are also product-level capabilities. The server clamps or
-maps them per provider, and the UI offers only values the active product
-contract can preserve. Provider-only controls such as style, stability,
-similarity, instructions, or pronunciation dictionaries remain outside the
-client contract until the product deliberately adopts a portable equivalent.
+Rate, locale, and delivery instructions are product-level capabilities. A
+future server clamps or maps them per provider, and the UI offers only values
+the active product contract can preserve. Other provider-only controls such as
+stability, similarity, or pronunciation dictionaries remain outside the client
+contract until the product deliberately adopts a portable equivalent.
 
 ### Provider selection and migration
 
@@ -541,15 +549,16 @@ The speech settings must distinguish:
 - **Device voice**: browser speech, availability varies, and TV routing is not
   promised.
 - **TV-compatible online voice**: generated media routed through HTML audio;
-  requires internet access and explicit consent to send one saying and the
-  selected participant name.
+  requires internet access and explicit consent to send one saying, the
+  selected participant name, and the selected Personality's voice instructions.
 
 Do not continue presenting browser-exposed voice choices as if they select the
 OpenAI-generated voice. The online path uses a small allowlist of supported
 OpenAI voices or a single documented default. The generic preview follows the
-selected path and never sends private pack text or a participant name. Online
-voice controls remain unavailable until a key is configured and the owner has
-enabled online speech consent.
+selected path and uses the selected Personality's voice instructions while
+never sending private saying text or a participant name. Online voice controls
+remain unavailable until a key is configured and the owner has enabled online
+speech consent.
 
 If the media path fails during a workout, avoid a persistent timer obstruction.
 Record a compact status for later display in Settings or the pre-workout screen

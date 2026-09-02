@@ -72,8 +72,9 @@ reused for a different behavior.
 - **C-001:** The user can import a supported content-pack file using the
   device's standard file picker.
 - **C-002:** Import processing and pack storage occur locally. Importing a pack
-  does not upload it; an individual saying and selected participant name may
-  leave the device only under the separately enabled online-speech policy.
+  does not upload it; an individual saying, selected participant name, and the
+  selected pack's voice instructions may leave the device only under the
+  separately enabled online-speech policy.
 - **C-003:** A successfully imported pack is saved on the current device and is
   available offline for later workouts.
 - **C-004:** Importing a pack does not require a separate session-only or
@@ -99,18 +100,22 @@ reused for a different behavior.
   at least two names exist. Rotation is initialized per workout from the active
   attendance snapshot.
 - **C-014:** A v1 pack is limited to 512 KB, a name of 1 through 80 Unicode
-  characters, sayings of 1 through 240 Unicode characters, 500 sayings per
-  category, and 1,000 sayings total.
+  characters, voice instructions of 1 through 500 Unicode characters when
+  supplied, sayings of 1 through 240 Unicode characters, 500 sayings per
+  category, and 1,000 sayings total. Older and plain-text packs without voice
+  instructions receive the built-in default.
 - **C-015:** V1 supports `general`, `work`, `cycleRest`, and `finished` saying
   categories. A missing specific category falls back to `general`; unknown
   saying categories are rejected.
 - **C-016:** A protected generic starter Personality is included with the app
   so spoken motivation can be used without importing a pack. It can be selected
-  or inspected but not renamed, exported, or removed.
+  or inspected but not renamed, exported, or removed. Its voice instructions
+  are the default for packs that do not supply their own.
 - **C-017:** The user can create a Personality on the current device by copying
   an app-generated prompt to an AI assistant, pasting the response, reviewing
-  and editing categorized sayings, and choosing Save & select. The app does not
-  contact the assistant or transmit the authoring fields itself.
+  and editing the generated voice instructions and categorized sayings, and
+  choosing Save & select. The app does not contact the assistant or transmit
+  the authoring fields itself.
 - **C-018:** Pasted authoring content accepts a valid v1 JSON object with or
   without a Markdown code fence, or plain text as work sayings. New authoring
   presents and creates only work, cycleRest, and finished sayings; `general`
@@ -129,8 +134,8 @@ reused for a different behavior.
 - **D-004:** The app makes no network request containing a routine, pack, or
   preference except when the user explicitly exports or shares it. After a
   separate opt-in, the app may transmit an individual saying and selected
-  participant name for online speech synthesis but must not upload the pack or
-  roster as a collection.
+  participant name plus the selected pack's voice instructions for online
+  speech synthesis but must not upload the pack or roster as a collection.
 - **D-005:** The app does not require analytics or tracking for core operation.
 - **D-006:** The user can manage an optional participant roster stored on the
   current device. Names are independent of content packs and routines.
@@ -178,7 +183,8 @@ reused for a different behavior.
 - **A-007:** Timer sounds and spoken motivation can be enabled independently.
   Settings distinguishes a device voice, whose media route is not promised,
   from an explicitly enabled OpenAI-generated voice played through HTML media.
-  Both paths use generic preview text and offer supported speech speeds.
+  Both paths use generic preview text and offer supported speech speeds. The
+  online preview uses the selected Personality's voice instructions.
 - **A-008:** App presentation is provided by named, replaceable themes. A theme
   may define visual tokens and decorative assets, but it does not change screen
   structure, control meaning, timer behavior, stored routines, or content-pack

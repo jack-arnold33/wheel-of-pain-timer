@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createOpenAiSpeech,
   OpenAiSpeechError,
+  OPENAI_SPEECH_BASE_INSTRUCTIONS,
   OPENAI_SPEECH_ENDPOINT,
 } from './openAiSpeech'
 
@@ -9,6 +10,7 @@ const request = {
   text: 'Jarno! Form first. Complaining second.',
   voice: 'alloy' as const,
   speed: 1,
+  voiceInstructions: 'Sound like a relentless but supportive boxing coach.',
 }
 
 const environment = (
@@ -44,6 +46,7 @@ describe('createOpenAiSpeech', () => {
       model: 'gpt-4o-mini-tts',
       input: request.text,
       voice: 'alloy',
+      instructions: `${OPENAI_SPEECH_BASE_INSTRUCTIONS}\n\nPersonality delivery: ${request.voiceInstructions}`,
       response_format: 'mp3',
       speed: 1,
     })
@@ -54,6 +57,14 @@ describe('createOpenAiSpeech', () => {
     await expect(createOpenAiSpeech(request, env)).rejects.toMatchObject({
       code: 'not-configured',
     })
+    expect(env.fetch).not.toHaveBeenCalled()
+  })
+
+  it('rejects missing Personality voice instructions before making a request', async () => {
+    const env = environment(new Response())
+    await expect(
+      createOpenAiSpeech({ ...request, voiceInstructions: ' ' }, env),
+    ).rejects.toMatchObject({ code: 'invalid-request' })
     expect(env.fetch).not.toHaveBeenCalled()
   })
 

@@ -37,6 +37,7 @@ import {
   type LocalBackup,
 } from '../domain/backup/localBackup'
 import type { AppPreferences } from '../domain/preferences/appPreferences'
+import { DEFAULT_VOICE_INSTRUCTIONS } from '../domain/contentPacks/validation'
 import {
   primeSpokenMotivation,
   speakMotivation,
@@ -67,6 +68,7 @@ export type SettingsPreferencePatch = AudioPreferencePatch &
 
 interface SettingsScreenProps extends AudioPreferencePatch {
   readonly themeId?: string
+  readonly voiceInstructions?: string
   readonly participantCount: number
   readonly onBack: () => void
   readonly onParticipants: () => void
@@ -93,6 +95,7 @@ export function SettingsScreen({
   allowOnlineVoices,
   voiceId,
   speechRate,
+  voiceInstructions = DEFAULT_VOICE_INSTRUCTIONS,
   participantCount,
   onBack,
   onParticipants,
@@ -178,6 +181,7 @@ export function SettingsScreen({
           text: 'The Wheel of Pain awaits.',
           voice: selected,
           speed: speechRate,
+          voiceInstructions,
         })
         const result = await appAudioPlayer.playSpeechPreview(blob)
         if (result !== 'started') {
@@ -699,8 +703,9 @@ export function SettingsScreen({
         <DialogTitle>Enable TV-compatible online voice?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            One selected saying and the participant name used to address it will be sent to OpenAI.
-            Personalities, rosters, routines, and workout history are never uploaded as collections.
+            One selected saying and the participant name used to address it, together with the
+            selected Personality&apos;s voice instructions, will be sent to OpenAI. Personalities,
+            rosters, routines, and workout history are never uploaded as collections.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

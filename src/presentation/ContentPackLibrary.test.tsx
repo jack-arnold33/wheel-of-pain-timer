@@ -15,6 +15,7 @@ const pack: ContentPack = {
   id: 'pack:test',
   schemaVersion: 1,
   name: 'Tuesday Chaos',
+  voiceInstructions: 'Sound dry, theatrical, and encouraging.',
   sayings: {
     general: ['Move.', 'Again.'],
     work: ['Go.'],
@@ -76,6 +77,7 @@ describe('ContentPackLibrary', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Inspect Tuesday Chaos' }))
     expect(screen.getByRole('heading', { name: '4 sayings' })).toBeInTheDocument()
+    expect(screen.getByText(pack.voiceInstructions)).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Rename' }))
     fireEvent.change(screen.getByLabelText('Pack name'), {
@@ -142,12 +144,15 @@ describe('ContentPackLibrary', () => {
     fireEvent.change(screen.getByLabelText('Paste ChatGPT response'), {
       target: {
         value:
-          '```json\n{"schemaVersion":1,"name":"Tuesday Chaos","sayings":{"work":["Go."],"cycleRest":["Breathe."],"finished":["Done."]}}\n```',
+          '```json\n{"schemaVersion":1,"name":"Tuesday Chaos","voiceInstructions":"Sound dry, theatrical, and encouraging.","sayings":{"work":["Go."],"cycleRest":["Breathe."],"finished":["Done."]}}\n```',
       },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Review sayings' }))
 
     expect(screen.getByRole('heading', { name: 'Review Personality' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/AI voice instructions/u)).toHaveValue(
+      'Sound dry, theatrical, and encouraging.',
+    )
     expect(screen.getByLabelText('During work sayings')).toHaveValue('• Go.')
     fireEvent.change(screen.getByLabelText('During work sayings'), {
       target: { value: '• Go.\n\n• Keep moving.' },
@@ -158,6 +163,7 @@ describe('ContentPackLibrary', () => {
       expect(onImport).toHaveBeenCalledWith({
         schemaVersion: 1,
         name: 'Tuesday Chaos',
+        voiceInstructions: 'Sound dry, theatrical, and encouraging.',
         sayings: {
           work: ['Go.', 'Keep moving.'],
           cycleRest: ['Breathe.'],

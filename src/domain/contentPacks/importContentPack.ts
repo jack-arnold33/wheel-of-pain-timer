@@ -8,6 +8,7 @@ import {
   normalizeContentPack,
   normalizeContentPackName,
   normalizeSayings,
+  DEFAULT_VOICE_INSTRUCTIONS,
 } from './validation'
 
 export interface ContentPackSourceFile {
@@ -43,6 +44,7 @@ export async function importContentPackFile(
     return {
       schemaVersion: CONTENT_PACK_SCHEMA_VERSION,
       name: titleFromFilename(file.name),
+      voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
       sayings: normalizeSayings({ general: text.split(/\r?\n/u) }),
       extensions: {},
     }
