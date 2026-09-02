@@ -16,6 +16,7 @@ export type ContentPackSayings = Readonly<
 export interface ContentPackDraft {
   readonly schemaVersion: typeof CONTENT_PACK_SCHEMA_VERSION
   readonly name: string
+  readonly voiceInstructions: string
   readonly sayings: ContentPackSayings
   readonly extensions: Readonly<Record<string, unknown>>
 }

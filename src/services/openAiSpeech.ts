@@ -1,7 +1,10 @@
 import { openAiCredentialRepository } from '../data/openAiCredentialRepository'
+import { MAX_VOICE_INSTRUCTIONS_LENGTH } from '../domain/contentPacks/validation'
 
 export const OPENAI_SPEECH_MODEL = 'gpt-4o-mini-tts'
 export const OPENAI_SPEECH_ENDPOINT = 'https://api.openai.com/v1/audio/speech'
+export const OPENAI_SPEECH_BASE_INSTRUCTIONS =
+  'Read the supplied text exactly as written. Do not add, remove, rewrite, or repeat words. Pronounce any participant name clearly and finish the complete sentence.'
 export const OPENAI_SPEECH_VOICES = [
   { id: 'alloy', label: 'Alloy' },
   { id: 'coral', label: 'Coral' },
@@ -32,6 +35,7 @@ export interface OpenAiSpeechRequest {
   readonly text: string
   readonly voice: OpenAiSpeechVoice
   readonly speed: number
+  readonly voiceInstructions: string
   readonly signal?: AbortSignal
 }
 
@@ -55,9 +59,15 @@ export async function createOpenAiSpeech(
   environment: OpenAiSpeechEnvironment = defaultEnvironment,
 ): Promise<Blob> {
   const text = request.text.trim()
+  const voiceInstructions =
+    typeof request.voiceInstructions === 'string'
+      ? request.voiceInstructions.trim()
+      : ''
   if (
     text.length === 0 ||
     text.length > 4_096 ||
+    voiceInstructions.length === 0 ||
+    Array.from(voiceInstructions).length > MAX_VOICE_INSTRUCTIONS_LENGTH ||
     !voiceIds.has(request.voice) ||
     !Number.isFinite(request.speed) ||
     request.speed < 0.25 ||
@@ -92,6 +102,7 @@ export async function createOpenAiSpeech(
           model: OPENAI_SPEECH_MODEL,
           input: text,
           voice: request.voice,
+          instructions: `${OPENAI_SPEECH_BASE_INSTRUCTIONS}\n\nPersonality delivery: ${voiceInstructions}`,
           response_format: 'mp3',
           speed: request.speed,
         }),

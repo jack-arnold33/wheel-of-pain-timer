@@ -52,7 +52,8 @@ object:
 ```
 
 Content-pack entries use the stored version 1 pack fields: `id`,
-`schemaVersion`, `name`, `sayings`, `extensions`, `createdAt`, and `updatedAt`.
+`schemaVersion`, `name`, `voiceInstructions`, `sayings`, `extensions`,
+`createdAt`, and `updatedAt`.
 Participant entries use `id`, `name`, `createdAt`, and `updatedAt`.
 
 Version 1 recognizes the built-in theme identifiers `wheel-of-pain`,

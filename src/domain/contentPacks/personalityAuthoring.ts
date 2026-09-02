@@ -1,5 +1,9 @@
 import { CONTENT_PACK_SCHEMA_VERSION, type ContentPackDraft } from './types'
-import { InvalidContentPackError, normalizeContentPack } from './validation'
+import {
+  DEFAULT_VOICE_INSTRUCTIONS,
+  InvalidContentPackError,
+  normalizeContentPack,
+} from './validation'
 
 export const PERSONALITY_AUTHORING_DRAFT_KEY =
   'wheel-of-pain:personality-authoring-draft:v1'
@@ -21,6 +25,7 @@ export interface PersonalityAuthoringDraft {
   readonly themes: string
   readonly avoid: string
   readonly response: string
+  readonly voiceInstructions: string
   readonly sayings: Readonly<Record<PersonalityAuthoringCategory, string>>
 }
 
@@ -32,6 +37,7 @@ export const emptyPersonalityAuthoringDraft = (): PersonalityAuthoringDraft => (
   themes: '',
   avoid: '',
   response: '',
+  voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
   sayings: {
     work: '',
     cycleRest: '',
@@ -60,6 +66,7 @@ export function loadPersonalityAuthoringDraft(
       themes: text(parsed.themes),
       avoid: text(parsed.avoid),
       response: text(parsed.response),
+      voiceInstructions: text(parsed.voiceInstructions) || DEFAULT_VOICE_INSTRUCTIONS,
       sayings: {
         work: text(sayings.work),
         cycleRest: text(sayings.cycleRest),
@@ -143,6 +150,8 @@ export function buildPersonalityPrompt(
     '',
     'Write short phrases that sound natural when spoken aloud. Be creative, encouraging, and consistent with the requested tone. Do not include participant names or name placeholders; the app adds a participant name automatically. Do not use Markdown, emoji, or stage directions in the sayings.',
     '',
+    'Also write voiceInstructions that tell a text-to-speech model how this Personality should sound. Describe delivery only: tone, energy, pacing, emphasis, and emotional style. Do not include participant names, sayings, dialogue, sound effects, or instructions to add spoken words. Use 1 through 3 concise sentences and no more than 500 characters.',
+    '',
     'Generate exactly 20 work sayings, 8 cycle-rest sayings, and 5 finished sayings.',
     '',
     'Return exactly one fenced code block marked json. Do not write anything before or after the code block.',
@@ -151,6 +160,7 @@ export function buildPersonalityPrompt(
     '{',
     '  "schemaVersion": 1,',
     `  "name": ${JSON.stringify(draft.name.trim())},`,
+    '  "voiceInstructions": "delivery guidance matching this Personality",',
     '  "sayings": {',
     '    "work": ["saying for the beginning of a work round", "..."],',
     '    "cycleRest": ["saying for the beginning of a longer cycle rest", "..."],',
@@ -176,6 +186,7 @@ export function authoringDraftFromPack(
     ...current,
     step: 'review',
     name: pack.name,
+    voiceInstructions: pack.voiceInstructions,
     sayings: {
       work: formatSayings(pack.sayings.work ?? pack.sayings.general),
       cycleRest: formatSayings(pack.sayings.cycleRest),
@@ -190,6 +201,7 @@ export function contentPackFromAuthoringDraft(
   return normalizeContentPack({
     schemaVersion: CONTENT_PACK_SCHEMA_VERSION,
     name: draft.name,
+    voiceInstructions: draft.voiceInstructions,
     sayings: Object.fromEntries(
       personalityAuthoringCategories.map((category) => [
         category,

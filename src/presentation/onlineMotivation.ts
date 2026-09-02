@@ -22,6 +22,7 @@ export interface MotivationTarget {
 export interface OnlineMotivationOptions {
   readonly voice: OpenAiSpeechVoice
   readonly speed: number
+  readonly voiceInstructions: string
 }
 
 type SpeechRequest = (
@@ -112,6 +113,7 @@ export class OnlineMotivationController {
       text,
       voice: this.options.voice,
       speed: this.options.speed,
+      voiceInstructions: this.options.voiceInstructions,
       signal: controller.signal,
     })
       .then((blob) => {

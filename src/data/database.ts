@@ -25,6 +25,7 @@ export interface ContentPackRecord {
   readonly id: string
   readonly schemaVersion: 1
   readonly name: string
+  readonly voiceInstructions?: string
   readonly sayings: ContentPackSayings
   readonly extensions: Readonly<Record<string, unknown>>
   readonly createdAt: number

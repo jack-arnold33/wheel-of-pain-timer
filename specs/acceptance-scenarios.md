@@ -460,12 +460,14 @@ Given the user starts Create Personality on a phone
 And enters a name and optional tone, themes, and subjects to avoid
 When the user chooses Copy prompt for ChatGPT
 Then a schema-aware authoring prompt is copied or shown for manual copying
+And the prompt requests bounded voice-delivery instructions matching the
+  Personality without names, sayings, sound effects, or additional dialogue
 And the app does not contact ChatGPT or transmit the authoring fields
 And the unfinished draft is saved on this device
 When the PWA reloads after the user switches apps
 Then the unfinished draft is recovered
 When the user pastes valid v1 JSON with or without a Markdown code fence
-And reviews or edits the categorized sayings
+And reviews or edits the AI voice instructions and categorized sayings
 And chooses Save & select
 Then the same content-pack validation and conflict rules are applied
 And the Personality is saved locally, selected, and shown on pre-workout
@@ -477,6 +479,7 @@ Given the user is creating a Personality
 When the user pastes non-empty plain text with one saying per line
 Then the lines are normalized into the work category for review
 And general is not presented as a new-authoring category
+And the built-in default voice instructions are used
 ```
 
 ### Import a valid plain-text pack locally
@@ -503,6 +506,8 @@ Given a .timerpack.json file has schemaVersion 1, a valid name, and valid
   general, work, cycleRest, or finished categories within every limit
 When the user imports it
 Then the normalized pack is saved and selected atomically
+And supplied voice instructions are trimmed and preserved when present
+And the built-in default voice instructions are assigned when the field is absent
 And its supported categories are available offline
 And unknown top-level fields are retained for portable re-export but never run
 ```
@@ -525,6 +530,8 @@ Examples:
   | a missing or unsupported schemaVersion            |
   | a missing or 0-character normalized name          |
   | a name longer than 80 Unicode characters          |
+  | empty supplied voice instructions                 |
+  | supplied voice instructions longer than 500 characters |
   | no non-empty supported saying category            |
   | a saying longer than 240 Unicode characters       |
   | more than 500 normalized sayings in one category  |
@@ -720,12 +727,13 @@ Scenario: Save a dedicated project key on this device
 
 Scenario: User explicitly enables TV-compatible online speech
   Given a project key is configured on this device
-  And Settings explains that one saying and its selected participant name may
-    be sent to OpenAI
+  And Settings explains that one saying, its selected participant name, and the
+    selected Personality's voice instructions may be sent to OpenAI
   When the user selects TV voice through OpenAI, confirms consent, and selects
     an OpenAI voice
-  Then only the individual utterance needed at that moment may be transmitted
-  And the pack and roster are never uploaded as collections
+  Then only the individual utterance, the bounded pack voice instructions, and
+    the fixed exact-reading rules needed at that moment may be transmitted
+  And the pack's saying collection and roster are never uploaded as collections
   And the returned MP3 is played through HTML media
   When the user selects Device voice or removes the key
   Then pending generation is cancelled, prepared media is discarded, and no

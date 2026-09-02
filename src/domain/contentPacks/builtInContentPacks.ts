@@ -1,4 +1,5 @@
 import type { ContentPack } from './types'
+import { DEFAULT_VOICE_INSTRUCTIONS } from './validation'
 
 export const BUILT_IN_STARTER_PACK_ID = 'builtin:workout-starter'
 
@@ -6,6 +7,7 @@ export const builtInStarterPack: ContentPack = {
   id: BUILT_IN_STARTER_PACK_ID,
   schemaVersion: 1,
   name: 'Workout Starter',
+  voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
   sayings: {
     general: ['Keep moving.', 'You have got this.'],
     work: ['Time to work.', 'Make this round count.'],

@@ -55,20 +55,23 @@ and subjects to avoid. The app creates a prompt that the user can copy to an AI
 assistant. The app does not contact the assistant or upload this guidance.
 The prompt explicitly requests exactly one `json` code block containing a
 complete raw JSON object rather than quoted or escaped JSON, with nothing
-outside the block. This supports reliable use of an assistant's Copy code
-action. It forbids line-continuation backslashes and asks the assistant to use
-ordinary spaces rather than HTML whitespace entities and verify that the
-content inside the block is valid JSON before returning it. The paste parser
-normalizes common HTML whitespace entities introduced by rich-text copying
-before validation.
+outside the block. In addition to categorized sayings, it requests one concise
+`voiceInstructions` value describing the Personality's tone, energy, pacing,
+emphasis, and emotional style without names, sayings, sound effects, or extra
+spoken content. This supports reliable use of an assistant's Copy code action.
+It forbids line-continuation backslashes and asks the assistant to use ordinary
+spaces rather than HTML whitespace entities and verify that the content inside
+the block is valid JSON before returning it. The paste parser normalizes common
+HTML whitespace entities introduced by rich-text copying before validation.
 
 After returning to the app, the user pastes the generated response. Version 1
 accepts the documented JSON object, including JSON copied inside a Markdown code
 fence. Plain pasted text is also accepted as one work saying per non-empty
 line. New authoring presents only `work`, `cycleRest`, and `finished`; it does
-not request or create fallback `general` sayings. The user reviews and may edit every category before choosing
-**Save & select**. Saving uses the same validation, conflict handling, local
-storage, and automatic selection as file import.
+not request or create fallback `general` sayings. The user reviews and may edit
+the AI voice instructions and every category before choosing **Save & select**.
+Saving uses the same validation, conflict handling, local storage, and automatic
+selection as file import.
 
 The v1 schema continues to accept `general` for backward compatibility with
 existing packs and plain-text file imports. It remains an internal fallback for
@@ -107,6 +110,7 @@ Its required `name` field is authoritative rather than the filename.
 {
   "schemaVersion": 1,
   "name": "Tuesday Chaos Crew",
+  "voiceInstructions": "Sound dry, theatrical, and encouraging. Use crisp pacing and confident emphasis without shouting.",
   "sayings": {
     "general": ["Prepare your excuses."],
     "work": ["Form first. Complaining second."],
@@ -121,6 +125,10 @@ Its required `name` field is authoritative rather than the filename.
 - `schemaVersion` is required and must equal a supported integer version.
 - `name` is required, trimmed, and must contain 1 through 80 Unicode
   characters.
+- `voiceInstructions` is trimmed and must contain 1 through 500 Unicode
+  characters when supplied. Older JSON packs and plain-text imports without
+  the field receive the built-in default instructions; every normalized,
+  saved, backed-up, and exported pack contains an explicit value.
 - `sayings` is required and must contain at least one non-empty supported
   category after normalization.
 - Supported v1 categories are `general`, `work`, `cycleRest`, and `finished`.
@@ -139,7 +147,8 @@ Its required `name` field is authoritative rather than the filename.
 
 - The app includes a protected generic **Workout Starter** pack so a fresh
   install offers spoken motivation without requiring a file import. It can be
-  selected and inspected, but it cannot be renamed, exported, or removed.
+  selected and inspected, but it cannot be renamed, exported, or removed. Its
+  built-in voice instructions are the default for older or plain-text packs.
 - Built-in sayings are application content. Private or group-specific sayings
   remain user-supplied data and are never bundled into the deployment.
 - Zero or one pack is active for an MVP workout.

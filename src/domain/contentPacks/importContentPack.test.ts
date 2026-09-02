@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { importContentPackFile } from './importContentPack'
-import { InvalidContentPackError, MAX_CONTENT_PACK_BYTES } from './validation'
+import {
+  DEFAULT_VOICE_INSTRUCTIONS,
+  InvalidContentPackError,
+  MAX_CONTENT_PACK_BYTES,
+} from './validation'
 
 const sourceFile = (name: string, contents: string, size = contents.length) => ({
   name,
@@ -20,6 +24,7 @@ describe('content-pack import', () => {
     expect(pack).toEqual({
       schemaVersion: 1,
       name: 'Tuesday Chaos',
+      voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
       sayings: {
         general: ['Prepare your excuses.', 'Form first.'],
       },
@@ -34,6 +39,7 @@ describe('content-pack import', () => {
         JSON.stringify({
           schemaVersion: 1,
           name: ' Crew ',
+          voiceInstructions: ' Sound dry and theatrical. ',
           sayings: { work: [' Go! ', 'Go!'], finished: ['Done.'] },
           author: 'Local user',
         }),
@@ -43,9 +49,25 @@ describe('content-pack import', () => {
     expect(pack).toEqual({
       schemaVersion: 1,
       name: 'Crew',
+      voiceInstructions: 'Sound dry and theatrical.',
       sayings: { work: ['Go!'], finished: ['Done.'] },
       extensions: { author: 'Local user' },
     })
+  })
+
+  it('gives older JSON packs the default voice instructions', async () => {
+    const pack = await importContentPackFile(
+      sourceFile(
+        'legacy.timerpack.json',
+        JSON.stringify({
+          schemaVersion: 1,
+          name: 'Legacy',
+          sayings: { work: ['Go.'] },
+        }),
+      ),
+    )
+
+    expect(pack.voiceInstructions).toBe(DEFAULT_VOICE_INSTRUCTIONS)
   })
 
   it.each([
@@ -70,6 +92,32 @@ describe('content-pack import', () => {
         JSON.stringify({ schemaVersion: 1, name: 'Empty', sayings: { work: [' '] } }),
       ),
       'at least one',
+    ],
+    [
+      'empty voice instructions',
+      sourceFile(
+        'empty-voice.timerpack.json',
+        JSON.stringify({
+          schemaVersion: 1,
+          name: 'Empty Voice',
+          voiceInstructions: ' ',
+          sayings: { work: ['Go.'] },
+        }),
+      ),
+      '1 through 500',
+    ],
+    [
+      'oversized voice instructions',
+      sourceFile(
+        'long-voice.timerpack.json',
+        JSON.stringify({
+          schemaVersion: 1,
+          name: 'Long Voice',
+          voiceInstructions: 'x'.repeat(501),
+          sayings: { work: ['Go.'] },
+        }),
+      ),
+      '1 through 500',
     ],
   ])('rejects an actionable %s without producing a pack', async (_label, file, message) => {
     await expect(importContentPackFile(file)).rejects.toThrow(message)

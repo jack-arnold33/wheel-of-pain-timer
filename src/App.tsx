@@ -513,6 +513,10 @@ export function App({
             allowOnlineVoices={allowOnlineVoices}
             voiceId={selectedVoiceId}
             speechRate={speechRate}
+            voiceInstructions={
+              contentPacks.find(({ id }) => id === selectedContentPackId)
+                ?.voiceInstructions
+            }
             participantCount={participants.length}
             onBack={() => setScreen(settingsReturnScreen)}
             onParticipants={() => {

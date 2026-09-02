@@ -253,6 +253,17 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
                 onChange={(event) => update('name', event.target.value)}
                 slotProps={{ htmlInput: { maxLength: 80 } }}
               />
+              <TextField
+                required
+                fullWidth
+                multiline
+                minRows={3}
+                label="AI voice instructions"
+                value={draft.voiceInstructions}
+                onChange={(event) => update('voiceInstructions', event.target.value)}
+                helperText="Describe how this Personality should sound. The app separately requires the voice to read each saying exactly."
+                slotProps={{ htmlInput: { maxLength: 500 } }}
+              />
               {personalityAuthoringCategories.map((category) => (
                 <Paper key={category} variant="outlined" sx={{ p: 2 }}>
                   <Stack spacing={1.5}>
@@ -287,7 +298,12 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
                 elevation={4}
                 sx={{ position: { xs: 'sticky', sm: 'static' }, bottom: 12, p: 1.5, zIndex: 1 }}
               >
-                <Button fullWidth variant="contained" disabled={busy} onClick={() => void save()}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  disabled={busy || draft.voiceInstructions.trim().length === 0}
+                  onClick={() => void save()}
+                >
                   Save & select
                 </Button>
               </Paper>

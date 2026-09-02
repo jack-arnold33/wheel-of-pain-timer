@@ -13,6 +13,7 @@ let repository: ContentPackRepository
 const draft: ContentPackDraft = {
   schemaVersion: 1,
   name: 'Tuesday Chaos',
+  voiceInstructions: 'Sound dry, theatrical, and encouraging.',
   sayings: { general: ['Move.'] },
   extensions: { author: 'Local' },
 }
@@ -87,5 +88,21 @@ describe('content-pack repository', () => {
       repository.create({ ...draft, sayings: { general: ['x'.repeat(241)] } }),
     ).rejects.toBeInstanceOf(InvalidContentPackError)
     expect(await database.contentPacks.count()).toBe(0)
+  })
+
+  it('normalizes a legacy stored pack with the default voice instructions', async () => {
+    await database.contentPacks.add({
+      id: 'pack:legacy',
+      schemaVersion: 1,
+      name: 'Legacy',
+      sayings: { general: ['Move.'] },
+      extensions: {},
+      createdAt: 1,
+      updatedAt: 1,
+    })
+
+    expect((await repository.get('pack:legacy'))?.voiceInstructions).toContain(
+      'supportive workout coach',
+    )
   })
 })

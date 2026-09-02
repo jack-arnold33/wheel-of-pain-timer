@@ -6,6 +6,9 @@ import {
 } from './types'
 
 export const MAX_CONTENT_PACK_BYTES = 512 * 1024
+export const MAX_VOICE_INSTRUCTIONS_LENGTH = 500
+export const DEFAULT_VOICE_INSTRUCTIONS =
+  'Sound like an energetic, confident, and supportive workout coach. Keep the delivery natural, concise, and motivating without shouting or becoming theatrical.'
 const MAX_NAME_LENGTH = 80
 const MAX_SAYING_LENGTH = 240
 const MAX_CATEGORY_SAYINGS = 500
@@ -29,6 +32,21 @@ export function normalizeContentPackName(name: unknown): string {
   if (length < 1 || length > MAX_NAME_LENGTH) {
     throw new InvalidContentPackError(
       'The pack name must contain 1 through 80 characters.',
+    )
+  }
+  return normalized
+}
+
+export function normalizeVoiceInstructions(value: unknown): string {
+  if (value === undefined) return DEFAULT_VOICE_INSTRUCTIONS
+  if (typeof value !== 'string') {
+    throw new InvalidContentPackError('Voice instructions must be text.')
+  }
+  const normalized = value.trim()
+  const length = characterCount(normalized)
+  if (length < 1 || length > MAX_VOICE_INSTRUCTIONS_LENGTH) {
+    throw new InvalidContentPackError(
+      'Voice instructions must contain 1 through 500 characters.',
     )
   }
   return normalized
@@ -109,11 +127,18 @@ export function normalizeContentPack(value: unknown): ContentPackDraft {
     )
   }
 
-  const { schemaVersion: _schemaVersion, name, sayings, ...extensions } = input
+  const {
+    schemaVersion: _schemaVersion,
+    name,
+    voiceInstructions,
+    sayings,
+    ...extensions
+  } = input
   void _schemaVersion
   return {
     schemaVersion: CONTENT_PACK_SCHEMA_VERSION,
     name: normalizeContentPackName(name),
+    voiceInstructions: normalizeVoiceInstructions(voiceInstructions),
     sayings: normalizeSayings(sayings),
     extensions,
   }

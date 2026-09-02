@@ -59,6 +59,7 @@ const exportPack = (pack: ContentPack) => {
     ...pack.extensions,
     schemaVersion: pack.schemaVersion,
     name: pack.name,
+    voiceInstructions: pack.voiceInstructions,
     sayings: pack.sayings,
   }
   const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], {
@@ -252,6 +253,12 @@ export function ContentPackLibrary({
                     : 'Saved on this device'}
                 </Typography>
                 <Typography variant="h5">{totalSayings(inspection)} sayings</Typography>
+                <Stack spacing={0.5}>
+                  <Typography variant="h6">AI voice instructions</Typography>
+                  <Typography color="text.secondary">
+                    {inspection.voiceInstructions}
+                  </Typography>
+                </Stack>
                 <Divider />
                 {contentPackCategories.map((category) => (
                   <Stack key={category} direction="row" sx={{ justifyContent: 'space-between' }}>

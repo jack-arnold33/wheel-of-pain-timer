@@ -20,6 +20,7 @@ const pack: ContentPack = {
   id: 'test',
   schemaVersion: 1,
   name: 'Test',
+  voiceInstructions: 'Sound calm but firm.',
   sayings: { work: ['Work.'], cycleRest: ['Rest.'], finished: ['Done.'] },
   extensions: {},
   createdAt: 1,
@@ -39,7 +40,7 @@ const setup = () => {
   const controller = new OnlineMotivationController(
     phases,
     new MotivationSession(pack, [], () => 0),
-    { voice: 'alloy', speed: 1 },
+    { voice: 'alloy', speed: 1, voiceInstructions: pack.voiceInstructions },
     onError,
     player,
     request,
@@ -62,6 +63,9 @@ describe('online motivation preparation', () => {
     speech.controller.startAt(0)
     await flush()
     expect(speech.request).toHaveBeenCalledTimes(1)
+    expect(speech.request).toHaveBeenCalledWith(
+      expect.objectContaining({ voiceInstructions: pack.voiceInstructions }),
+    )
     expect(speech.player.prepareSpeech).toHaveBeenCalledWith(
       expect.stringMatching(/^phase:/),
       expect.any(Blob),
