@@ -21,6 +21,8 @@ import {
   InputLabel,
   MenuItem,
   Paper,
+  Radio,
+  RadioGroup,
   Select,
   Stack,
   Switch,
@@ -115,6 +117,7 @@ export function SettingsScreen({
   const [apiKey, setApiKey] = useState('')
   const [acknowledgeLocalKey, setAcknowledgeLocalKey] = useState(false)
   const [credentialBusy, setCredentialBusy] = useState(false)
+  const [configureOnlineVoice, setConfigureOnlineVoice] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -235,6 +238,7 @@ export function SettingsScreen({
       await openAiCredentialRepository.remove()
       setCredential({ configured: false })
       setApiKey('')
+      setConfigureOnlineVoice(false)
       if (allowOnlineVoices) await save({ allowOnlineVoices: false, voiceId: null })
       setPreviewNotice('OpenAI API key removed from this device.')
     } catch {
@@ -529,78 +533,123 @@ export function SettingsScreen({
 
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={2}>
-              <Typography variant="h5">TV-compatible online voice</Typography>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={allowOnlineVoices}
-                    disabled={busy || credentialBusy}
-                    onChange={(_, checked) => {
-                      if (checked) {
-                        if (!credential.configured) {
-                          setPreviewNotice('Save an OpenAI API key on this device first.')
-                          return
-                        }
-                        setConfirmOnlineVoices(true)
-                        return
-                      }
-                      appAudioPlayer.cancelSpeech()
+              <Typography variant="h5">Voice output</Typography>
+              <FormControl>
+                <RadioGroup
+                  aria-label="Motivational voice output"
+                  value={allowOnlineVoices || configureOnlineVoice ? 'openai' : 'device'}
+                  onChange={(_, value) => {
+                    if (value === 'openai') {
+                      setConfigureOnlineVoice(true)
+                      return
+                    }
+                    setConfigureOnlineVoice(false)
+                    appAudioPlayer.cancelSpeech()
+                    if (allowOnlineVoices) {
                       void save({
-                        allowOnlineVoices: checked,
+                        allowOnlineVoices: false,
                         voiceId: null,
                       })
-                    }}
-                  />
-                }
-                label="Send one saying at a time to OpenAI for speech"
-              />
-              <Alert severity="warning">
-                Use a dedicated OpenAI project with a small hard spending limit and alert.
-                OpenAI recommends keeping API keys on a server; this personal-use app stores
-                the key in this device&apos;s IndexedDB instead.
-              </Alert>
-              <Typography variant="body2">
-                {credential.configured
-                  ? `Key configured on this device · ends in ${credential.lastFour}`
-                  : 'No OpenAI API key is configured on this device.'}
-              </Typography>
-              <TextField
-                label={credential.configured ? 'Replacement OpenAI API key' : 'OpenAI API key'}
-                type="password"
-                autoComplete="off"
-                value={apiKey}
-                disabled={credentialBusy}
-                onChange={(event) => setApiKey(event.target.value)}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={acknowledgeLocalKey}
-                    disabled={credentialBusy}
-                    onChange={(_, checked) => setAcknowledgeLocalKey(checked)}
-                  />
-                }
-                label="I understand this key stays on this device and can be read by code running as this app."
-              />
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                <Button
-                  variant="contained"
-                  disabled={credentialBusy || !acknowledgeLocalKey || apiKey.trim().length === 0}
-                  onClick={() => void saveApiKey()}
+                    }
+                  }}
                 >
-                  {credential.configured ? 'Replace key' : 'Save on this device'}
-                </Button>
-                {credential.configured && (
-                  <Button
-                    color="error"
-                    variant="outlined"
+                  <FormControlLabel
+                    value="device"
+                    disabled={busy || credentialBusy}
+                    control={<Radio />}
+                    label={
+                      <Box>
+                        <Typography>Device voice</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Free and available offline, but it may play on this device
+                          instead of the TV.
+                        </Typography>
+                      </Box>
+                    }
+                    sx={{ alignItems: 'flex-start', '& .MuiRadio-root': { mt: -0.5 } }}
+                  />
+                  <FormControlLabel
+                    value="openai"
+                    disabled={busy || credentialBusy}
+                    control={<Radio />}
+                    label={
+                      <Box>
+                        <Typography>TV voice through OpenAI</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Uses internet and API credit. Generated audio is routed through
+                          the TV-compatible player.
+                        </Typography>
+                      </Box>
+                    }
+                    sx={{ alignItems: 'flex-start', '& .MuiRadio-root': { mt: -0.5 } }}
+                  />
+                </RadioGroup>
+              </FormControl>
+              {(allowOnlineVoices || configureOnlineVoice) && (
+                <Stack spacing={2}>
+                  {!credential.configured && (
+                    <Alert severity="info">
+                      Enter and save an OpenAI API key below to continue.
+                    </Alert>
+                  )}
+                  <Alert severity="warning">
+                    Use a dedicated OpenAI project with a small hard spending limit and alert.
+                    OpenAI recommends keeping API keys on a server; this personal-use app stores
+                    the key in this device&apos;s IndexedDB instead.
+                  </Alert>
+                  <Typography variant="body2">
+                    {credential.configured
+                      ? `Key configured on this device · ends in ${credential.lastFour}`
+                      : 'No OpenAI API key is configured on this device.'}
+                  </Typography>
+                  <TextField
+                    label={credential.configured ? 'Replacement OpenAI API key' : 'OpenAI API key'}
+                    type="password"
+                    autoComplete="off"
+                    value={apiKey}
                     disabled={credentialBusy}
-                    onClick={() => void removeApiKey()}
-                  >
-                    Remove key
-                  </Button>
-                )}
-              </Stack>
+                    onChange={(event) => setApiKey(event.target.value)}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={acknowledgeLocalKey}
+                        disabled={credentialBusy}
+                        onChange={(_, checked) => setAcknowledgeLocalKey(checked)}
+                      />
+                    }
+                    label="I understand this key stays on this device and can be read by code running as this app."
+                  />
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                    <Button
+                      variant="contained"
+                      disabled={credentialBusy || !acknowledgeLocalKey || apiKey.trim().length === 0}
+                      onClick={() => void saveApiKey()}
+                    >
+                      {credential.configured ? 'Replace key' : 'Save on this device'}
+                    </Button>
+                    {credential.configured && !allowOnlineVoices && (
+                      <Button
+                        variant="contained"
+                        disabled={credentialBusy}
+                        onClick={() => setConfirmOnlineVoices(true)}
+                      >
+                        Enable TV voice
+                      </Button>
+                    )}
+                    {credential.configured && (
+                      <Button
+                        color="error"
+                        variant="outlined"
+                        disabled={credentialBusy}
+                        onClick={() => void removeApiKey()}
+                      >
+                        Remove key
+                      </Button>
+                    )}
+                  </Stack>
+                </Stack>
+              )}
             </Stack>
           </Paper>
 
@@ -643,7 +692,9 @@ export function SettingsScreen({
 
       <Dialog
         open={confirmOnlineVoices}
-        onClose={() => !busy && setConfirmOnlineVoices(false)}
+        onClose={() => {
+          if (!busy) setConfirmOnlineVoices(false)
+        }}
       >
         <DialogTitle>Enable TV-compatible online voice?</DialogTitle>
         <DialogContent>

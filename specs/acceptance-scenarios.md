@@ -722,11 +722,12 @@ Scenario: User explicitly enables TV-compatible online speech
   Given a project key is configured on this device
   And Settings explains that one saying and its selected participant name may
     be sent to OpenAI
-  When the user enables TV-compatible online speech and selects an OpenAI voice
+  When the user selects TV voice through OpenAI, confirms consent, and selects
+    an OpenAI voice
   Then only the individual utterance needed at that moment may be transmitted
   And the pack and roster are never uploaded as collections
   And the returned MP3 is played through HTML media
-  When the user disables online speech or removes the key
+  When the user selects Device voice or removes the key
   Then pending generation is cancelled, prepared media is discarded, and no
     future utterance is sent
 

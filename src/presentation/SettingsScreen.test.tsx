@@ -166,7 +166,7 @@ describe('SettingsScreen', () => {
       'aria-checked',
       'true',
     )
-    expect(screen.getAllByRole('radio')).toHaveLength(4)
+    expect(screen.getAllByRole('radio', { name: /^Use .* theme$/ })).toHaveLength(4)
     fireEvent.click(screen.getByRole('radio', { name: 'Use Cold Steel theme' }))
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith({ themeId: 'cold-steel' }),
@@ -235,7 +235,7 @@ describe('SettingsScreen', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('clears a selected online voice when consent is disabled', async () => {
+  it('clears a selected online voice when device voice is selected', async () => {
     const online = voice('Online Voice', 'voice:online', false)
     Object.defineProperty(window, 'speechSynthesis', {
       configurable: true,
@@ -264,15 +264,53 @@ describe('SettingsScreen', () => {
       </ThemeProvider>,
     )
 
-    fireEvent.click(screen.getByRole('switch', {
-      name: 'Send one saying at a time to OpenAI for speech',
-    }))
+    fireEvent.click(screen.getByRole('radio', { name: /Device voice/ }))
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith({
         allowOnlineVoices: false,
         voiceId: null,
       }),
     )
+  })
+
+  it('reveals OpenAI key and consent controls only after TV voice is selected', async () => {
+    const onChange = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <SettingsScreen
+          timerSoundsEnabled
+          spokenMotivationEnabled
+          allowOnlineVoices={false}
+          voiceId={null}
+          speechRate={1}
+          participantCount={0}
+          onBack={vi.fn()}
+          onParticipants={vi.fn()}
+          onChange={onChange}
+          {...backupHandlers}
+        />
+      </ThemeProvider>,
+    )
+
+    const onlineChoice = await screen.findByRole('radio', {
+      name: /TV voice through OpenAI/,
+    })
+    expect(onlineChoice).toBeEnabled()
+    expect(screen.queryByLabelText('OpenAI API key')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('checkbox', { name: /I understand this key/ }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(onlineChoice)
+
+    expect(screen.getByLabelText('OpenAI API key')).toBeInTheDocument()
+    expect(
+      screen.getByRole('checkbox', { name: /I understand this key/ }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Enter and save an OpenAI API key below to continue.'),
+    ).toBeInTheDocument()
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('explains online speech before saving consent', async () => {
@@ -302,10 +340,9 @@ describe('SettingsScreen', () => {
       screen.queryByText(/An individual saying and the participant name/),
     ).not.toBeInTheDocument()
 
+    fireEvent.click(screen.getByRole('radio', { name: /TV voice through OpenAI/ }))
     await screen.findByText(/ends in abcd/)
-    fireEvent.click(screen.getByRole('switch', {
-      name: 'Send one saying at a time to OpenAI for speech',
-    }))
+    fireEvent.click(screen.getByRole('button', { name: 'Enable TV voice' }))
     expect(
       screen.getByRole('heading', { name: 'Enable TV-compatible online voice?' }),
     ).toBeInTheDocument()
@@ -339,6 +376,7 @@ describe('SettingsScreen', () => {
       </ThemeProvider>,
     )
 
+    fireEvent.click(await screen.findByRole('radio', { name: /TV voice through OpenAI/ }))
     const saveButton = screen.getByRole('button', { name: 'Save on this device' })
     expect(saveButton).toBeDisabled()
     fireEvent.change(screen.getByLabelText('OpenAI API key'), {
