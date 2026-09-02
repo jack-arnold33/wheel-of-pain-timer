@@ -42,13 +42,15 @@ import {
   remainingScheduledMs,
   workIntervalsRemaining,
 } from './timerPresentation'
-import { playTimerCues, primeTimerAudio } from './timerAudio'
+import { playTimerCues, primeTimerAudio, stopTimerCues } from './timerAudio'
 import { timerCueFrame, timerCuesBetween } from './timerCues'
 import { motivationCategoryBetween } from './motivationCues'
 import {
   speakMotivation,
   type MotivationSpeechOptions,
 } from './spokenMotivation'
+import { OPENAI_SPEECH_VOICES, type OpenAiSpeechVoice } from '../services/openAiSpeech'
+import { OnlineMotivationController } from './onlineMotivation'
 
 export interface WorkoutMotivation {
   readonly pack: ContentPack
@@ -102,8 +104,36 @@ export function WorkoutRunner({
       ? new MotivationSession(motivation.pack, motivation.participants)
       : undefined,
   )
+  const [onlineMotivation] = useState(() => {
+    if (
+      motivationSession === undefined ||
+      motivation === undefined ||
+      !motivation.enabled ||
+      !motivation.speech.allowOnlineVoices
+    ) {
+      return undefined
+    }
+    const selectedVoice = OPENAI_SPEECH_VOICES.some(
+      ({ id }) => id === motivation.speech.voiceId,
+    )
+      ? (motivation.speech.voiceId as OpenAiSpeechVoice)
+      : 'alloy'
+    return new OnlineMotivationController(
+      phases,
+      motivationSession,
+      { voice: selectedVoice, speed: motivation.speech.rate },
+      (code) => {
+        setMotivationNotice(
+          code === 'authentication' || code === 'not-configured'
+            ? 'Online speech needs a valid OpenAI API key in Settings.'
+            : 'Online speech was unavailable. The visual timer will continue.',
+        )
+      },
+    )
+  })
   const activeElapsedMs = useRef(initialActiveElapsedMs)
   const completionReported = useRef(false)
+  const completionSpeechStarted = useRef(false)
   const lastCheckpointAtMs = useRef(0)
   const lastCheckpointPosition = useRef('')
   const previousCueFrame = useRef<ReturnType<typeof timerCueFrame> | undefined>(
@@ -118,6 +148,8 @@ export function WorkoutRunner({
       ? undefined
       : timerCueFrame(initialWorkout, initialClockMs),
   )
+  const previousWorkoutStatus = useRef<WorkoutState['status'] | undefined>(undefined)
+  const workoutPhaseIndex = 'phaseIndex' in workout ? workout.phaseIndex : -1
 
   const advance = (state: WorkoutState, atMs: number): WorkoutState => {
     if (state.status !== 'running') return projectWorkout(state, atMs)
@@ -138,6 +170,19 @@ export function WorkoutRunner({
   })
 
   useEffect(() => {
+    const previous = previousWorkoutStatus.current
+    previousWorkoutStatus.current = workout.status
+    if (onlineMotivation === undefined || workout.status === 'complete') return
+    if (workout.status !== 'running') {
+      onlineMotivation.cancel()
+      return
+    }
+    if (previous !== 'running' && workoutPhaseIndex >= 0) {
+      onlineMotivation.startAt(workoutPhaseIndex)
+    }
+  }, [onlineMotivation, workout.status, workoutPhaseIndex])
+
+  useEffect(() => {
     const currentFrame = timerCueFrame(workout, clockMs)
     const category = motivationCategoryBetween(
       previousMotivationFrame.current,
@@ -145,8 +190,24 @@ export function WorkoutRunner({
       phases,
     )
     if (category !== undefined && motivationSession !== undefined && motivation) {
-      const text = motivationSession.next(category)
-      if (text !== undefined) {
+      if (onlineMotivation !== undefined) {
+        const targetId = currentFrame.status === 'complete'
+          ? 'complete'
+          : `phase:${currentFrame.phaseIndex}`
+        if (targetId === 'complete') completionSpeechStarted.current = true
+        void onlineMotivation.arrive(targetId).then((result) => {
+          if (result === 'blocked' || result === 'failed') {
+            setMotivationNotice(
+              'Prepared speech could not play. The visual timer will continue.',
+            )
+          }
+        })
+      } else {
+        const text = motivationSession.next(category)
+        if (text === undefined) {
+          previousMotivationFrame.current = currentFrame
+          return
+        }
         const result = speakMotivation(text, motivation.speech)
         if (result === 'unsupported') {
           setMotivationNotice('Spoken motivation is not supported by this browser.')
@@ -162,7 +223,14 @@ export function WorkoutRunner({
       }
     }
     previousMotivationFrame.current = currentFrame
-  }, [clockMs, motivation, motivationSession, phases, workout])
+  }, [clockMs, motivation, motivationSession, onlineMotivation, phases, workout])
+
+  useEffect(
+    () => () => {
+      if (!completionSpeechStarted.current) onlineMotivation?.cancel()
+    },
+    [onlineMotivation],
+  )
 
   useEffect(() => {
     if (workout.status === 'complete' && !completionReported.current) {
@@ -193,8 +261,13 @@ export function WorkoutRunner({
   }, [clockMs, soundsEnabled, workout])
 
   useEffect(() => {
+    if (!soundsEnabled) stopTimerCues()
+  }, [soundsEnabled])
+
+  useEffect(() => {
     const pauseInterruptedResume = () => {
       if (document.visibilityState === 'visible') return
+      onlineMotivation?.cancel()
       const atMs = now()
       setClockMs(atMs)
       setWorkout((state) =>
@@ -204,7 +277,7 @@ export function WorkoutRunner({
     document.addEventListener('visibilitychange', pauseInterruptedResume)
     return () =>
       document.removeEventListener('visibilitychange', pauseInterruptedResume)
-  }, [])
+  }, [onlineMotivation])
 
   if (workout.status === 'complete') return null
 

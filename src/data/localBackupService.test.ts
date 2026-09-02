@@ -6,7 +6,11 @@ import {
 } from '../domain/backup/localBackup'
 import { defaultAppPreferences } from '../domain/preferences/appPreferences'
 import { standardRoutineTiming } from '../domain/timer/standardRoutine'
-import { APP_PREFERENCES_ID, WheelOfPainDatabase } from './database'
+import {
+  APP_PREFERENCES_ID,
+  OPENAI_CREDENTIAL_ID,
+  WheelOfPainDatabase,
+} from './database'
 import { LocalBackupService } from './localBackupService'
 import { PreferencesRepository } from './preferencesRepository'
 
@@ -71,8 +75,16 @@ describe('local backup service', () => {
       id: APP_PREFERENCES_ID,
       ...source.preferences,
     })
+    await database.credentials.put({
+      id: OPENAI_CREDENTIAL_ID,
+      apiKey: 'sk-proj-must-never-be-exported',
+      lastFour: 'rted',
+      updatedAt: 30,
+    })
 
-    expect(await service.export()).toEqual(source)
+    const exported = await service.export()
+    expect(exported).toEqual(source)
+    expect(JSON.stringify(exported)).not.toContain('sk-proj')
   })
 
   it('atomically replaces every local collection after complete validation', async () => {
@@ -81,6 +93,12 @@ describe('local backup service', () => {
       name: 'Old Routine',
       timing: standardRoutineTiming,
       createdAt: 1,
+      updatedAt: 1,
+    })
+    await database.credentials.put({
+      id: OPENAI_CREDENTIAL_ID,
+      apiKey: 'sk-proj-stays-device-local',
+      lastFour: 'ocal',
       updatedAt: 1,
     })
 
@@ -93,6 +111,9 @@ describe('local backup service', () => {
     expect(await database.preferences.get(APP_PREFERENCES_ID)).toEqual({
       id: APP_PREFERENCES_ID,
       ...source.preferences,
+    })
+    expect(await database.credentials.get(OPENAI_CREDENTIAL_ID)).toMatchObject({
+      apiKey: 'sk-proj-stays-device-local',
     })
   })
 

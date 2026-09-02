@@ -1,110 +1,111 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { HtmlAudioPlayer, TIMER_CUE_ASSETS } from './timerAudio'
 
-interface FakeAudioParam {
-  setValueAtTime: ReturnType<typeof vi.fn>
-  exponentialRampToValueAtTime: ReturnType<typeof vi.fn>
+class FakeAudio extends EventTarget {
+  src = ''
+  preload = ''
+  muted = false
+  currentTime = 0
+  readyState = 4
+  load = vi.fn()
+  pause = vi.fn()
+  autoEnd = false
+  play = vi.fn(async () => {
+    if (this.autoEnd) queueMicrotask(() => this.dispatchEvent(new Event('ended')))
+  })
 }
 
-const installAudioContext = () => {
-  const frequencies: number[] = []
-  const peakGains: number[] = []
-  const durations: number[] = []
-
-  class FakeAudioContext {
-    state = 'running'
-    currentTime = 10
-    destination = {}
-    resume = vi.fn()
-
-    createOscillator() {
-      const frequency = {
-        setValueAtTime: vi.fn((value: number) => frequencies.push(value)),
-      }
-      let startsAt = 0
-      return {
-        type: 'sine',
-        frequency,
-        connect: vi.fn(),
-        start: vi.fn((at: number) => { startsAt = at }),
-        stop: vi.fn((at: number) => durations.push(at - startsAt)),
-      }
-    }
-
-    createGain() {
-      const gain: FakeAudioParam = {
-        setValueAtTime: vi.fn(),
-        exponentialRampToValueAtTime: vi.fn((value: number) => {
-          if (value > 0.001) peakGains.push(value)
-        }),
-      }
-      return { gain, connect: vi.fn() }
-    }
-  }
-
-  Object.defineProperty(window, 'AudioContext', {
-    configurable: true,
-    value: FakeAudioContext,
+const setup = () => {
+  const elements: FakeAudio[] = []
+  const revoked: string[] = []
+  const configureAudioSession = vi.fn()
+  const player = new HtmlAudioPlayer({
+    createAudio: (src) => {
+      const audio = new FakeAudio()
+      audio.src = src ?? ''
+      audio.autoEnd = src !== undefined
+      elements.push(audio)
+      return audio
+    },
+    createObjectUrl: () => 'blob:prepared',
+    revokeObjectUrl: (url) => revoked.push(url),
+    configureAudioSession,
   })
-  return { frequencies, peakGains, durations }
+  const bySource = (source: string) =>
+    elements.find((element) => element.src === source) as FakeAudio
+  return { player, elements, bySource, revoked, configureAudioSession }
 }
 
-afterEach(() => {
-  vi.resetModules()
-  Reflect.deleteProperty(navigator, 'audioSession')
-  Reflect.deleteProperty(window, 'AudioContext')
-})
-
-describe('timer audio', () => {
-  it('selects the iPhone playback session when audio is primed', async () => {
-    const audioSession = { type: 'auto' }
-    Object.defineProperty(navigator, 'audioSession', {
-      configurable: true,
-      value: audioSession,
-    })
-
-    const { primeTimerAudio } = await import('./timerAudio')
-    primeTimerAudio()
-
-    expect(audioSession.type).toBe('playback')
+describe('HTML timer audio', () => {
+  it('primes retained media elements and the playback session', async () => {
+    const audio = setup()
+    await audio.player.prime()
+    expect(audio.configureAudioSession).toHaveBeenCalledOnce()
+    expect(audio.elements.slice(0, 4).every((element) => element.preload === 'auto')).toBe(true)
+    expect(audio.bySource(TIMER_CUE_ASSETS.transition).play).toHaveBeenCalledOnce()
   })
 
-  it('remains usable when the browser has no audio-session API', async () => {
-    const { primeTimerAudio } = await import('./timerAudio')
-
-    expect(() => primeTimerAudio()).not.toThrow()
-  })
-
-  it('uses a louder ascending countdown with a distinctive final warning', async () => {
-    const audio = installAudioContext()
-    const { playTimerCues } = await import('./timerAudio')
-
-    playTimerCues([
+  it('maps countdown and transition cues to their packaged assets in order', async () => {
+    const audio = setup()
+    const order: string[] = []
+    for (const [name, source] of Object.entries(TIMER_CUE_ASSETS)) {
+      audio.bySource(source).play.mockImplementation(async function (this: FakeAudio) {
+        order.push(name)
+        queueMicrotask(() => this.dispatchEvent(new Event('ended')))
+      })
+    }
+    await audio.player.playCues([
       { kind: 'countdown', second: 3 },
       { kind: 'countdown', second: 2 },
       { kind: 'countdown', second: 1 },
+      { kind: 'transition' },
     ])
-
-    expect(audio.frequencies).toEqual([700, 880, 1_100, 1_650])
-    expect(audio.peakGains).toEqual([0.62, 0.7, 0.76, 0.18])
-    expect(audio.durations).toHaveLength(4)
-    expect(audio.durations[0]).toBeCloseTo(0.16)
-    expect(audio.durations[1]).toBeCloseTo(0.18)
-    expect(audio.durations[2]).toBeCloseTo(0.26)
-    expect(audio.durations[3]).toBeCloseTo(0.2)
+    expect(order).toEqual(['countdown-3', 'countdown-2', 'countdown-1', 'transition'])
   })
 
-  it('uses a strong harmonic two-tone transition cue', async () => {
-    const audio = installAudioContext()
-    const { playTimerCues } = await import('./timerAudio')
+  it('stops an active sequence without playing its remaining cues', async () => {
+    const audio = setup()
+    const first = audio.bySource(TIMER_CUE_ASSETS['countdown-3'])
+    const second = audio.bySource(TIMER_CUE_ASSETS['countdown-2'])
+    first.autoEnd = false
+    const playback = audio.player.playCues([
+      { kind: 'countdown', second: 3 },
+      { kind: 'countdown', second: 2 },
+    ])
+    await Promise.resolve()
+    audio.player.stopCues()
+    first.dispatchEvent(new Event('ended'))
+    await playback
+    expect(first.pause).toHaveBeenCalled()
+    expect(second.play).not.toHaveBeenCalled()
+  })
 
-    playTimerCues([{ kind: 'transition' }])
+  it('gives an essential cue priority over prepared speech', async () => {
+    const audio = setup()
+    audio.player.prepareSpeech('work:1', new Blob(['audio']))
+    await audio.player.playPreparedSpeech('work:1')
+    await audio.player.playCues([{ kind: 'transition' }])
+    expect(audio.elements.at(-1)?.pause).toHaveBeenCalled()
+    expect(audio.revoked).toEqual(['blob:prepared'])
+  })
 
-    expect(audio.frequencies).toEqual([880, 1_760, 1_320, 2_640])
-    expect(audio.peakGains).toEqual([0.75, 0.14, 0.85, 0.1])
-    expect(audio.durations).toHaveLength(4)
-    expect(audio.durations[0]).toBeCloseTo(0.16)
-    expect(audio.durations[1]).toBeCloseTo(0.13)
-    expect(audio.durations[2]).toBeCloseTo(0.28)
-    expect(audio.durations[3]).toBeCloseTo(0.22)
+  it('plays a ready prepared clip once and revokes it when it ends', async () => {
+    const audio = setup()
+    const speech = audio.elements.at(-1) as FakeAudio
+    audio.player.prepareSpeech('work:1', new Blob(['audio']))
+    await expect(audio.player.playPreparedSpeech('work:1')).resolves.toBe('started')
+    speech.dispatchEvent(new Event('ended'))
+    expect(audio.revoked).toEqual(['blob:prepared'])
+    await expect(audio.player.playPreparedSpeech('work:1')).resolves.toBe('not-ready')
+  })
+
+  it('skips and revokes a target that is not media-ready', async () => {
+    const audio = setup()
+    const speech = audio.elements.at(-1) as FakeAudio
+    speech.readyState = 0
+    audio.player.prepareSpeech('work:1', new Blob(['audio']))
+    await expect(audio.player.playPreparedSpeech('work:1')).resolves.toBe('not-ready')
+    expect(speech.play).not.toHaveBeenCalled()
+    expect(audio.revoked).toEqual(['blob:prepared'])
   })
 })

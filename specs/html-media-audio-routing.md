@@ -624,10 +624,10 @@ active.
 5. Play representative workout music and confirm essential cues remain usable;
    record system ducking rather than assuming the app controls it.
 6. Cold-launch offline and confirm every essential cue still works.
-7. Before product implementation, prove that a direct authenticated Fetch
-   request from the deployed origin succeeds despite browser CORS enforcement
-   in both Safari and Home Screen modes. Record preflight or Fetch failure
-   without recording the Authorization value.
+7. The product owner reports that the direct authenticated Fetch request from
+   the deployed browser succeeds and is not blocked by CORS. Preserve the
+   formal Safari and Home Screen evidence without recording the Authorization
+   value.
 8. For generated speech, record request-to-ready and transition-to-audible
    latency, stale cancellation, invalid and revoked key behavior, local key
    persistence and removal, offline failure, and consent revocation.

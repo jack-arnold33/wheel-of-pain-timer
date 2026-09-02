@@ -12,7 +12,30 @@ const speechMocks = vi.hoisted(() => ({
   speakMotivation: vi.fn(() => 'spoken' as const),
 }))
 
+const credentialMocks = vi.hoisted(() => ({
+  status: vi.fn(async () => ({ configured: false, lastFour: undefined as string | undefined })),
+  save: vi.fn(async () => ({ configured: true, lastFour: 'abcd' })),
+  remove: vi.fn(async () => undefined),
+}))
+
+const onlineSpeechMocks = vi.hoisted(() => ({
+  createOpenAiSpeech: vi.fn(async () => new Blob(['audio'], { type: 'audio/mpeg' })),
+}))
+
+const audioPlayerMocks = vi.hoisted(() => ({
+  playSpeechPreview: vi.fn(async () => 'started' as const),
+  cancelSpeech: vi.fn(),
+}))
+
 vi.mock('./spokenMotivation', () => speechMocks)
+vi.mock('../data/openAiCredentialRepository', () => ({
+  openAiCredentialRepository: credentialMocks,
+}))
+vi.mock('../services/openAiSpeech', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../services/openAiSpeech')>()),
+  createOpenAiSpeech: onlineSpeechMocks.createOpenAiSpeech,
+}))
+vi.mock('./timerAudio', () => ({ appAudioPlayer: audioPlayerMocks }))
 
 const voice = (
   name: string,
@@ -57,6 +80,7 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   vi.restoreAllMocks()
+  credentialMocks.status.mockResolvedValue({ configured: false, lastFour: undefined })
   Reflect.deleteProperty(window, 'speechSynthesis')
 })
 
@@ -109,7 +133,7 @@ describe('SettingsScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fast' }))
     await waitFor(() => expect(onChange).toHaveBeenCalledWith({ speechRate: 1.25 }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Preview voice' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Preview device voice' }))
     expect(speechMocks.primeSpokenMotivation).toHaveBeenCalledOnce()
     expect(speechMocks.speakMotivation).toHaveBeenCalledWith(
       'The Wheel of Pain awaits.',
@@ -175,7 +199,7 @@ describe('SettingsScreen', () => {
     ).toBeInTheDocument()
   })
 
-  it('labels online voices and keeps them unavailable without consent', async () => {
+  it('does not present browser online voices as TV-compatible choices', async () => {
     Object.defineProperty(window, 'speechSynthesis', {
       configurable: true,
       value: {
@@ -206,10 +230,9 @@ describe('SettingsScreen', () => {
       screen.getByText('No eligible on-device voice is currently exposed by this browser.'),
     ).toBeInTheDocument()
     fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Voice' }))
-    const onlineOption = await screen.findByRole('option', {
-      name: 'Online Voice (en-US) · Online or unknown',
-    })
-    expect(onlineOption).toHaveAttribute('aria-disabled', 'true')
+    expect(
+      screen.queryByRole('option', { name: /Online Voice/ }),
+    ).not.toBeInTheDocument()
   })
 
   it('clears a selected online voice when consent is disabled', async () => {
@@ -230,7 +253,7 @@ describe('SettingsScreen', () => {
           timerSoundsEnabled
           spokenMotivationEnabled
           allowOnlineVoices
-          voiceId={online.voiceURI}
+          voiceId="alloy"
           speechRate={1}
           participantCount={0}
           onBack={vi.fn()}
@@ -241,7 +264,9 @@ describe('SettingsScreen', () => {
       </ThemeProvider>,
     )
 
-    fireEvent.click(screen.getByRole('switch', { name: 'Allow online voices' }))
+    fireEvent.click(screen.getByRole('switch', {
+      name: 'Send one saying at a time to OpenAI for speech',
+    }))
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith({
         allowOnlineVoices: false,
@@ -251,6 +276,7 @@ describe('SettingsScreen', () => {
   })
 
   it('explains online speech before saving consent', async () => {
+    credentialMocks.status.mockResolvedValue({ configured: true, lastFour: 'abcd' })
     const onChange = vi.fn().mockResolvedValue(undefined)
     render(
       <ThemeProvider theme={wheelOfPainTheme}>
@@ -276,19 +302,60 @@ describe('SettingsScreen', () => {
       screen.queryByText(/An individual saying and the participant name/),
     ).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('switch', { name: 'Allow online voices' }))
+    await screen.findByText(/ends in abcd/)
+    fireEvent.click(screen.getByRole('switch', {
+      name: 'Send one saying at a time to OpenAI for speech',
+    }))
     expect(
-      screen.getByRole('heading', { name: 'Allow online voices?' }),
+      screen.getByRole('heading', { name: 'Enable TV-compatible online voice?' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/An individual saying and the participant name/),
+      screen.getByText(/One selected saying and the participant name/),
     ).toBeInTheDocument()
     expect(onChange).not.toHaveBeenCalled()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Allow online voices' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Enable online voice' }))
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith({ allowOnlineVoices: true }),
     )
+  })
+
+  it('requires acknowledgement, stores only a redacted key status, and removes it', async () => {
+    const onChange = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <SettingsScreen
+          timerSoundsEnabled
+          spokenMotivationEnabled
+          allowOnlineVoices={false}
+          voiceId={null}
+          speechRate={1}
+          participantCount={0}
+          onBack={vi.fn()}
+          onParticipants={vi.fn()}
+          onChange={onChange}
+          {...backupHandlers}
+        />
+      </ThemeProvider>,
+    )
+
+    const saveButton = screen.getByRole('button', { name: 'Save on this device' })
+    expect(saveButton).toBeDisabled()
+    fireEvent.change(screen.getByLabelText('OpenAI API key'), {
+      target: { value: 'sk-proj-example-1234567890abcd' },
+    })
+    fireEvent.click(screen.getByRole('checkbox', { name: /I understand this key/ }))
+    fireEvent.click(saveButton)
+
+    await screen.findByText(/ends in abcd/)
+    expect(credentialMocks.save).toHaveBeenCalledWith(
+      'sk-proj-example-1234567890abcd',
+    )
+    expect(screen.queryByDisplayValue(/sk-proj/)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove key' }))
+    await waitFor(() => expect(credentialMocks.remove).toHaveBeenCalledOnce())
+    expect(audioPlayerMocks.cancelSpeech).toHaveBeenCalled()
   })
 
   it('validates a backup before showing and confirming replacement', async () => {

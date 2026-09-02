@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "generate:timer-audio": "node scripts/generate-timer-audio.mjs",
     "generate:pwa-assets": "pwa-assets-generator --preset minimal-2023 public/icon.svg",
     "lint": "eslint .",
     "preview": "vite preview",

@@ -690,39 +690,52 @@ Scenario: One active participant
   Then that participant prefixes every saying
 ```
 
-### Voice selection respects availability and online consent
+### Device and TV-compatible voices respect consent and key containment
 
-**Requirements:** C-002, D-004, A-007
+**Requirements:** C-002, D-004, D-010, A-007
 
 ```gherkin
-Scenario: Select and preview an eligible voice
-  Given the browser exposes an eligible voice under the current online policy
+Scenario: Select and preview a device voice
+  Given the browser exposes an on-device voice
   When the user selects it and chooses Preview
   Then generic built-in preview text is spoken at the selected Slow, Normal, or
     Fast speed
   And no private pack saying or participant name is used for the preview
+  And Settings does not promise that device speech follows the television route
 
 Scenario: Selected voice disappears
   Given a previously selected voice is no longer exposed
   When speech is next prepared
-  Then an eligible System Default is used and the fallback is reported
-  Or spoken motivation is reported unavailable when no eligible default exists
+  Then an eligible device System Default is used and the fallback is reported
+  Or device speech is reported unavailable when no eligible default exists
 
-Scenario: Online voices are not allowed
-  Given Allow online voices is off
-  When the browser identifies a voice as online
-  Then that voice cannot be selected or receive text
-  And if the browser cannot provide enough information to enforce the policy,
-    online speech remains unavailable
+Scenario: Save a dedicated project key on this device
+  Given Settings explains OpenAI's server-side key recommendation and the
+    accepted personal-use exception
+  When the owner acknowledges the warning and saves a project API key
+  Then only a redacted configured state is rendered
+  And the key exists only in the dedicated credential record
+  And it is absent from preferences, backup, restore, logs, service-worker
+    messages, source, and build output
 
-Scenario: User explicitly allows online voices
-  Given Settings explains that one saying and its selected participant name may
-    be sent to the speech provider
-  When the user explicitly enables Allow online voices and selects an online voice
+Scenario: User explicitly enables TV-compatible online speech
+  Given a project key is configured on this device
+  And Settings explains that one saying and its selected participant name may
+    be sent to OpenAI
+  When the user enables TV-compatible online speech and selects an OpenAI voice
   Then only the individual utterance needed at that moment may be transmitted
   And the pack and roster are never uploaded as collections
-  When the user disables Allow online voices
-  Then no future utterance is sent to an online voice
+  And the returned MP3 is played through HTML media
+  When the user disables online speech or removes the key
+  Then pending generation is cancelled, prepared media is discarded, and no
+    future utterance is sent
+
+Scenario: Prepare zero never delays Work
+  Given TV-compatible online speech is enabled and Prepare is zero seconds
+  When the first Work begins before its generated clip is media-ready
+  Then the first announcement is skipped
+  And Work starts on time
+  And the late result is never replayed
 ```
 
 ## Presentation and accessibility

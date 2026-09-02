@@ -2,9 +2,36 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
 
+const productionContentSecurityPolicy = {
+  name: 'production-content-security-policy',
+  apply: 'build' as const,
+  transformIndexHtml: () => [
+    {
+      tag: 'meta',
+      attrs: {
+        'http-equiv': 'Content-Security-Policy',
+        content: [
+          "default-src 'self'",
+          "script-src 'self'",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          "font-src 'self' https://fonts.gstatic.com",
+          "img-src 'self' data: blob:",
+          "media-src 'self' blob:",
+          "connect-src 'self' https://api.openai.com",
+          "worker-src 'self' blob:",
+          "object-src 'none'",
+          "base-uri 'self'",
+        ].join('; '),
+      },
+      injectTo: 'head-prepend' as const,
+    },
+  ],
+}
+
 export default defineConfig({
   base: '/wheel-of-pain-timer/',
   plugins: [
+    productionContentSecurityPolicy,
     react(),
     VitePWA({
       strategies: 'injectManifest',
@@ -13,7 +40,7 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: false,
       injectManifest: {
-        globPatterns: ['**/*.{css,html,ico,js,png,svg,woff2}'],
+        globPatterns: ['**/*.{css,html,ico,js,png,svg,wav,woff2}'],
       },
       manifest: {
         name: 'Wheel of Pain Timer',

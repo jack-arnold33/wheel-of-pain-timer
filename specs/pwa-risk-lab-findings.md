@@ -42,6 +42,7 @@ devices or older operating systems.
 | Wake lock through completion | Pass | The lock remained through Complete and released after Done. |
 | Wake lock after early end | Pass | End released the lock immediately. |
 | Installed update adoption | Partial | The new version was retrieved, but the old cached UI appeared until the service-worker update was adopted. |
+| Direct OpenAI speech request | Pass | The tester reports that the deployed browser request succeeds and is not blocked by CORS, so the selected personal-use direct-request design may proceed. |
 
 ## Product decisions derived from the evidence
 
@@ -59,6 +60,9 @@ devices or older operating systems.
    installation while offline is not supported.
 8. Keep user data local by default and keep private content out of the public
    application bundle.
+9. Permit the owner-supplied, device-local OpenAI project key design recorded
+   in `html-media-audio-routing.md`; retain its credential-containment,
+   spending-limit, and physical playback acceptance requirements.
 
 ## Deferred and unvalidated areas
 
@@ -68,8 +72,8 @@ These areas were not proven by the lab and remain implementation-stage risks:
   cases beyond the foreground callback-delay experiment;
 - interrupted service-worker download or activation and mixed-version failure;
 - IndexedDB quota failure, eviction, atomic replacement, and backup restore;
-- browser voice discovery, offline speech, voice locality, and privacy
-  enforcement;
+- generated-speech latency, stale cancellation, key containment, offline
+  failure, and privacy enforcement beyond the reported CORS pass;
 - landscape legibility, television overscan, and the exact TV-mirroring setup;
 - the full unsupported or denied wake-lock matrix on the required iPhone.
 
