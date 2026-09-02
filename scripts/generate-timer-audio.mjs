@@ -22,15 +22,6 @@ const cues = {
       { frequency: 1_650, gain: 0.18, offsetSeconds: 0, durationSeconds: 0.2 },
     ],
   },
-  'transition.wav': {
-    durationSeconds: 0.45,
-    tones: [
-      { frequency: 880, gain: 0.75, offsetSeconds: 0, durationSeconds: 0.16 },
-      { frequency: 1_760, gain: 0.14, offsetSeconds: 0, durationSeconds: 0.13 },
-      { frequency: 1_320, gain: 0.85, offsetSeconds: 0.17, durationSeconds: 0.28 },
-      { frequency: 2_640, gain: 0.1, offsetSeconds: 0.17, durationSeconds: 0.22 },
-    ],
-  },
 }
 
 const envelope = (elapsed, duration) => {

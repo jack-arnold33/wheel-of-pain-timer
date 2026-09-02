@@ -38,7 +38,8 @@ reused for a different behavior.
   from monotonic elapsed time rather than by assuming each periodic callback
   occurs on schedule. Recovery after full termination uses persisted timeline
   evidence as specified in T-014.
-- **T-005:** The app communicates phase changes using visual and audible cues.
+- **T-005:** The app communicates phase changes visually. When Timer sounds are
+  enabled, the final 3, 2, and 1 countdown cues provide advance audible notice.
 - **T-006:** The app requests screen-wake behavior only when the browser reports
   support, with a usable fallback and clear notice when unavailable. Vibration
   is not part of MVP.
@@ -50,8 +51,9 @@ reused for a different behavior.
   round, and exercise position.
 - **T-010:** Play/Pause remains visible throughout an active workout; Skip and
   End Workout are secondary actions.
-- **T-011:** Countdown cues begin with three seconds remaining, and a phase
-  transition has an audible and visual cue.
+- **T-011:** Countdown cues play at three, two, and one seconds remaining. The
+  one-second cue is the final audible warning; no additional sound plays when
+  the phase changes.
 - **T-012:** While an active workout is visible, the app requests a screen wake
   lock, retains it while paused, and reports when the capability is unavailable
   or denied. Normal completion retains the lock until Done is pressed.

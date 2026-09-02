@@ -8,8 +8,8 @@ television used for mirrored workouts.
 
 The migration covers two distinct kinds of audio:
 
-1. Essential countdown and phase-transition sounds, which must remain bundled
-   with the application and work offline.
+1. Essential 3, 2, and 1 countdown sounds, which must remain bundled with the
+   application and work offline.
 2. Optional spoken motivation, which may use provider-generated audio only
    after the user has explicitly allowed the individual saying and participant
    name to be sent for online speech.
@@ -76,14 +76,13 @@ advance workout state.
 ### Essential timer sounds
 
 Replace oscillator-generated tones in `src/presentation/timerAudio.ts` with
-four versioned, app-owned media assets:
+three versioned, app-owned media assets:
 
 | Asset | Use | Required character |
 | --- | --- | --- |
 | `countdown-3` | Three seconds remain | Short, distinct warning |
 | `countdown-2` | Two seconds remain | Short, distinct warning |
 | `countdown-1` | One second remains | Strongest countdown warning |
-| `transition` | Next phase begins | Clearly different from countdown cues |
 
 The delivered files must preserve the intent and approximate audible duration
 of the current tones. They may be rendered from the current oscillator design,
@@ -381,7 +380,7 @@ client contract until the product deliberately adopts a portable equivalent.
 Choose the initial provider with a recorded bake-off using the actual short,
 high-energy sayings and target iPhone/TV setup. Compare:
 
-- transition-to-audible latency after one-event-ahead preparation;
+- target-to-audible latency after one-event-ahead preparation;
 - voice intelligibility over representative workout music and garage noise;
 - consistency for participant names, numbers, and punctuation;
 - MP3 compatibility and response-size distribution;
@@ -480,9 +479,7 @@ speech preparation, and media playback must remain.
 
 - Reset a cue element to its start before playing it.
 - Play each emitted cue at most once.
-- Preserve array order. When transition and countdown cues arrive in the same
-  frame, finish or bound the transition lead before starting the countdown;
-  do not overlap them into an unintelligible sound.
+- Preserve array order if multiple countdown commands are emitted together.
 - A newer essential cue may interrupt an older essential cue if required to
   remain aligned with the visible timer. It must never delay timer state.
 - Essential timer cues take priority over spoken motivation. When they would
@@ -559,7 +556,7 @@ coming from the TV; the app cannot observe the selected system route.
 
 ## Offline behavior
 
-- Packaged countdown and transition sounds work offline.
+- Packaged countdown sounds work offline.
 - The app may reuse only a currently prepared, in-memory speech blob after a
   transient connection loss.
 - It does not generate new online speech while offline.
@@ -585,7 +582,7 @@ added by this specification.
 
 ### Automated tests
 
-- Maps 3, 2, 1, and transition commands to the correct packaged assets.
+- Maps 3, 2, and 1 commands to the correct packaged assets.
 - Preserves cue order and plays each command once.
 - Handles `play()` resolution and rejection without affecting timer state.
 - Gives essential cues priority over speech.
@@ -628,7 +625,7 @@ active.
    the deployed browser succeeds and is not blocked by CORS. Preserve the
    formal Safari and Home Screen evidence without recording the Authorization
    value.
-8. For generated speech, record request-to-ready and transition-to-audible
+8. For generated speech, record request-to-ready and target-to-audible
    latency, stale cancellation, invalid and revoked key behavior, local key
    persistence and removal, offline failure, and consent revocation.
 
@@ -653,7 +650,7 @@ Play-gesture priming strategy is proven or the support boundary is revised.
 1. Run and record the direct-browser OpenAI key, CORS, credential-containment,
    latency, and HTML media routing risk-lab experiment.
 2. Record and link the completed risk-lab HTML media and Web Audio runs.
-3. Commit the four final cue assets and extend the PWA precache pattern.
+3. Commit the three final cue assets and extend the PWA precache pattern.
 4. Replace oscillator synthesis with the retained HTML media cue player while
    keeping the current `TimerCue` decision layer unchanged.
 5. Add unit, integration, production-build, offline, and physical routing
@@ -670,7 +667,7 @@ Play-gesture priming strategy is proven or the support boundary is revised.
 
 ## Requirement traceability
 
-- T-005 and T-011: audible countdown and transition behavior
+- T-005 and T-011: audible countdown and visual transition behavior
 - T-014: no replay of missed cues after recovery
 - C-008, C-010, C-012, and C-013: optional saying schedule and participant
   selection

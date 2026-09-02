@@ -57,7 +57,7 @@ A zero-second Prepare or Cooldown is omitted.
 Prepare, Exercise Rest, Cycle Rest, and Cooldown may each be zero seconds. Work
 must be greater than zero. Exercises per round, rounds per cycle, and cycles
 must each be at least one. Any zero-duration optional phase is omitted without
-playing duplicate transition cues.
+  playing an extra sound at the skipped boundary.
 
 Configuration limits are:
 
@@ -115,12 +115,13 @@ The active-screen label **Rest** denotes the configured Exercise Rest phase;
 The next phase appears as secondary information, for example `Next: Rest`. It
 must not compete visually with the current phase, remaining time, or progress.
 
-## Countdown and transition cues
+## Countdown cues and phase transitions
 
-Each phase gives countdown cues at 3, 2, and 1 seconds remaining. A common
-transition sound plays when the next phase begins; Work and Rest do not require
-different transition sounds. Visual state changes accompany audio cues, and
-the timer remains understandable when audio is muted or unavailable.
+Each phase gives countdown cues at 3, 2, and 1 seconds remaining. The
+one-second cue is the final audible warning before the boundary; no additional
+sound plays when the next phase begins. The visual state changes at the exact
+phase boundary, and the timer remains understandable when audio is muted or
+unavailable.
 When a phase is shorter than three seconds, only the remaining applicable
 countdown numbers are cued.
 
@@ -144,8 +145,8 @@ starts a three-second resume countdown.
 
 Skip Phase and End Workout are secondary actions.
 
-Skip immediately advances through the normal sequence and plays the normal
-transition cue. A skipped Work interval counts as completed and is not retried.
+Skip immediately advances through the normal sequence without playing a
+boundary sound. A skipped Work interval counts as completed and is not retried.
 Skipping Cooldown completes the workout. When Skip is used while paused, the
 next non-omitted phase is selected at its full duration and remains paused. If
 Skip is used during the resume countdown, the countdown is canceled first and
@@ -181,8 +182,8 @@ verified. The user may resume or End Workout. A positive elapsed value advances
 normally; a long closure and a forward manual clock change cannot be reliably
 distinguished by a web app and remain a documented platform risk.
 
-Missed countdown cues, transition sounds, and spoken sayings are not
-replayed in a burst after recovery. End Workout remains available if the
+Missed countdown cues and spoken sayings are not replayed in a burst after
+recovery. End Workout remains available if the
 recovered workout is no longer relevant.
 
 The app requests a screen wake lock for the full active-workout lifetime,

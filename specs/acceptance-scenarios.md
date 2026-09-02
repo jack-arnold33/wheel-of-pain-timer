@@ -94,7 +94,7 @@ And Work and all counts are valid and positive
 When the workout runs
 Then it consists only of its Work phases followed by Complete
 And omitted phases never appear at 00:00
-And omitted phases do not produce duplicate transition cues
+And omitted phases do not produce extra boundary sounds
 ```
 
 ### Work and counts must be positive
@@ -177,7 +177,7 @@ And the same phase resumes with the same remaining duration after 1
 And pressing Pause during the countdown cancels it and leaves the phase paused
 ```
 
-### Phase countdown and transition cues are exact
+### Phase countdown cues and visual transitions are exact
 
 **Requirements:** T-001, T-005, T-011, A-002
 
@@ -188,13 +188,13 @@ Then one countdown cue is produced for that number when Timer sounds is enabled
 And a visual countdown state communicates the same information
 And the display uses ceiling behavior and never lingers at 00:00
 When the next non-omitted phase begins
-Then one transition sound and visual phase change occur
+Then the visual phase changes without an additional transition sound
 
 Scenario: A phase shorter than three seconds has only applicable cues
   Given a timed phase is configured for 3 seconds
   When it runs normally
   Then it produces countdown cues for 3, 2, and 1 only
-  And it produces one transition cue when the next non-omitted phase begins
+  And it produces no additional sound when the next non-omitted phase begins
 ```
 
 ### Resume never completes invisibly
@@ -227,7 +227,7 @@ Scenario: Skip a running Work phase
   When the user presses Skip Phase
   Then that Work counts as completed and is never retried
   And the next non-omitted phase begins immediately
-  And one normal transition cue is produced
+  And no boundary sound is produced
 
 Scenario: Skip while paused
   Given a phase is paused
@@ -293,7 +293,7 @@ When the app is backgrounded long enough to cross one or more phase boundaries
 And the same process returns to the foreground
 Then monotonic elapsed time places the workout in the correct current phase
 And the displayed remaining time and progress are correct
-And missed countdown, transition, and spoken cues are not replayed
+And missed countdown and spoken cues are not replayed
 ```
 
 ### A backgrounded paused workout remains frozen
