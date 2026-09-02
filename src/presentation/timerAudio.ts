@@ -1,7 +1,6 @@
 import countdown1Url from '../assets/audio/countdown-1.wav?url'
 import countdown2Url from '../assets/audio/countdown-2.wav?url'
 import countdown3Url from '../assets/audio/countdown-3.wav?url'
-import transitionUrl from '../assets/audio/transition.wav?url'
 import type { TimerCue } from './timerCues'
 
 type AudioSessionNavigator = Navigator & {
@@ -51,13 +50,10 @@ export const TIMER_CUE_ASSETS = {
   'countdown-3': countdown3Url,
   'countdown-2': countdown2Url,
   'countdown-1': countdown1Url,
-  transition: transitionUrl,
 } as const
 
 const cueAsset = (cue: TimerCue) =>
-  cue.kind === 'transition'
-    ? TIMER_CUE_ASSETS.transition
-    : TIMER_CUE_ASSETS[`countdown-${cue.second as 1 | 2 | 3}`]
+  TIMER_CUE_ASSETS[`countdown-${cue.second as 1 | 2 | 3}`]
 
 const blockedPlayback = (error: unknown): AudioPlaybackResult =>
   error instanceof DOMException && error.name === 'NotAllowedError'
@@ -90,7 +86,7 @@ export class HtmlAudioPlayer {
     this.environment.configureAudioSession()
     for (const element of this.cues.values()) element.load()
 
-    const element = this.cues.get(TIMER_CUE_ASSETS.transition)
+    const element = this.cues.get(TIMER_CUE_ASSETS['countdown-1'])
     if (element === undefined) return
     element.muted = true
     try {

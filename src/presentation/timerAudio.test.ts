@@ -41,11 +41,11 @@ describe('HTML timer audio', () => {
     const audio = setup()
     await audio.player.prime()
     expect(audio.configureAudioSession).toHaveBeenCalledOnce()
-    expect(audio.elements.slice(0, 4).every((element) => element.preload === 'auto')).toBe(true)
-    expect(audio.bySource(TIMER_CUE_ASSETS.transition).play).toHaveBeenCalledOnce()
+    expect(audio.elements.slice(0, 3).every((element) => element.preload === 'auto')).toBe(true)
+    expect(audio.bySource(TIMER_CUE_ASSETS['countdown-1']).play).toHaveBeenCalledOnce()
   })
 
-  it('maps countdown and transition cues to their packaged assets in order', async () => {
+  it('maps countdown cues to their packaged assets in order', async () => {
     const audio = setup()
     const order: string[] = []
     for (const [name, source] of Object.entries(TIMER_CUE_ASSETS)) {
@@ -58,9 +58,8 @@ describe('HTML timer audio', () => {
       { kind: 'countdown', second: 3 },
       { kind: 'countdown', second: 2 },
       { kind: 'countdown', second: 1 },
-      { kind: 'transition' },
     ])
-    expect(order).toEqual(['countdown-3', 'countdown-2', 'countdown-1', 'transition'])
+    expect(order).toEqual(['countdown-3', 'countdown-2', 'countdown-1'])
   })
 
   it('stops an active sequence without playing its remaining cues', async () => {
@@ -84,7 +83,7 @@ describe('HTML timer audio', () => {
     const audio = setup()
     audio.player.prepareSpeech('work:1', new Blob(['audio']))
     await audio.player.playPreparedSpeech('work:1')
-    await audio.player.playCues([{ kind: 'transition' }])
+    await audio.player.playCues([{ kind: 'countdown', second: 1 }])
     expect(audio.elements.at(-1)?.pause).toHaveBeenCalled()
     expect(audio.revoked).toEqual(['blob:prepared'])
   })

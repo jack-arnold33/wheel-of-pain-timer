@@ -30,7 +30,7 @@ describe('timer cues', () => {
     expect(timerCuesBetween(frame(4_900, 0), frame(4_100, 100))).toEqual([])
   })
 
-  it('plays a transition and the applicable countdown for a short next phase', () => {
+  it('plays no separate transition sound and starts a short phase countdown', () => {
     expect(
       timerCuesBetween(
         frame(100, 0),
@@ -39,10 +39,19 @@ describe('timer cues', () => {
           elapsedInPhaseMs: 0,
         }),
       ),
-    ).toEqual([
-      { kind: 'transition' },
-      { kind: 'countdown', second: 3 },
-    ])
+    ).toEqual([{ kind: 'countdown', second: 3 }])
+  })
+
+  it('stays silent at a normal phase boundary', () => {
+    expect(
+      timerCuesBetween(
+        frame(100, 0),
+        frame(10_000, 100, {
+          phaseIndex: 1,
+          elapsedInPhaseMs: 0,
+        }),
+      ),
+    ).toEqual([])
   })
 
   it('does not replay cues after a suspended observation gap', () => {

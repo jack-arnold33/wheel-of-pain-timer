@@ -1,9 +1,7 @@
 import type { WorkoutState } from '../domain/timer/types'
 import { remainingPhaseMs } from '../domain/timer/engine'
 
-export type TimerCue =
-  | { readonly kind: 'countdown'; readonly second: number }
-  | { readonly kind: 'transition' }
+export type TimerCue = { readonly kind: 'countdown'; readonly second: number }
 
 export interface TimerCueFrame {
   readonly status: WorkoutState['status']
@@ -62,8 +60,7 @@ export function timerCuesBetween(
   }
 
   if (previous.phaseIndex !== current.phaseIndex) {
-    const cues: TimerCue[] = [{ kind: 'transition' }]
-    return cues.concat(applicableCountdownCue(current))
+    return applicableCountdownCue(current)
   }
 
   const previousSecond = countdownSecond(previous)
