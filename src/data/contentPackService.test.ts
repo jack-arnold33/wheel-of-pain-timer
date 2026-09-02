@@ -32,16 +32,17 @@ afterEach(async () => {
 })
 
 describe('content-pack selection service', () => {
-  it('saves and selects an imported pack in one local transaction', async () => {
-    const saved = await service.importAndSelect(draft)
+  it('saves a pack without changing the workout selection', async () => {
+    const saved = await service.create(draft)
     const state = await service.load()
 
     expect(state.packs).toEqual([builtInStarterPack, saved])
-    expect(state.preferences.selectedContentPackId).toBe(saved.id)
+    expect(state.preferences.selectedContentPackId).toBeNull()
   })
 
   it('removes a selected pack and returns Personality to None', async () => {
-    const saved = await service.importAndSelect(draft)
+    const saved = await service.create(draft)
+    await service.select(saved.id)
     await service.remove(saved.id, true)
     const state = await service.load()
 

@@ -257,9 +257,11 @@ describe('App workout flow', () => {
     await openProtectedRoutine()
     fireEvent.click(screen.getByRole('button', { name: 'Choose Personality' }))
     expect(
-      await screen.findByRole('heading', { name: 'Personality' }),
+      await screen.findByRole('heading', { name: 'Choose Personality' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('2 sayings · saved on this device')).toBeInTheDocument()
+    expect(screen.getByText('2 sayings')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Create Personality' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Import file' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Select Tuesday Chaos' }))
 
     await waitFor(() => expect(selectContentPack).toHaveBeenCalledWith(pack.id))
@@ -267,7 +269,7 @@ describe('App workout flow', () => {
     expect(screen.getByText('Tuesday Chaos')).toBeInTheDocument()
   })
 
-  it('imports a plain-text pack locally and selects it automatically', async () => {
+  it('imports a Personality in Settings without selecting it', async () => {
     const imported: ContentPack = {
       id: 'pack:phone',
       schemaVersion: 1,
@@ -289,9 +291,11 @@ describe('App workout flow', () => {
       </ThemeProvider>,
     )
 
-    await openProtectedRoutine()
-    fireEvent.click(screen.getByRole('button', { name: 'Choose Personality' }))
-    await screen.findByRole('heading', { name: 'Personality' })
+    await screen.findByRole('heading', { name: 'Routines' })
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    await screen.findByRole('heading', { name: 'Settings' })
+    fireEvent.click(screen.getByRole('button', { name: /Personalities/u }))
+    await screen.findByRole('heading', { name: 'Personalities' })
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')
     expect(input).not.toBeNull()
     const file = new File(['Keep moving.\n'], 'phone-fun.txt', { type: 'text/plain' })
@@ -305,8 +309,14 @@ describe('App workout flow', () => {
         }),
       ),
     )
-    expect(screen.getByRole('heading', { name: 'Wheel of Pain' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Personalities' })).toBeInTheDocument()
     expect(screen.getByText('Phone Fun')).toBeInTheDocument()
+    expect(screen.queryByText('Selected')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    await screen.findByRole('heading', { name: 'Settings' })
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    await openProtectedRoutine()
+    expect(screen.getByText('None')).toBeInTheDocument()
   })
 
   it('customizes the protected preset as a validated saved copy', async () => {

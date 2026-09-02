@@ -79,8 +79,9 @@ reused for a different behavior.
   available offline for later workouts.
 - **C-004:** Importing a pack does not require a separate session-only or
   persistence choice.
-- **C-005:** The user can select, rename, inspect, and remove saved packs.
-  Import conflicts never silently overwrite an existing pack.
+- **C-005:** The user can select a saved pack from pre-workout. Settings lets
+  the user create, import, rename, inspect, export, and remove packs. Import
+  conflicts never silently overwrite an existing pack.
 - **C-006:** The app validates a pack before use and presents actionable errors
   without partially importing invalid content.
 - **C-007:** Imported text is rendered as text and is never executed as HTML or
@@ -91,8 +92,9 @@ reused for a different behavior.
 - **C-010:** Structured sayings have distinct `work`, `cycleRest`, and
   `finished` categories. The app speaks at the beginning of each round, each
   Cycle Rest, and normal workout completion respectively.
-- **C-011:** A successfully imported pack is selected automatically and the
-  user returns to the originating pre-workout screen.
+- **C-011:** Creating or importing a pack from Settings saves it without
+  changing the current Personality. The pre-workout picker selects only None
+  or an already-available pack and then returns to the same pre-workout screen.
 - **C-012:** Spoken sayings can address a participant selected from a
   configurable name list.
 - **C-013:** Participant selection uses a shuffled rotation that selects every
@@ -114,7 +116,7 @@ reused for a different behavior.
 - **C-017:** The user can create a Personality on the current device by copying
   an app-generated prompt to an AI assistant, pasting the response, reviewing
   and editing the generated voice instructions and categorized sayings, and
-  choosing Save & select. The app does not contact the assistant or transmit
+  choosing Save Personality. The app does not contact the assistant or transmit
   the authoring fields itself.
 - **C-018:** Pasted authoring content accepts a valid v1 JSON object with or
   without a Markdown code fence, or plain text as work sayings. New authoring

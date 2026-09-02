@@ -122,7 +122,7 @@ describe('SettingsScreen', () => {
     )
     const sectionHeadings = screen.getAllByRole('heading', { level: 5 })
     expect(sectionHeadings[0]).toHaveTextContent('Appearance')
-    expect(sectionHeadings[1]).toHaveTextContent('People')
+    expect(sectionHeadings[1]).toHaveTextContent('Workout setup')
     expect(sectionHeadings[2]).toHaveTextContent('Audio')
 
     fireEvent.click(screen.getByRole('switch', { name: 'Timer sounds' }))

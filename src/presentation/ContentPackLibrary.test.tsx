@@ -37,9 +37,7 @@ describe('ContentPackLibrary', () => {
       <ThemeProvider theme={wheelOfPainTheme}>
         <ContentPackLibrary
           packs={[builtInStarterPack]}
-          selectedId={null}
           onBack={vi.fn()}
-          onSelect={vi.fn()}
           onImport={vi.fn()}
           onReplace={vi.fn()}
           onRename={vi.fn()}
@@ -48,7 +46,8 @@ describe('ContentPackLibrary', () => {
       </ThemeProvider>,
     )
 
-    expect(screen.getByRole('button', { name: 'Select Workout Starter' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Personalities' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Select Workout Starter' })).not.toBeInTheDocument()
     expect(screen.getByText('Built in')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Inspect Workout Starter' }))
     expect(screen.getByText('Included with the app')).toBeInTheDocument()
@@ -64,9 +63,7 @@ describe('ContentPackLibrary', () => {
       <ThemeProvider theme={wheelOfPainTheme}>
         <ContentPackLibrary
           packs={[pack]}
-          selectedId={pack.id}
           onBack={vi.fn()}
-          onSelect={vi.fn()}
           onImport={vi.fn()}
           onReplace={vi.fn()}
           onRename={onRename}
@@ -111,9 +108,7 @@ describe('ContentPackLibrary', () => {
       <ThemeProvider theme={wheelOfPainTheme}>
         <ContentPackLibrary
           packs={[]}
-          selectedId={null}
           onBack={vi.fn()}
-          onSelect={vi.fn()}
           onImport={onImport}
           onReplace={vi.fn()}
           onRename={vi.fn()}
@@ -157,7 +152,7 @@ describe('ContentPackLibrary', () => {
     fireEvent.change(screen.getByLabelText('During work sayings'), {
       target: { value: '• Go.\n\n• Keep moving.' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Save & select' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save Personality' }))
 
     await waitFor(() =>
       expect(onImport).toHaveBeenCalledWith({
@@ -172,15 +167,13 @@ describe('ContentPackLibrary', () => {
         extensions: {},
       }),
     )
-    expect(screen.getByRole('heading', { name: 'Personality' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Personalities' })).toBeInTheDocument()
   })
 
   it('recovers an unfinished creator draft after leaving the library', () => {
     const props = {
       packs: [],
-      selectedId: null,
       onBack: vi.fn(),
-      onSelect: vi.fn(),
       onImport: vi.fn(),
       onReplace: vi.fn(),
       onRename: vi.fn(),
@@ -224,9 +217,7 @@ describe('ContentPackLibrary', () => {
       <ThemeProvider theme={wheelOfPainTheme}>
         <ContentPackLibrary
           packs={[pack]}
-          selectedId={pack.id}
           onBack={vi.fn()}
-          onSelect={vi.fn()}
           onImport={onImport}
           onReplace={onReplace}
           onRename={vi.fn()}
@@ -236,7 +227,7 @@ describe('ContentPackLibrary', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Personality' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Save & select' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save Personality' }))
     expect(await screen.findByRole('heading', { name: 'Pack already exists' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Replace existing' }))
 
@@ -244,6 +235,9 @@ describe('ContentPackLibrary', () => {
       pack.id,
       expect.objectContaining({ name: pack.name, sayings: { work: ['A replacement.'] } }),
     ))
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Pack already exists' })).not.toBeInTheDocument(),
+    )
     await waitFor(() =>
       expect(localStorage.getItem(PERSONALITY_AUTHORING_DRAFT_KEY)).toBeNull(),
     )

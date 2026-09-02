@@ -38,10 +38,8 @@ export type ContentPackImportResult =
 
 interface ContentPackLibraryProps {
   readonly packs: readonly ContentPack[]
-  readonly selectedId: string | null
   readonly storageNotice?: string
   readonly onBack: () => void
-  readonly onSelect: (id: string | null) => Promise<void>
   readonly onImport: (draft: ContentPackDraft) => Promise<ContentPackImportResult>
   readonly onReplace: (id: string, draft: ContentPackDraft) => Promise<void>
   readonly onRename: (id: string, name: string) => Promise<ContentPack>
@@ -78,10 +76,8 @@ const exportPack = (pack: ContentPack) => {
 
 export function ContentPackLibrary({
   packs,
-  selectedId,
   storageNotice,
   onBack,
-  onSelect,
   onImport,
   onReplace,
   onRename,
@@ -154,14 +150,14 @@ export function ContentPackLibrary({
       <Container maxWidth="sm">
         <Stack spacing={3}>
           <Button startIcon={<ArrowBackRoundedIcon />} onClick={onBack} sx={{ alignSelf: 'flex-start' }}>
-            Workout
+            Settings
           </Button>
           <Stack spacing={1}>
             <Typography variant="h1" sx={{ fontSize: { xs: '2.25rem', sm: '3.25rem' } }}>
-              Personality
+              Personalities
             </Typography>
             <Typography color="text.secondary">
-              Choose sayings for this workout. Packs stay on this device.
+              Create and manage the motivational voices available for your workouts.
             </Typography>
           </Stack>
 
@@ -194,43 +190,23 @@ export function ContentPackLibrary({
           </Stack>
 
           <Stack spacing={2} aria-label="Content packs">
-            <Button
-              variant={selectedId === null ? 'contained' : 'outlined'}
-              color={selectedId === null ? 'primary' : 'inherit'}
-              onClick={() => void run(() => onSelect(null))}
-              sx={{ justifyContent: 'flex-start', p: 2, textTransform: 'none' }}
-            >
-              <Stack sx={{ alignItems: 'flex-start' }}>
-                <Typography variant="h6">None</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Essential timer cues only
-                </Typography>
-              </Stack>
-            </Button>
-
             {packs.map((pack) => (
               <Paper key={pack.id} variant="outlined" sx={{ p: 1 }}>
                 <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
-                  <Button
-                    color="inherit"
-                    onClick={() => void run(() => onSelect(pack.id))}
-                    aria-label={`Select ${pack.name}`}
-                    sx={{ flex: 1, justifyContent: 'flex-start', textTransform: 'none', p: 1.5 }}
-                  >
+                  <Box sx={{ flex: 1, p: 1.5 }}>
                     <Stack sx={{ alignItems: 'flex-start' }}>
                       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                         <Typography variant="h6">{pack.name}</Typography>
                         {isBuiltInContentPack(pack.id) && (
                           <Chip label="Built in" size="small" />
                         )}
-                        {selectedId === pack.id && <Chip label="Selected" color="primary" size="small" />}
                       </Stack>
                       <Typography variant="body2" color="text.secondary">
                         {totalSayings(pack)} sayings ·{' '}
                         {isBuiltInContentPack(pack.id) ? 'included with app' : 'saved on this device'}
                       </Typography>
                     </Stack>
-                  </Button>
+                  </Box>
                   <IconButton aria-label={`Inspect ${pack.name}`} onClick={() => setInspection(pack)}>
                     <InfoOutlinedIcon />
                   </IconButton>
@@ -382,6 +358,7 @@ export function ContentPackLibrary({
                 if (!conflict) return
                 await onReplace(conflict.existing.id, conflict.draft)
                 if (conflict.fromCreator) clearPersonalityAuthoringDraft()
+                setConflict(undefined)
               })
             }
           >
@@ -402,6 +379,9 @@ export function ContentPackLibrary({
                   })
                 } else if (conflict.fromCreator) {
                   clearPersonalityAuthoringDraft()
+                  setConflict(undefined)
+                } else {
+                  setConflict(undefined)
                 }
               })
             }

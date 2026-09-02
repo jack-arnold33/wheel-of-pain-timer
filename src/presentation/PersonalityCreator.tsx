@@ -304,7 +304,7 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
                   disabled={busy || draft.voiceInstructions.trim().length === 0}
                   onClick={() => void save()}
                 >
-                  Save & select
+                  Save Personality
                 </Button>
               </Paper>
             </>

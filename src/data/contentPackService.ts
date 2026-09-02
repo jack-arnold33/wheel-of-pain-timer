@@ -43,31 +43,12 @@ export class ContentPackService {
     await this.preferences.update({ selectedContentPackId: id })
   }
 
-  async importAndSelect(draft: ContentPackDraft): Promise<ContentPack> {
-    return this.database.transaction(
-      'rw',
-      [this.database.contentPacks, this.database.preferences],
-      async () => {
-        const pack = await this.packs.create(draft)
-        await this.preferences.update({ selectedContentPackId: pack.id })
-        return pack
-      },
-    )
+  async create(draft: ContentPackDraft): Promise<ContentPack> {
+    return this.packs.create(draft)
   }
 
-  async replaceAndSelect(
-    id: string,
-    draft: ContentPackDraft,
-  ): Promise<ContentPack> {
-    return this.database.transaction(
-      'rw',
-      [this.database.contentPacks, this.database.preferences],
-      async () => {
-        const pack = await this.packs.replace(id, draft)
-        await this.preferences.update({ selectedContentPackId: pack.id })
-        return pack
-      },
-    )
+  async replace(id: string, draft: ContentPackDraft): Promise<ContentPack> {
+    return this.packs.replace(id, draft)
   }
 
   async remove(id: string, selected: boolean): Promise<void> {
