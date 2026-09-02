@@ -21,6 +21,8 @@ import {
   InputLabel,
   MenuItem,
   Paper,
+  Radio,
+  RadioGroup,
   Select,
   Stack,
   Switch,
@@ -529,31 +531,60 @@ export function SettingsScreen({
 
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={2}>
-              <Typography variant="h5">TV-compatible online voice</Typography>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={allowOnlineVoices}
+              <Typography variant="h5">Voice output</Typography>
+              <FormControl>
+                <RadioGroup
+                  aria-label="Motivational voice output"
+                  value={allowOnlineVoices ? 'openai' : 'device'}
+                  onChange={(_, value) => {
+                    if (value === 'openai') {
+                      setConfirmOnlineVoices(true)
+                      return
+                    }
+                    appAudioPlayer.cancelSpeech()
+                    void save({
+                      allowOnlineVoices: false,
+                      voiceId: null,
+                    })
+                  }}
+                >
+                  <FormControlLabel
+                    value="device"
                     disabled={busy || credentialBusy}
-                    onChange={(_, checked) => {
-                      if (checked) {
-                        if (!credential.configured) {
-                          setPreviewNotice('Save an OpenAI API key on this device first.')
-                          return
-                        }
-                        setConfirmOnlineVoices(true)
-                        return
-                      }
-                      appAudioPlayer.cancelSpeech()
-                      void save({
-                        allowOnlineVoices: checked,
-                        voiceId: null,
-                      })
-                    }}
+                    control={<Radio />}
+                    label={
+                      <Box>
+                        <Typography>Device voice</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Free and available offline, but it may play on this device
+                          instead of the TV.
+                        </Typography>
+                      </Box>
+                    }
+                    sx={{ alignItems: 'flex-start', '& .MuiRadio-root': { mt: -0.5 } }}
                   />
-                }
-                label="Send one saying at a time to OpenAI for speech"
-              />
+                  <FormControlLabel
+                    value="openai"
+                    disabled={busy || credentialBusy || !credential.configured}
+                    control={<Radio />}
+                    label={
+                      <Box>
+                        <Typography>TV voice through OpenAI</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Uses internet and API credit. Generated audio is routed through
+                          the TV-compatible player.
+                        </Typography>
+                      </Box>
+                    }
+                    sx={{ alignItems: 'flex-start', '& .MuiRadio-root': { mt: -0.5 } }}
+                  />
+                </RadioGroup>
+              </FormControl>
+              {!credential.configured && (
+                <Alert severity="info">
+                  Save an OpenAI API key below to make the TV voice option available.
+                </Alert>
+              )}
               <Alert severity="warning">
                 Use a dedicated OpenAI project with a small hard spending limit and alert.
                 OpenAI recommends keeping API keys on a server; this personal-use app stores

@@ -166,7 +166,7 @@ describe('SettingsScreen', () => {
       'aria-checked',
       'true',
     )
-    expect(screen.getAllByRole('radio')).toHaveLength(4)
+    expect(screen.getAllByRole('radio', { name: /^Use .* theme$/ })).toHaveLength(4)
     fireEvent.click(screen.getByRole('radio', { name: 'Use Cold Steel theme' }))
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith({ themeId: 'cold-steel' }),
@@ -235,7 +235,7 @@ describe('SettingsScreen', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('clears a selected online voice when consent is disabled', async () => {
+  it('clears a selected online voice when device voice is selected', async () => {
     const online = voice('Online Voice', 'voice:online', false)
     Object.defineProperty(window, 'speechSynthesis', {
       configurable: true,
@@ -264,15 +264,41 @@ describe('SettingsScreen', () => {
       </ThemeProvider>,
     )
 
-    fireEvent.click(screen.getByRole('switch', {
-      name: 'Send one saying at a time to OpenAI for speech',
-    }))
+    fireEvent.click(screen.getByRole('radio', { name: /Device voice/ }))
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith({
         allowOnlineVoices: false,
         voiceId: null,
       }),
     )
+  })
+
+  it('explains why TV voice cannot be selected until a key is saved', async () => {
+    const onChange = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <SettingsScreen
+          timerSoundsEnabled
+          spokenMotivationEnabled
+          allowOnlineVoices={false}
+          voiceId={null}
+          speechRate={1}
+          participantCount={0}
+          onBack={vi.fn()}
+          onParticipants={vi.fn()}
+          onChange={onChange}
+          {...backupHandlers}
+        />
+      </ThemeProvider>,
+    )
+
+    expect(
+      await screen.findByRole('radio', { name: /TV voice through OpenAI/ }),
+    ).toBeDisabled()
+    expect(
+      screen.getByText('Save an OpenAI API key below to make the TV voice option available.'),
+    ).toBeInTheDocument()
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('explains online speech before saving consent', async () => {
@@ -303,9 +329,7 @@ describe('SettingsScreen', () => {
     ).not.toBeInTheDocument()
 
     await screen.findByText(/ends in abcd/)
-    fireEvent.click(screen.getByRole('switch', {
-      name: 'Send one saying at a time to OpenAI for speech',
-    }))
+    fireEvent.click(screen.getByRole('radio', { name: /TV voice through OpenAI/ }))
     expect(
       screen.getByRole('heading', { name: 'Enable TV-compatible online voice?' }),
     ).toBeInTheDocument()
