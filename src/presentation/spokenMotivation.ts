@@ -2,6 +2,7 @@ export interface MotivationSpeechOptions {
   readonly allowOnlineVoices: boolean
   readonly voiceId: string | null
   readonly rate: number
+  readonly volume: number
 }
 
 export type MotivationSpeechResult =
@@ -73,6 +74,7 @@ export function speakMotivation(
   utterance.voice = selection.voice
   utterance.lang = selection.voice.lang
   utterance.rate = Math.min(2, Math.max(0.5, options.rate))
+  utterance.volume = Math.min(1, Math.max(0, options.volume))
   environment.synthesis.speak(utterance)
   return selection.fallback ? 'spoken-with-fallback' : 'spoken'
 }

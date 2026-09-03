@@ -22,6 +22,7 @@ const options: MotivationSpeechOptions = {
   allowOnlineVoices: false,
   voiceId: null,
   rate: 1,
+  volume: 1,
 }
 
 const environment = (voices: SpeechSynthesisVoice[]) => {
@@ -39,10 +40,14 @@ const environment = (voices: SpeechSynthesisVoice[]) => {
 }
 
 describe('spoken motivation privacy policy', () => {
-  it('uses an on-device default and applies the configured rate', () => {
+  it('uses an on-device default and applies the configured rate and volume', () => {
     const local = voice('local', true, true)
     const speech = environment([voice('online', false), local])
-    expect(speakMotivation('Jarno! Move.', { ...options, rate: 1.25 }, speech.value)).toBe(
+    expect(speakMotivation(
+      'Jarno! Move.',
+      { ...options, rate: 1.25, volume: 0.65 },
+      speech.value,
+    )).toBe(
       'spoken',
     )
     const utterance = speech.speak.mock.calls[0][0] as SpeechSynthesisUtterance
@@ -51,6 +56,7 @@ describe('spoken motivation privacy policy', () => {
       voice: local,
       lang: 'en-US',
       rate: 1.25,
+      volume: 0.65,
     })
   })
 

@@ -1,0 +1,6 @@
+File: transition-bell.wav
+Original title: Dingdingding.wav
+Author: IOII-IOIO-IIOI
+Source: https://commons.wikimedia.org/wiki/File:Dingdingding.wav
+License: CC0 1.0 Universal Public Domain Dedication
+License URL: https://creativecommons.org/publicdomain/zero/1.0/

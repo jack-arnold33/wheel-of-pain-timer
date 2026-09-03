@@ -8,7 +8,7 @@ television used for mirrored workouts.
 
 The migration covers two distinct kinds of audio:
 
-1. Essential 3, 2, and 1 countdown sounds, which must remain bundled with the
+1. An essential transition bell at three seconds remaining, which must remain bundled with the
    application and work offline.
 2. Optional spoken motivation, which may use provider-generated audio only
    after the user has explicitly allowed the individual saying and participant
@@ -73,22 +73,17 @@ The cue decision code remains the authority on whether a cue should occur. The
 audio layer receives already-selected cue commands and does not inspect or
 advance workout state.
 
-### Essential timer sounds
+### Essential timer sound
 
-Replace oscillator-generated tones in `src/presentation/timerAudio.ts` with
-three versioned, app-owned media assets:
+Use one versioned, app-owned media asset:
 
 | Asset | Use | Required character |
 | --- | --- | --- |
-| `countdown-3` | Three seconds remain | Short, distinct warning |
-| `countdown-2` | Two seconds remain | Short, distinct warning |
-| `countdown-1` | One second remains | Strongest countdown warning |
+| `transition-bell` | Three seconds remain | Short, recognizable boxing bell |
 
-The delivered files must preserve the intent and approximate audible duration
-of the current tones. They may be rendered from the current oscillator design,
-but the committed media files become the canonical product sounds. Use one
-iPhone-compatible encoded format for the initial implementation and add a
-fallback source only if the supported-device test matrix demonstrates a need.
+The committed CC0 WAV file is the canonical product sound. Use one
+iPhone-compatible encoded format and add a fallback source only if the
+supported-device test matrix demonstrates a need.
 
 Assets are part of the application build, covered by the service-worker
 precache, and usable without a network after installation. The PWA asset glob
@@ -489,7 +484,7 @@ speech preparation, and media playback must remain.
 
 - Reset a cue element to its start before playing it.
 - Play each emitted cue at most once.
-- Preserve array order if multiple countdown commands are emitted together.
+- Emit and play the transition cue at most once per phase.
 - A newer essential cue may interrupt an older essential cue if required to
   remain aligned with the visible timer. It must never delay timer state.
 - Essential timer cues take priority over spoken motivation. When they would
@@ -567,7 +562,7 @@ coming from the TV; the app cannot observe the selected system route.
 
 ## Offline behavior
 
-- Packaged countdown sounds work offline.
+- The packaged transition bell works offline.
 - The app may reuse only a currently prepared, in-memory speech blob after a
   transient connection loss.
 - It does not generate new online speech while offline.
@@ -593,7 +588,7 @@ added by this specification.
 
 ### Automated tests
 
-- Maps 3, 2, and 1 commands to the correct packaged assets.
+- Maps the three-second transition command to the packaged bell asset.
 - Preserves cue order and plays each command once.
 - Handles `play()` resolution and rejection without affecting timer state.
 - Gives essential cues priority over speech.
@@ -678,7 +673,7 @@ Play-gesture priming strategy is proven or the support boundary is revised.
 
 ## Requirement traceability
 
-- T-005 and T-011: audible countdown and visual transition behavior
+- T-005 and T-011: audible transition warning and visual transition behavior
 - T-014: no replay of missed cues after recovery
 - C-008, C-010, C-012, and C-013: optional saying schedule and participant
   selection

@@ -16,21 +16,21 @@ const frame = (
 })
 
 describe('timer cues', () => {
-  it.each([3, 2, 1])('produces one cue at %i seconds', (second) => {
+  it('produces one transition cue at three seconds', () => {
     expect(
       timerCuesBetween(
-        frame((second + 1) * 1_000, 0),
-        frame(second * 1_000, 100),
+        frame(3_100, 0),
+        frame(3_000, 100),
       ),
-    ).toEqual([{ kind: 'countdown', second }])
+    ).toEqual([{ kind: 'transition' }])
   })
 
-  it('does not cue outside the final three seconds or repeat a second', () => {
+  it('does not cue outside the threshold or repeat within the last three seconds', () => {
     expect(timerCuesBetween(frame(5_000, 0), frame(4_000, 100))).toEqual([])
-    expect(timerCuesBetween(frame(4_900, 0), frame(4_100, 100))).toEqual([])
+    expect(timerCuesBetween(frame(3_000, 0), frame(2_000, 100))).toEqual([])
   })
 
-  it('plays no separate transition sound and starts a short phase countdown', () => {
+  it('cues a newly started three-second phase for its upcoming transition', () => {
     expect(
       timerCuesBetween(
         frame(100, 0),
@@ -39,7 +39,7 @@ describe('timer cues', () => {
           elapsedInPhaseMs: 0,
         }),
       ),
-    ).toEqual([{ kind: 'countdown', second: 3 }])
+    ).toEqual([{ kind: 'transition' }])
   })
 
   it('stays silent at a normal phase boundary', () => {
@@ -58,7 +58,7 @@ describe('timer cues', () => {
     expect(
       timerCuesBetween(
         frame(6_000, 0),
-        frame(2_000, 5_000),
+        frame(3_000, 5_000),
       ),
     ).toEqual([])
     expect(

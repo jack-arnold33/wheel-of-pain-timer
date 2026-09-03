@@ -25,6 +25,7 @@ import {
   Radio,
   RadioGroup,
   Select,
+  Slider,
   Stack,
   Switch,
   TextField,
@@ -58,7 +59,9 @@ import { appAudioPlayer } from './timerAudio'
 export type AudioPreferencePatch = Pick<
   AppPreferences,
   | 'timerSoundsEnabled'
+  | 'transitionVolume'
   | 'spokenMotivationEnabled'
+  | 'voiceVolume'
   | 'allowOnlineVoices'
   | 'voiceId'
   | 'speechRate'
@@ -67,7 +70,12 @@ export type AudioPreferencePatch = Pick<
 export type SettingsPreferencePatch = AudioPreferencePatch &
   Pick<AppPreferences, 'themeId'>
 
-interface SettingsScreenProps extends AudioPreferencePatch {
+interface SettingsScreenProps extends Omit<
+  AudioPreferencePatch,
+  'transitionVolume' | 'voiceVolume'
+> {
+  readonly transitionVolume?: number
+  readonly voiceVolume?: number
   readonly themeId?: string
   readonly voiceInstructions?: string
   readonly participantCount: number
@@ -94,7 +102,9 @@ const speechSynthesis = () =>
 export function SettingsScreen({
   themeId = 'wheel-of-pain',
   timerSoundsEnabled,
+  transitionVolume = 0.5,
   spokenMotivationEnabled,
+  voiceVolume = 1,
   allowOnlineVoices,
   voiceId,
   speechRate,
@@ -188,6 +198,7 @@ export function SettingsScreen({
           speed: speechRate,
           voiceInstructions,
         })
+        appAudioPlayer.setSpeechVolume(voiceVolume)
         const result = await appAudioPlayer.playSpeechPreview(blob)
         if (result !== 'started') {
           setPreviewNotice('The generated preview could not be played.')
@@ -208,6 +219,7 @@ export function SettingsScreen({
         allowOnlineVoices: false,
         voiceId,
         rate: speechRate,
+        volume: voiceVolume,
       })
     } catch {
       setPreviewNotice('The voice preview could not be played.')
@@ -457,6 +469,19 @@ export function SettingsScreen({
                 }
                 label="Timer sounds"
               />
+              <Stack spacing={0.5}>
+                <Typography>Transition bell volume</Typography>
+                <Slider
+                  aria-label="Transition bell volume"
+                  value={Math.round(transitionVolume * 100)}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(value) => `${value}%`}
+                  disabled={busy || !timerSoundsEnabled}
+                  onChangeCommitted={(_, value) =>
+                    void save({ transitionVolume: (value as number) / 100 })
+                  }
+                />
+              </Stack>
               <FormControlLabel
                 control={
                   <Switch
@@ -467,6 +492,19 @@ export function SettingsScreen({
                 }
                 label="Spoken motivation"
               />
+              <Stack spacing={0.5}>
+                <Typography>Motivational voice volume</Typography>
+                <Slider
+                  aria-label="Motivational voice volume"
+                  value={Math.round(voiceVolume * 100)}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(value) => `${value}%`}
+                  disabled={busy || !spokenMotivationEnabled}
+                  onChangeCommitted={(_, value) =>
+                    void save({ voiceVolume: (value as number) / 100 })
+                  }
+                />
+              </Stack>
               <Typography variant="body2" color="text.secondary">
                 {allowOnlineVoices
                   ? 'TV-compatible online voice uses generated media and requires internet access.'

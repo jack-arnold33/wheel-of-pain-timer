@@ -89,8 +89,10 @@ or active workout flow.
 
 Audio settings are:
 
-- **Timer sounds**, on by default, for the 3, 2, and 1 countdown cues
+- **Timer sounds**, on by default, for the transition bell at three seconds
+- **Transition bell volume**, independently adjustable and 50% by default
 - **Spoken motivation**, on by default when a Personality is selected
+- **Motivational voice volume**, independently adjustable and 100% by default
 - **Voice**, defaulting to the device System Default or OpenAI Alloy when the
   TV-compatible path is enabled
 - **Speech speed**, with Slow, Normal, and Fast choices and Normal as default

@@ -1,7 +1,7 @@
 import type { WorkoutState } from '../domain/timer/types'
 import { remainingPhaseMs } from '../domain/timer/engine'
 
-export type TimerCue = { readonly kind: 'countdown'; readonly second: number }
+export type TimerCue = { readonly kind: 'transition' }
 
 export interface TimerCueFrame {
   readonly status: WorkoutState['status']
@@ -35,15 +35,12 @@ export function timerCueFrame(
   }
 }
 
-const countdownSecond = (frame: TimerCueFrame) =>
-  Math.ceil(frame.remainingMs / 1_000)
+const TRANSITION_CUE_AT_MS = 3_000
 
-const applicableCountdownCue = (frame: TimerCueFrame): TimerCue[] => {
-  const second = countdownSecond(frame)
-  return second >= 1 && second <= 3
-    ? [{ kind: 'countdown', second }]
+const applicableTransitionCue = (frame: TimerCueFrame): TimerCue[] =>
+  frame.remainingMs <= TRANSITION_CUE_AT_MS && frame.remainingMs > 0
+    ? [{ kind: 'transition' }]
     : []
-}
 
 export function timerCuesBetween(
   previous: TimerCueFrame | undefined,
@@ -51,7 +48,7 @@ export function timerCuesBetween(
 ): TimerCue[] {
   if (current.status !== 'running') return []
   if (previous === undefined || previous.status !== 'running') {
-    return applicableCountdownCue(current)
+    return applicableTransitionCue(current)
   }
 
   const observationGapMs = current.observedAtMs - previous.observedAtMs
@@ -60,11 +57,12 @@ export function timerCuesBetween(
   }
 
   if (previous.phaseIndex !== current.phaseIndex) {
-    return applicableCountdownCue(current)
+    return applicableTransitionCue(current)
   }
 
-  const previousSecond = countdownSecond(previous)
-  const currentSecond = countdownSecond(current)
-  if (currentSecond !== previousSecond - 1) return []
-  return applicableCountdownCue(current)
+  return previous.remainingMs > TRANSITION_CUE_AT_MS &&
+    current.remainingMs <= TRANSITION_CUE_AT_MS &&
+    current.remainingMs > 0
+    ? [{ kind: 'transition' }]
+    : []
 }

@@ -25,6 +25,7 @@ const onlineSpeechMocks = vi.hoisted(() => ({
 const audioPlayerMocks = vi.hoisted(() => ({
   playSpeechPreview: vi.fn(async () => 'started' as const),
   cancelSpeech: vi.fn(),
+  setSpeechVolume: vi.fn(),
 }))
 
 vi.mock('./spokenMotivation', () => speechMocks)
@@ -124,6 +125,12 @@ describe('SettingsScreen', () => {
     expect(sectionHeadings[0]).toHaveTextContent('Appearance')
     expect(sectionHeadings[1]).toHaveTextContent('Workout setup')
     expect(sectionHeadings[2]).toHaveTextContent('Audio')
+    expect(screen.getByRole('slider', { name: 'Transition bell volume' })).toHaveValue(
+      '50',
+    )
+    expect(screen.getByRole('slider', { name: 'Motivational voice volume' })).toHaveValue(
+      '100',
+    )
 
     fireEvent.click(screen.getByRole('switch', { name: 'Timer sounds' }))
     await waitFor(() =>
@@ -137,7 +144,7 @@ describe('SettingsScreen', () => {
     expect(speechMocks.primeSpokenMotivation).toHaveBeenCalledOnce()
     expect(speechMocks.speakMotivation).toHaveBeenCalledWith(
       'The Wheel of Pain awaits.',
-      { allowOnlineVoices: false, voiceId: null, rate: 1 },
+      { allowOnlineVoices: false, voiceId: null, rate: 1, volume: 1 },
     )
     expect(screen.getByText('2 saved')).toBeInTheDocument()
   })
