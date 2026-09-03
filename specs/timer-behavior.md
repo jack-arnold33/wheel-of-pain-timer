@@ -116,15 +116,13 @@ Exercise names are neither configured nor displayed.
 The active-screen label **Rest** denotes the configured Exercise Rest phase;
 **Cycle Rest** identifies the longer between-cycle phase.
 
-## Countdown cues and phase transitions
+## Transition cue and phase transitions
 
-Each phase gives countdown cues at 3, 2, and 1 seconds remaining. The
-one-second cue is the final audible warning before the boundary; no additional
+Each phase gives one boxing-bell cue at three seconds remaining. No additional
 sound plays when the next phase begins. The visual state changes at the exact
 phase boundary, and the timer remains understandable when audio is muted or
-unavailable.
-When a phase is shorter than three seconds, only the remaining applicable
-countdown numbers are cued.
+unavailable. A phase that begins with three seconds or less remaining cues the
+bell immediately so its upcoming transition is still announced.
 
 Whole seconds are displayed using ceiling behavior. A 30-second phase begins
 at `00:30`, shows `00:01` throughout its final fractional second, and moves
@@ -146,8 +144,8 @@ starts a three-second resume countdown.
 
 Skip Phase and End Workout are secondary actions.
 
-Skip immediately advances through the normal sequence without playing a
-boundary sound. A skipped Work interval counts as completed and is not retried.
+Skip immediately advances through the normal sequence without playing a bell.
+A skipped Work interval counts as completed and is not retried.
 Skipping Cooldown completes the workout. When Skip is used while paused, the
 next non-omitted phase is selected at its full duration and remains paused. If
 Skip is used during the resume countdown, the countdown is canceled first and
@@ -183,7 +181,7 @@ verified. The user may resume or End Workout. A positive elapsed value advances
 normally; a long closure and a forward manual clock change cannot be reliably
 distinguished by a web app and remain a documented platform risk.
 
-Missed countdown cues and spoken sayings are not replayed in a burst after
+Missed transition bells and spoken sayings are not replayed in a burst after
 recovery. End Workout remains available if the
 recovered workout is no longer relevant.
 

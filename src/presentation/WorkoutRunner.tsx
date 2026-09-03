@@ -41,7 +41,12 @@ import {
   remainingScheduledMs,
   workIntervalsRemaining,
 } from './timerPresentation'
-import { playTimerCues, primeTimerAudio, stopTimerCues } from './timerAudio'
+import {
+  appAudioPlayer,
+  playTimerCues,
+  primeTimerAudio,
+  stopTimerCues,
+} from './timerAudio'
 import { timerCueFrame, timerCuesBetween } from './timerCues'
 import { motivationCategoryBetween } from './motivationCues'
 import {
@@ -64,6 +69,7 @@ interface WorkoutRunnerProps {
   initialWorkout?: WorkoutState
   initialActiveElapsedMs?: number
   soundsEnabled?: boolean
+  transitionVolume?: number
   motivation?: WorkoutMotivation
   wakeLockMessage?: string
   recoveryMessage?: string
@@ -82,6 +88,7 @@ export function WorkoutRunner({
   initialWorkout,
   initialActiveElapsedMs = 0,
   soundsEnabled = true,
+  transitionVolume = 0.5,
   motivation,
   wakeLockMessage,
   recoveryMessage,
@@ -153,6 +160,11 @@ export function WorkoutRunner({
   )
   const previousWorkoutStatus = useRef<WorkoutState['status'] | undefined>(undefined)
   const workoutPhaseIndex = 'phaseIndex' in workout ? workout.phaseIndex : -1
+
+  useEffect(() => {
+    appAudioPlayer.setTransitionVolume(transitionVolume)
+    appAudioPlayer.setSpeechVolume(motivation?.speech.volume ?? 1)
+  }, [motivation?.speech.volume, transitionVolume])
 
   const advance = (state: WorkoutState, atMs: number): WorkoutState => {
     if (state.status !== 'running') return projectWorkout(state, atMs)

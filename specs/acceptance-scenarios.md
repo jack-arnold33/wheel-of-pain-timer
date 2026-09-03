@@ -177,24 +177,23 @@ And the same phase resumes with the same remaining duration after 1
 And pressing Pause during the countdown cancels it and leaves the phase paused
 ```
 
-### Phase countdown cues and visual transitions are exact
+### Transition bell and visual transitions are exact
 
 **Requirements:** T-001, T-005, T-011, A-002
 
 ```gherkin
 Given a timed phase has more than three seconds remaining
-When it reaches each of 3, 2, and 1 seconds remaining
-Then one countdown cue is produced for that number when Timer sounds is enabled
-And a visual countdown state communicates the same information
+When it reaches 3 seconds remaining
+Then one boxing-bell cue is produced when Timer sounds is enabled
 And the display uses ceiling behavior and never lingers at 00:00
 When the next non-omitted phase begins
 Then the visual phase changes without an additional transition sound
 
-Scenario: A phase shorter than three seconds has only applicable cues
+Scenario: A phase starting at three seconds cues its upcoming transition
   Given a timed phase is configured for 3 seconds
   When it runs normally
-  Then it produces countdown cues for 3, 2, and 1 only
-  And it produces no additional sound when the next non-omitted phase begins
+  Then it produces one transition bell when the phase begins
+  And the next non-omitted phase begins without an additional sound
 ```
 
 ### Resume never completes invisibly
@@ -293,7 +292,7 @@ When the app is backgrounded long enough to cross one or more phase boundaries
 And the same process returns to the foreground
 Then monotonic elapsed time places the workout in the correct current phase
 And the displayed remaining time and progress are correct
-And missed countdown and spoken cues are not replayed
+And missed transition bells and spoken cues are not replayed
 ```
 
 ### A backgrounded paused workout remains frozen

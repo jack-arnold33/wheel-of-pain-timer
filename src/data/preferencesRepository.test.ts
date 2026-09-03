@@ -55,12 +55,16 @@ describe('preferences repository', () => {
       themeId: 'wheel-of-pain',
       timerSoundsEnabled: 'not-a-boolean',
       speechRate: 99,
+      transitionVolume: -1,
+      voiceVolume: 2,
     })
 
     const preferences = await repository.get()
 
     expect(preferences.timerSoundsEnabled).toBe(true)
     expect(preferences.speechRate).toBe(1)
+    expect(preferences.transitionVolume).toBe(0.5)
+    expect(preferences.voiceVolume).toBe(1)
     expect(preferences.activeParticipantIds).toEqual([])
   })
 

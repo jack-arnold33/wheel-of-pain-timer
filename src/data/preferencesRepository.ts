@@ -22,10 +22,24 @@ function normalizePreferences(
       typeof stored?.timerSoundsEnabled === 'boolean'
         ? stored.timerSoundsEnabled
         : defaultAppPreferences.timerSoundsEnabled,
+    transitionVolume:
+      typeof stored?.transitionVolume === 'number' &&
+      Number.isFinite(stored.transitionVolume) &&
+      stored.transitionVolume >= 0 &&
+      stored.transitionVolume <= 1
+        ? stored.transitionVolume
+        : defaultAppPreferences.transitionVolume,
     spokenMotivationEnabled:
       typeof stored?.spokenMotivationEnabled === 'boolean'
         ? stored.spokenMotivationEnabled
         : defaultAppPreferences.spokenMotivationEnabled,
+    voiceVolume:
+      typeof stored?.voiceVolume === 'number' &&
+      Number.isFinite(stored.voiceVolume) &&
+      stored.voiceVolume >= 0 &&
+      stored.voiceVolume <= 1
+        ? stored.voiceVolume
+        : defaultAppPreferences.voiceVolume,
     allowOnlineVoices:
       typeof stored?.allowOnlineVoices === 'boolean'
         ? stored.allowOnlineVoices
@@ -53,7 +67,9 @@ function normalizePreferences(
 const withoutId = (record: AppPreferencesRecord): AppPreferences => ({
   themeId: record.themeId,
   timerSoundsEnabled: record.timerSoundsEnabled,
+  transitionVolume: record.transitionVolume,
   spokenMotivationEnabled: record.spokenMotivationEnabled,
+  voiceVolume: record.voiceVolume,
   allowOnlineVoices: record.allowOnlineVoices,
   voiceId: record.voiceId,
   speechRate: record.speechRate,

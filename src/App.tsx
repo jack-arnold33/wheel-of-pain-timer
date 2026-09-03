@@ -96,6 +96,8 @@ interface AppProps {
     readonly voiceId?: string | null
     readonly speechRate?: number
     readonly timerSoundsEnabled?: boolean
+    readonly transitionVolume?: number
+    readonly voiceVolume?: number
   }>
   selectContentPack?: (id: string | null) => Promise<void>
   importContentPack?: (draft: ContentPackDraft) => Promise<ContentPack>
@@ -154,6 +156,8 @@ const loadStoredContentPacks = async () => {
     voiceId: state.preferences.voiceId,
     speechRate: state.preferences.speechRate,
     timerSoundsEnabled: state.preferences.timerSoundsEnabled,
+    transitionVolume: state.preferences.transitionVolume,
+    voiceVolume: state.preferences.voiceVolume,
   }
 }
 
@@ -262,9 +266,13 @@ export function App({
   const [contentPackNotice, setContentPackNotice] = useState<string>()
   const [spokenMotivationEnabled, setSpokenMotivationEnabled] = useState(true)
   const [timerSoundsEnabled, setTimerSoundsEnabled] = useState(initialTimerSoundsEnabled)
+  const [transitionVolume, setTransitionVolume] = useState(
+    defaultAppPreferences.transitionVolume,
+  )
   const [allowOnlineVoices, setAllowOnlineVoices] = useState(false)
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null)
   const [speechRate, setSpeechRate] = useState(1)
+  const [voiceVolume, setVoiceVolume] = useState(defaultAppPreferences.voiceVolume)
   const [participants, setParticipants] = useState<readonly Participant[]>([])
   const [activeParticipantIds, setActiveParticipantIds] = useState<readonly string[]>([])
   const [participantNotice, setParticipantNotice] = useState<string>()
@@ -376,6 +384,10 @@ export function App({
         if (state.timerSoundsEnabled !== undefined) {
           setTimerSoundsEnabled(state.timerSoundsEnabled)
         }
+        if (state.transitionVolume !== undefined) {
+          setTransitionVolume(state.transitionVolume)
+        }
+        if (state.voiceVolume !== undefined) setVoiceVolume(state.voiceVolume)
       })
       .catch(() => {
         if (!active) return
@@ -514,7 +526,9 @@ export function App({
           <SettingsScreen
             themeId={themeId}
             timerSoundsEnabled={timerSoundsEnabled}
+            transitionVolume={transitionVolume}
             spokenMotivationEnabled={spokenMotivationEnabled}
+            voiceVolume={voiceVolume}
             allowOnlineVoices={allowOnlineVoices}
             voiceId={selectedVoiceId}
             speechRate={speechRate}
@@ -533,7 +547,9 @@ export function App({
             onChange={async (patch: Partial<SettingsPreferencePatch>) => {
               const saved = await updatePreferences(patch)
               setTimerSoundsEnabled(saved.timerSoundsEnabled)
+              setTransitionVolume(saved.transitionVolume)
               setSpokenMotivationEnabled(saved.spokenMotivationEnabled)
+              setVoiceVolume(saved.voiceVolume)
               setAllowOnlineVoices(saved.allowOnlineVoices)
               setSelectedVoiceId(saved.voiceId)
               setSpeechRate(saved.speechRate)
@@ -690,6 +706,7 @@ export function App({
           initialWorkout={initialWorkout}
           initialActiveElapsedMs={initialActiveElapsedMs}
           soundsEnabled={timerSoundsEnabled}
+          transitionVolume={transitionVolume}
           motivation={(() => {
             const pack = contentPacks.find(
               ({ id }) => id === selectedContentPackId,
@@ -704,6 +721,7 @@ export function App({
                 allowOnlineVoices,
                 voiceId: selectedVoiceId,
                 rate: speechRate,
+                volume: voiceVolume,
               },
             }
           })()}

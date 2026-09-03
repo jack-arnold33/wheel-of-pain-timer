@@ -5,6 +5,7 @@ class FakeAudio extends EventTarget {
   src = ''
   preload = ''
   muted = false
+  volume = 1
   currentTime = 0
   readyState = 4
   load = vi.fn()
@@ -43,11 +44,11 @@ describe('HTML timer audio', () => {
     const audio = setup()
     await audio.player.prime()
     expect(audio.configureAudioSession).toHaveBeenCalledOnce()
-    expect(audio.elements.slice(0, 3).every((element) => element.preload === 'auto')).toBe(true)
-    expect(audio.bySource(TIMER_CUE_ASSETS['countdown-1']).play).toHaveBeenCalledOnce()
+    expect(audio.elements[0].preload).toBe('auto')
+    expect(audio.bySource(TIMER_CUE_ASSETS.transition).play).toHaveBeenCalledOnce()
   })
 
-  it('maps countdown cues to their packaged assets in order', async () => {
+  it('maps transition cues to the packaged bell', async () => {
     const audio = setup()
     const order: string[] = []
     for (const [name, source] of Object.entries(TIMER_CUE_ASSETS)) {
@@ -57,28 +58,29 @@ describe('HTML timer audio', () => {
       })
     }
     await audio.player.playCues([
-      { kind: 'countdown', second: 3 },
-      { kind: 'countdown', second: 2 },
-      { kind: 'countdown', second: 1 },
+      { kind: 'transition' },
     ])
-    expect(order).toEqual(['countdown-3', 'countdown-2', 'countdown-1'])
+    expect(order).toEqual(['transition'])
   })
 
-  it('stops an active sequence without playing its remaining cues', async () => {
+  it('stops an active bell', async () => {
     const audio = setup()
-    const first = audio.bySource(TIMER_CUE_ASSETS['countdown-3'])
-    const second = audio.bySource(TIMER_CUE_ASSETS['countdown-2'])
+    const first = audio.bySource(TIMER_CUE_ASSETS.transition)
     first.autoEnd = false
-    const playback = audio.player.playCues([
-      { kind: 'countdown', second: 3 },
-      { kind: 'countdown', second: 2 },
-    ])
+    const playback = audio.player.playCues([{ kind: 'transition' }])
     await Promise.resolve()
     audio.player.stopCues()
     first.dispatchEvent(new Event('ended'))
     await playback
     expect(first.pause).toHaveBeenCalled()
-    expect(second.play).not.toHaveBeenCalled()
+  })
+
+  it('applies independent transition and speech volumes', async () => {
+    const audio = setup()
+    audio.player.setTransitionVolume(0.35)
+    audio.player.setSpeechVolume(0.8)
+    expect(audio.bySource(TIMER_CUE_ASSETS.transition).volume).toBe(0.35)
+    expect(audio.speechElements.every(({ volume }) => volume === 0.8)).toBe(true)
   })
 
   it('gives an essential cue priority over prepared speech', async () => {
@@ -86,7 +88,7 @@ describe('HTML timer audio', () => {
     const speech = audio.speechElements[0]
     audio.player.prepareSpeech('work:1', new Blob(['audio']))
     await audio.player.playPreparedSpeech('work:1')
-    await audio.player.playCues([{ kind: 'countdown', second: 1 }])
+    await audio.player.playCues([{ kind: 'transition' }])
     expect(speech.pause).toHaveBeenCalled()
     expect(audio.revoked).toEqual(['blob:prepared-1'])
   })

@@ -1,6 +1,4 @@
-import countdown1Url from '../assets/audio/countdown-1.wav?url'
-import countdown2Url from '../assets/audio/countdown-2.wav?url'
-import countdown3Url from '../assets/audio/countdown-3.wav?url'
+import transitionBellUrl from '../assets/audio/transition-bell.wav?url'
 import type { TimerCue } from './timerCues'
 
 type AudioSessionNavigator = Navigator & {
@@ -13,6 +11,7 @@ interface MediaElement {
   src: string
   preload: string
   muted: boolean
+  volume: number
   currentTime: number
   readonly readyState: number
   load(): void
@@ -66,13 +65,8 @@ const browserEnvironment: PlayerEnvironment = {
 }
 
 export const TIMER_CUE_ASSETS = {
-  'countdown-3': countdown3Url,
-  'countdown-2': countdown2Url,
-  'countdown-1': countdown1Url,
+  transition: transitionBellUrl,
 } as const
-
-const cueAsset = (cue: TimerCue) =>
-  TIMER_CUE_ASSETS[`countdown-${cue.second as 1 | 2 | 3}`]
 
 const blockedPlayback = (error: unknown): AudioPlaybackResult =>
   error instanceof DOMException && error.name === 'NotAllowedError'
@@ -86,11 +80,14 @@ export class HtmlAudioPlayer {
   private activeCue?: MediaElement
   private activeSpeech?: ActiveSpeech
   private preparedSpeech?: PreparedSpeech
+  private transitionVolume = 0.5
+  private speechVolume = 1
 
   constructor(private readonly environment: PlayerEnvironment = browserEnvironment) {
     for (const source of Object.values(TIMER_CUE_ASSETS)) {
       const element = environment.createAudio(source)
       element.preload = 'auto'
+      element.volume = this.transitionVolume
       this.cues.set(source, element)
     }
     this.speechElements = [environment.createAudio(), environment.createAudio()]
@@ -101,7 +98,7 @@ export class HtmlAudioPlayer {
     this.environment.configureAudioSession()
     for (const element of this.cues.values()) element.load()
 
-    const element = this.cues.get(TIMER_CUE_ASSETS['countdown-1'])
+    const element = this.cues.get(TIMER_CUE_ASSETS.transition)
     if (element === undefined) return
     element.muted = true
     try {
@@ -124,7 +121,7 @@ export class HtmlAudioPlayer {
       let finalResult: AudioPlaybackResult = 'not-ready'
       for (const cue of cues) {
         if (operation !== this.cueOperation) return 'not-ready'
-        const element = this.cues.get(cueAsset(cue))
+        const element = this.cues.get(TIMER_CUE_ASSETS[cue.kind])
         if (element === undefined) {
           finalResult = 'failed'
           continue
@@ -194,6 +191,16 @@ export class HtmlAudioPlayer {
       prepared.readyTimeout = window.setTimeout(reject, 5_000)
       element.load()
     })
+  }
+
+  setTransitionVolume(volume: number): void {
+    this.transitionVolume = Math.min(1, Math.max(0, volume))
+    for (const element of this.cues.values()) element.volume = this.transitionVolume
+  }
+
+  setSpeechVolume(volume: number): void {
+    this.speechVolume = Math.min(1, Math.max(0, volume))
+    for (const element of this.speechElements) element.volume = this.speechVolume
   }
 
   async playSpeechPreview(blob: Blob): Promise<AudioPlaybackResult> {
@@ -301,7 +308,7 @@ export class HtmlAudioPlayer {
         element.removeEventListener('error', finish)
         resolve()
       }
-      const timeout = window.setTimeout(finish, 700)
+      const timeout = window.setTimeout(finish, 2_500)
       element.addEventListener('ended', finish, { once: true })
       element.addEventListener('error', finish, { once: true })
     })

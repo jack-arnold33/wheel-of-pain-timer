@@ -1,6 +1,9 @@
 import { isBuiltInContentPack } from '../contentPacks/builtInContentPacks'
 import { normalizeContentPack } from '../contentPacks/validation'
-import type { AppPreferences } from '../preferences/appPreferences'
+import {
+  defaultAppPreferences,
+  type AppPreferences,
+} from '../preferences/appPreferences'
 import { PROTECTED_ROUTINE_ID } from '../routines/protectedRoutine'
 import { assertValidRoutineTiming } from '../timer/validation'
 import type {
@@ -162,6 +165,19 @@ const validatePreferences = (
   ) {
     throw new InvalidLocalBackupError('Preference speechRate must be from 0.5 through 2.')
   }
+  const volume = (key: 'transitionVolume' | 'voiceVolume') => {
+    const value = input[key]
+    if (value === undefined) return defaultAppPreferences[key]
+    if (
+      typeof value !== 'number' ||
+      !Number.isFinite(value) ||
+      value < 0 ||
+      value > 1
+    ) {
+      throw new InvalidLocalBackupError(`Preference ${key} must be from 0 through 1.`)
+    }
+    return value
+  }
   const selectedContentPackId = input.selectedContentPackId
   if (
     selectedContentPackId !== null &&
@@ -188,7 +204,9 @@ const validatePreferences = (
   return {
     themeId,
     timerSoundsEnabled: boolean('timerSoundsEnabled'),
+    transitionVolume: volume('transitionVolume'),
     spokenMotivationEnabled: boolean('spokenMotivationEnabled'),
+    voiceVolume: volume('voiceVolume'),
     allowOnlineVoices: boolean('allowOnlineVoices'),
     voiceId,
     speechRate,
