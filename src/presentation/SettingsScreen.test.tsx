@@ -57,7 +57,7 @@ const backupHandlers = {
 }
 
 const localBackup: LocalBackup = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   routines: [
     {
       id: 'routine:test',
@@ -69,7 +69,16 @@ const localBackup: LocalBackup = {
   ],
   contentPacks: [],
   participants: [
-    { id: 'participant:test', name: 'Jarno', createdAt: 1, updatedAt: 1 },
+    {
+      id: 'participant:test',
+      name: 'Jarno',
+      spokenName: '',
+      about: '',
+      motivationStyle: 'crew-default',
+      avoid: '',
+      createdAt: 1,
+      updatedAt: 1,
+    },
   ],
   preferences: {
     ...defaultAppPreferences,
@@ -106,7 +115,8 @@ describe('SettingsScreen', () => {
         <SettingsScreen
           timerSoundsEnabled
           spokenMotivationEnabled
-          allowOnlineVoices={false}
+          openAiFeaturesEnabled={false}
+          useOpenAiVoice={false}
           voiceId={null}
           speechRate={1}
           participantCount={2}
@@ -156,7 +166,8 @@ describe('SettingsScreen', () => {
         <SettingsScreen
           timerSoundsEnabled
           spokenMotivationEnabled
-          allowOnlineVoices
+          openAiFeaturesEnabled
+          useOpenAiVoice
           voiceId="alloy"
           speechRate={1}
           voiceInstructions="Sound dry, theatrical, and encouraging."
@@ -190,7 +201,8 @@ describe('SettingsScreen', () => {
           themeId="wheel-of-pain"
           timerSoundsEnabled
           spokenMotivationEnabled
-          allowOnlineVoices={false}
+          openAiFeaturesEnabled={false}
+          useOpenAiVoice={false}
           voiceId={null}
           speechRate={1}
           participantCount={0}
@@ -220,7 +232,8 @@ describe('SettingsScreen', () => {
           themeId="retired-theme"
           timerSoundsEnabled
           spokenMotivationEnabled
-          allowOnlineVoices={false}
+          openAiFeaturesEnabled={false}
+          useOpenAiVoice={false}
           voiceId={null}
           speechRate={1}
           participantCount={0}
@@ -254,7 +267,8 @@ describe('SettingsScreen', () => {
         <SettingsScreen
           timerSoundsEnabled
           spokenMotivationEnabled
-          allowOnlineVoices={false}
+          openAiFeaturesEnabled={false}
+          useOpenAiVoice={false}
           voiceId={null}
           speechRate={1}
           participantCount={0}
@@ -292,7 +306,8 @@ describe('SettingsScreen', () => {
         <SettingsScreen
           timerSoundsEnabled
           spokenMotivationEnabled
-          allowOnlineVoices
+          openAiFeaturesEnabled
+          useOpenAiVoice
           voiceId="alloy"
           speechRate={1}
           participantCount={0}
@@ -307,7 +322,7 @@ describe('SettingsScreen', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Device voice/ }))
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith({
-        allowOnlineVoices: false,
+        useOpenAiVoice: false,
         voiceId: null,
       }),
     )
@@ -320,7 +335,8 @@ describe('SettingsScreen', () => {
         <SettingsScreen
           timerSoundsEnabled
           spokenMotivationEnabled
-          allowOnlineVoices={false}
+          openAiFeaturesEnabled={false}
+          useOpenAiVoice={false}
           voiceId={null}
           speechRate={1}
           participantCount={0}
@@ -338,14 +354,14 @@ describe('SettingsScreen', () => {
     expect(onlineChoice).toBeEnabled()
     expect(screen.queryByLabelText('OpenAI API key')).not.toBeInTheDocument()
     expect(
-      screen.queryByRole('checkbox', { name: /I understand this key/ }),
+      screen.queryByRole('checkbox', { name: /Enable OpenAI features/ }),
     ).not.toBeInTheDocument()
 
     fireEvent.click(onlineChoice)
 
     expect(screen.getByLabelText('OpenAI API key')).toBeInTheDocument()
     expect(
-      screen.getByRole('checkbox', { name: /I understand this key/ }),
+      screen.getByRole('checkbox', { name: /Enable OpenAI features/ }),
     ).toBeInTheDocument()
     expect(
       screen.getByText('Enter and save an OpenAI API key below to continue.'),
@@ -353,7 +369,7 @@ describe('SettingsScreen', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it('explains online speech before saving consent', async () => {
+  it('uses the single OpenAI notice when enabling online speech', async () => {
     credentialMocks.status.mockResolvedValue({ configured: true, lastFour: 'abcd' })
     const onChange = vi.fn().mockResolvedValue(undefined)
     render(
@@ -361,7 +377,8 @@ describe('SettingsScreen', () => {
         <SettingsScreen
           timerSoundsEnabled
           spokenMotivationEnabled
-          allowOnlineVoices={false}
+          openAiFeaturesEnabled={false}
+          useOpenAiVoice={false}
           voiceId={null}
           speechRate={1}
           participantCount={0}
@@ -373,27 +390,14 @@ describe('SettingsScreen', () => {
       </ThemeProvider>,
     )
 
-    expect(
-      screen.queryByText('Audio and voice choices stay on this device.'),
-    ).not.toBeInTheDocument()
-    expect(
-      screen.queryByText(/An individual saying and the participant name/),
-    ).not.toBeInTheDocument()
-
     fireEvent.click(screen.getByRole('radio', { name: /TV voice through OpenAI/ }))
     await screen.findByText(/ends in abcd/)
+    expect(
+      screen.getByRole('checkbox', { name: /Enable OpenAI features/ }),
+    ).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Enable TV voice' }))
-    expect(
-      screen.getByRole('heading', { name: 'Enable TV-compatible online voice?' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText(/One selected saying and the participant name/),
-    ).toBeInTheDocument()
-    expect(onChange).not.toHaveBeenCalled()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Enable online voice' }))
     await waitFor(() =>
-      expect(onChange).toHaveBeenCalledWith({ allowOnlineVoices: true }),
+      expect(onChange).toHaveBeenCalledWith({ useOpenAiVoice: true }),
     )
   })
 
@@ -404,7 +408,8 @@ describe('SettingsScreen', () => {
         <SettingsScreen
           timerSoundsEnabled
           spokenMotivationEnabled
-          allowOnlineVoices={false}
+          openAiFeaturesEnabled={false}
+          useOpenAiVoice={false}
           voiceId={null}
           speechRate={1}
           participantCount={0}
@@ -422,7 +427,7 @@ describe('SettingsScreen', () => {
     fireEvent.change(screen.getByLabelText('OpenAI API key'), {
       target: { value: 'sk-proj-example-1234567890abcd' },
     })
-    fireEvent.click(screen.getByRole('checkbox', { name: /I understand this key/ }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /Enable OpenAI features/ }))
     fireEvent.click(saveButton)
 
     await screen.findByText(/ends in abcd/)
@@ -443,7 +448,8 @@ describe('SettingsScreen', () => {
         <SettingsScreen
           timerSoundsEnabled
           spokenMotivationEnabled
-          allowOnlineVoices={false}
+          openAiFeaturesEnabled={false}
+          useOpenAiVoice={false}
           voiceId={null}
           speechRate={1}
           participantCount={0}

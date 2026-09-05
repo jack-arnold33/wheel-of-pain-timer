@@ -18,7 +18,7 @@ let database: WheelOfPainDatabase
 let service: LocalBackupService
 
 const backup = (): LocalBackup => ({
-  schemaVersion: 1,
+  schemaVersion: 2,
   routines: [
     {
       id: 'routine:backup',
@@ -31,7 +31,8 @@ const backup = (): LocalBackup => ({
   contentPacks: [
     {
       id: 'pack:backup',
-      schemaVersion: 1,
+      schemaVersion: 2,
+      addressingMode: 'participant-prefix',
       name: 'Backup Pack',
       voiceInstructions: 'Sound steady and reassuring.',
       sayings: { work: ['Keep moving.'] },
@@ -44,6 +45,10 @@ const backup = (): LocalBackup => ({
     {
       id: 'participant:backup',
       name: 'Jarno',
+      spokenName: '',
+      about: 'Keeps the crew moving.',
+      motivationStyle: 'crew-default',
+      avoid: '',
       createdAt: 10,
       updatedAt: 20,
     },
@@ -149,7 +154,7 @@ describe('local backup service', () => {
     ).rejects.toThrow('The backup file is not valid JSON.')
     await expect(
       parseLocalBackupFile({
-        text: () => Promise.resolve(JSON.stringify({ ...backup(), schemaVersion: 2 })),
+        text: () => Promise.resolve(JSON.stringify({ ...backup(), schemaVersion: 3 })),
       }),
     ).rejects.toBeInstanceOf(InvalidLocalBackupError)
   })

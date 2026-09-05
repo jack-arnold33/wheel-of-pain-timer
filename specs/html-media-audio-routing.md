@@ -10,9 +10,8 @@ The migration covers two distinct kinds of audio:
 
 1. An essential transition bell at three seconds remaining, which must remain bundled with the
    application and work offline.
-2. Optional spoken motivation, which may use provider-generated audio only
-   after the user has explicitly allowed the individual saying and participant
-   name to be sent for online speech.
+2. Optional spoken motivation, which may use provider-generated audio after
+   the user enables the shared OpenAI feature notice and opt-in.
 
 Timer correctness, visual cues, and workout controls remain independent of
 audio availability.
@@ -109,7 +108,8 @@ The initial integration is deliberately OpenAI-specific:
 - Logging: application and diagnostic logs must not contain the saying,
   participant name, API key, Authorization header, or response bytes.
 
-The app may request this response only when online speech consent is enabled.
+The app may request this response only when OpenAI features and OpenAI speech
+are enabled.
 It must not send an entire Personality, its saying collection, participant
 roster, routine, or workout history. Sending the selected Personality's bounded
 voice instructions with one utterance is part of the consented request.
@@ -544,16 +544,16 @@ The speech settings must distinguish:
 - **Device voice**: browser speech, availability varies, and TV routing is not
   promised.
 - **TV-compatible online voice**: generated media routed through HTML audio;
-  requires internet access and explicit consent to send one saying, the
-  selected participant name, and the selected Personality's voice instructions.
+  requires internet access and the shared OpenAI opt-in to send one final
+  utterance and the selected Personality's voice instructions.
 
 Do not continue presenting browser-exposed voice choices as if they select the
 OpenAI-generated voice. The online path uses a small allowlist of supported
 OpenAI voices or a single documented default. The generic preview follows the
 selected path and uses the selected Personality's voice instructions while
 never sending private saying text or a participant name. Online voice controls
-remain unavailable until a key is configured and the owner has enabled online
-speech consent.
+remain unavailable until a key is configured and the owner has enabled OpenAI
+features and the OpenAI speech option.
 
 If the media path fails during a workout, avoid a persistent timer obstruction.
 Record a compact status for later display in Settings or the pre-workout screen

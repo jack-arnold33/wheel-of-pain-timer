@@ -13,7 +13,8 @@ import { wheelOfPainTheme } from './themes/wheelOfPainTheme'
 
 const pack: ContentPack = {
   id: 'pack:test',
-  schemaVersion: 1,
+  schemaVersion: 2,
+  addressingMode: 'participant-prefix',
   name: 'Tuesday Chaos',
   voiceInstructions: 'Sound dry, theatrical, and encouraging.',
   sayings: {
@@ -124,7 +125,7 @@ describe('ContentPackLibrary', () => {
     fireEvent.change(screen.getByLabelText('Tone'), {
       target: { value: 'Dry and theatrical' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Copy prompt for ChatGPT' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Copy prompt for another AI' }))
     expect(
       (await screen.findByLabelText('AI prompt') as HTMLTextAreaElement).value,
     ).toContain('Dry and theatrical')
@@ -139,7 +140,7 @@ describe('ContentPackLibrary', () => {
     fireEvent.change(screen.getByLabelText('Paste ChatGPT response'), {
       target: {
         value:
-          '```json\n{"schemaVersion":1,"name":"Tuesday Chaos","voiceInstructions":"Sound dry, theatrical, and encouraging.","sayings":{"work":["Go."],"cycleRest":["Breathe."],"finished":["Done."]}}\n```',
+          '```json\n{"schemaVersion":2,"name":"Tuesday Chaos","addressingMode":"participant-prefix","voiceInstructions":"Sound dry, theatrical, and encouraging.","sayings":{"work":["Go."],"cycleRest":["Breathe."],"finished":["Done."]}}\n```',
       },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Review sayings' }))
@@ -156,8 +157,9 @@ describe('ContentPackLibrary', () => {
 
     await waitFor(() =>
       expect(onImport).toHaveBeenCalledWith({
-        schemaVersion: 1,
+        schemaVersion: 2,
         name: 'Tuesday Chaos',
+        addressingMode: 'participant-prefix',
         voiceInstructions: 'Sound dry, theatrical, and encouraging.',
         sayings: {
           work: ['Go.', 'Keep moving.'],

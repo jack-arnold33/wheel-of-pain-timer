@@ -22,8 +22,9 @@ describe('content-pack import', () => {
     )
 
     expect(pack).toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       name: 'Tuesday Chaos',
+      addressingMode: 'participant-prefix',
       voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
       sayings: {
         general: ['Prepare your excuses.', 'Form first.'],
@@ -37,7 +38,7 @@ describe('content-pack import', () => {
       sourceFile(
         'crew.timerpack.json',
         JSON.stringify({
-          schemaVersion: 1,
+          schemaVersion: 2,
           name: ' Crew ',
           voiceInstructions: ' Sound dry and theatrical. ',
           sayings: { work: [' Go! ', 'Go!'], finished: ['Done.'] },
@@ -47,8 +48,9 @@ describe('content-pack import', () => {
     )
 
     expect(pack).toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       name: 'Crew',
+      addressingMode: 'participant-prefix',
       voiceInstructions: 'Sound dry and theatrical.',
       sayings: { work: ['Go!'], finished: ['Done.'] },
       extensions: { author: 'Local user' },
@@ -60,7 +62,7 @@ describe('content-pack import', () => {
       sourceFile(
         'legacy.timerpack.json',
         JSON.stringify({
-          schemaVersion: 1,
+          schemaVersion: 2,
           name: 'Legacy',
           sayings: { work: ['Go.'] },
         }),
@@ -78,7 +80,7 @@ describe('content-pack import', () => {
       sourceFile(
         'bad.timerpack.json',
         JSON.stringify({
-          schemaVersion: 1,
+          schemaVersion: 2,
           name: 'Bad',
           sayings: { surprise: ['Nope'] },
         }),
@@ -89,7 +91,7 @@ describe('content-pack import', () => {
       'empty sayings',
       sourceFile(
         'empty.timerpack.json',
-        JSON.stringify({ schemaVersion: 1, name: 'Empty', sayings: { work: [' '] } }),
+        JSON.stringify({ schemaVersion: 2, name: 'Empty', sayings: { work: [' '] } }),
       ),
       'at least one',
     ],
@@ -98,7 +100,7 @@ describe('content-pack import', () => {
       sourceFile(
         'empty-voice.timerpack.json',
         JSON.stringify({
-          schemaVersion: 1,
+          schemaVersion: 2,
           name: 'Empty Voice',
           voiceInstructions: ' ',
           sayings: { work: ['Go.'] },
@@ -111,7 +113,7 @@ describe('content-pack import', () => {
       sourceFile(
         'long-voice.timerpack.json',
         JSON.stringify({
-          schemaVersion: 1,
+          schemaVersion: 2,
           name: 'Long Voice',
           voiceInstructions: 'x'.repeat(501),
           sayings: { work: ['Go.'] },
@@ -132,7 +134,7 @@ describe('content-pack import', () => {
         sourceFile(
           'long.timerpack.json',
           JSON.stringify({
-            schemaVersion: 1,
+          schemaVersion: 2,
             name: 'Long',
             sayings: { general: ['x'.repeat(241)] },
           }),

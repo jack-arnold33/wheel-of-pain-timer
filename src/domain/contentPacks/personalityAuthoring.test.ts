@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   PERSONALITY_AUTHORING_DRAFT_KEY,
   authoringDraftFromPack,
+  buildPersonalityBrief,
   buildPersonalityPrompt,
   contentPackFromAuthoringDraft,
   emptyPersonalityAuthoringDraft,
@@ -44,14 +45,54 @@ describe('Personality authoring', () => {
     expect(prompt).not.toContain('general sayings')
   })
 
+  it('builds a crew brief from only the selected reusable profiles', () => {
+    const brief = buildPersonalityBrief(
+      {
+        ...emptyPersonalityAuthoringDraft(),
+        mode: 'crew',
+        name: 'Garage Regulars',
+        selectedParticipantIds: ['participant:alex'],
+      },
+      [
+        {
+          id: 'participant:alex',
+          name: 'Alexandra',
+          spokenName: 'Alex',
+          about: 'Always grabs the heaviest kettlebell.',
+          motivationStyle: 'crew-default',
+          avoid: 'Knee jokes',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+        { id: 'participant:sam', name: 'Sam', createdAt: 1, updatedAt: 1 },
+      ],
+      {
+        name: 'Tuesday Crew',
+        about: 'We train before sunrise.',
+        motivationStyle: 'playful',
+        avoid: 'Age jokes',
+      },
+    )
+
+    expect(brief).toContain('Crew name: Tuesday Crew')
+    expect(brief).toContain('Crew motivation style: playful')
+    expect(brief).toContain('Participant: Alexandra')
+    expect(brief).toContain('Spoken name: Alex')
+    expect(brief).toContain('Motivation style: playful')
+    expect(brief).toContain('Knee jokes')
+    expect(brief).not.toContain('Participant: Sam')
+    expect(brief).toContain('The app reads these sayings exactly as written')
+  })
+
   it('parses JSON copied with a Markdown fence', () => {
     const pack = parsePastedPersonality(
-      'Here you go:\n```json\n{"schemaVersion":1,"name":"Phone Crew","voiceInstructions":"Sound playful and quick.","sayings":{"work":["Go."],"finished":["Done."]}}\n```',
+      'Here you go:\n```json\n{"schemaVersion":2,"name":"Phone Crew","voiceInstructions":"Sound playful and quick.","sayings":{"work":["Go."],"finished":["Done."]}}\n```',
       'Ignored fallback',
     )
 
     expect(pack).toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
+      addressingMode: 'participant-prefix',
       name: 'Phone Crew',
       voiceInstructions: 'Sound playful and quick.',
       sayings: { work: ['Go.'], finished: ['Done.'] },
@@ -68,7 +109,7 @@ describe('Personality authoring', () => {
 
   it('normalizes HTML whitespace entities introduced while copying JSON', () => {
     const pack = parsePastedPersonality(
-      '{\n&#x20; "schemaVersion": 1,\n&#32; "name": "Entity Copy",\n&nbsp; "sayings": {"work": ["Go."]}\n}',
+      '{\n&#x20; "schemaVersion": 2,\n&#32; "name": "Entity Copy",\n&nbsp; "sayings": {"work": ["Go."]}\n}',
       'Ignored fallback',
     )
 
@@ -81,8 +122,9 @@ describe('Personality authoring', () => {
 
   it('round-trips an editable categorized draft through pack validation', () => {
     const draft = authoringDraftFromPack(emptyPersonalityAuthoringDraft(), {
-      schemaVersion: 1,
+      schemaVersion: 2,
       name: 'Editable',
+      addressingMode: 'participant-prefix',
       voiceInstructions: 'Sound dry and theatrical.',
       sayings: { work: ['First.', 'Second.'], cycleRest: ['Breathe.'] },
       extensions: {},
@@ -93,8 +135,9 @@ describe('Personality authoring', () => {
     expect(draft.voiceInstructions).toBe('Sound dry and theatrical.')
 
     expect(contentPackFromAuthoringDraft(draft)).toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       name: 'Editable',
+      addressingMode: 'participant-prefix',
       voiceInstructions: 'Sound dry and theatrical.',
       sayings: { work: ['First.', 'Second.'], cycleRest: ['Breathe.'] },
       extensions: {},
@@ -103,8 +146,9 @@ describe('Personality authoring', () => {
 
   it('moves a legacy general-only paste into work for new authoring', () => {
     const draft = authoringDraftFromPack(emptyPersonalityAuthoringDraft(), {
-      schemaVersion: 1,
+      schemaVersion: 2,
       name: 'Legacy Paste',
+      addressingMode: 'participant-prefix',
       voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
       sayings: { general: ['Keep moving.'] },
       extensions: {},

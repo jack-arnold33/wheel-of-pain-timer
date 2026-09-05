@@ -4,6 +4,7 @@ import {
   InvalidContentPackError,
   normalizeContentPack,
 } from './validation'
+import { emptyCrewProfile, type CrewProfile, type Participant } from '../participants/types'
 
 export const PERSONALITY_AUTHORING_DRAFT_KEY =
   'wheel-of-pain:personality-authoring-draft:v1'
@@ -18,8 +19,10 @@ export type PersonalityAuthoringCategory =
   (typeof personalityAuthoringCategories)[number]
 
 export interface PersonalityAuthoringDraft {
-  readonly schemaVersion: 1
+  readonly schemaVersion: 2
   readonly step: 'ideas' | 'review'
+  readonly mode: 'classic' | 'crew'
+  readonly selectedParticipantIds: readonly string[]
   readonly name: string
   readonly tone: string
   readonly themes: string
@@ -30,8 +33,10 @@ export interface PersonalityAuthoringDraft {
 }
 
 export const emptyPersonalityAuthoringDraft = (): PersonalityAuthoringDraft => ({
-  schemaVersion: 1,
+  schemaVersion: 2,
   step: 'ideas',
+  mode: 'classic',
+  selectedParticipantIds: [],
   name: '',
   tone: '',
   themes: '',
@@ -59,8 +64,14 @@ export function loadPersonalityAuthoringDraft(
         ? (parsed.sayings as Record<string, unknown>)
         : {}
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       step: parsed.step === 'review' ? 'review' : 'ideas',
+      mode: parsed.mode === 'crew' ? 'crew' : 'classic',
+      selectedParticipantIds: Array.isArray(parsed.selectedParticipantIds)
+        ? parsed.selectedParticipantIds.filter(
+            (id): id is string => typeof id === 'string',
+          )
+        : [],
       name: text(parsed.name),
       tone: text(parsed.tone),
       themes: text(parsed.themes),
@@ -120,6 +131,7 @@ export function parsePastedPersonality(
     return normalizeContentPack({
       schemaVersion: CONTENT_PACK_SCHEMA_VERSION,
       name: fallbackName,
+      addressingMode: 'participant-prefix',
       sayings: { work: payload.split(/\r?\n/u) },
     })
   }
@@ -135,8 +147,13 @@ export function parsePastedPersonality(
   return normalizeContentPack(parsed)
 }
 
-export function buildPersonalityPrompt(
-  draft: Pick<PersonalityAuthoringDraft, 'name' | 'tone' | 'themes' | 'avoid'>,
+export function buildPersonalityBrief(
+  draft: Pick<
+    PersonalityAuthoringDraft,
+    'name' | 'tone' | 'themes' | 'avoid' | 'mode' | 'selectedParticipantIds'
+  >,
+  participants: readonly Participant[] = [],
+  crewProfile: CrewProfile = emptyCrewProfile,
 ): string {
   const guidance = [
     draft.tone.trim() && `Tone: ${draft.tone.trim()}`,
@@ -144,22 +161,65 @@ export function buildPersonalityPrompt(
     draft.avoid.trim() && `Avoid: ${draft.avoid.trim()}`,
   ].filter(Boolean)
 
+  const selectedIds = new Set(draft.selectedParticipantIds)
+  const selectedParticipants = participants.filter(({ id }) => selectedIds.has(id))
+  const crewContext = draft.mode === 'crew'
+    ? [
+        crewProfile.name.trim() && `Crew name: ${crewProfile.name.trim()}`,
+        crewProfile.about.trim() && `Shared crew context: ${crewProfile.about.trim()}`,
+        `Crew motivation style: ${crewProfile.motivationStyle}`,
+        crewProfile.avoid.trim() && `Crew-wide subjects to avoid: ${crewProfile.avoid.trim()}`,
+        ...selectedParticipants.map((participant) =>
+          [
+            `Participant: ${participant.name}`,
+            participant.spokenName && `Spoken name: ${participant.spokenName}`,
+            participant.about && `About: ${participant.about}`,
+            `Motivation style: ${
+              participant.motivationStyle === undefined ||
+              participant.motivationStyle === 'crew-default'
+                ? crewProfile.motivationStyle
+                : participant.motivationStyle
+            }`,
+            participant.avoid && `Avoid for this participant: ${participant.avoid}`,
+          ].filter(Boolean).join('\n'),
+        ),
+      ].filter(Boolean)
+    : []
+
   return [
     `Create a workout-timer Personality named ${JSON.stringify(draft.name.trim())}.`,
     ...guidance,
+    ...crewContext,
     '',
-    'Write short phrases that sound natural when spoken aloud. Be creative, encouraging, and consistent with the requested tone. Do not include participant names or name placeholders; the app adds a participant name automatically. Do not use Markdown, emoji, or stage directions in the sayings.',
+    draft.mode === 'crew'
+      ? 'Write short phrases that sound natural when spoken aloud. Weave the selected participant names and supplied facts into the sayings naturally. Use only supplied facts, balance attention across the participants, respect every avoid instruction, and do not begin sayings with a mechanical name-only prefix. The app reads these sayings exactly as written.'
+      : 'Write short phrases that sound natural when spoken aloud. Do not include participant names or name placeholders; the app adds a participant name automatically.',
+    'Be creative, encouraging, and consistent with the requested tone. Do not use Markdown, emoji, or stage directions in the sayings.',
     '',
     'Also write voiceInstructions that tell a text-to-speech model how this Personality should sound. Describe delivery only: tone, energy, pacing, emphasis, and emotional style. Do not include participant names, sayings, dialogue, sound effects, or instructions to add spoken words. Use 1 through 3 concise sentences and no more than 500 characters.',
     '',
     'Generate exactly 20 work sayings, 8 cycle-rest sayings, and 5 finished sayings.',
+  ].join('\n')
+}
+
+export function buildPersonalityPrompt(
+  draft: Pick<
+    PersonalityAuthoringDraft,
+    'name' | 'tone' | 'themes' | 'avoid' | 'mode' | 'selectedParticipantIds'
+  >,
+  participants: readonly Participant[] = [],
+  crewProfile: CrewProfile = emptyCrewProfile,
+): string {
+  return [
+    buildPersonalityBrief(draft, participants, crewProfile),
     '',
     'Return exactly one fenced code block marked json. Do not write anything before or after the code block.',
     'Inside that code block, return valid JSON with exactly this structure:',
     '```json',
     '{',
-    '  "schemaVersion": 1,',
+    '  "schemaVersion": 2,',
     `  "name": ${JSON.stringify(draft.name.trim())},`,
+    `  "addressingMode": "${draft.mode === 'crew' ? 'authored' : 'participant-prefix'}",`,
     '  "voiceInstructions": "delivery guidance matching this Personality",',
     '  "sayings": {',
     '    "work": ["saying for the beginning of a work round", "..."],',
@@ -185,6 +245,7 @@ export function authoringDraftFromPack(
   return {
     ...current,
     step: 'review',
+    mode: pack.addressingMode === 'authored' ? 'crew' : 'classic',
     name: pack.name,
     voiceInstructions: pack.voiceInstructions,
     sayings: {
@@ -201,6 +262,8 @@ export function contentPackFromAuthoringDraft(
   return normalizeContentPack({
     schemaVersion: CONTENT_PACK_SCHEMA_VERSION,
     name: draft.name,
+    addressingMode:
+      draft.mode === 'crew' ? 'authored' : 'participant-prefix',
     voiceInstructions: draft.voiceInstructions,
     sayings: Object.fromEntries(
       personalityAuthoringCategories.map((category) => [

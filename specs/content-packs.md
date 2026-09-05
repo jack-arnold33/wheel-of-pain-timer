@@ -12,8 +12,8 @@ not application source code and are not included in the deployed application.
 Deployed app       Timer logic, UI, schema, and generic defaults
 Imported pack      User-selected sayings and labels
 On-device storage  Saved packs, routines, participants, and preferences
-Server             Stores no imported pack or roster; may receive an individual
-                   saying and selected name only after explicit speech opt-in
+OpenAI              Receives only a user-invoked generation brief or one speech
+                    utterance after the shared OpenAI opt-in is enabled
 ```
 
 The application being publicly reachable does not make imported local content
@@ -24,10 +24,11 @@ rather than encryption in MVP.
 
 Import, validation, and on-device storage do not upload a pack. Local speech
 synthesis may speak sayings without transmitting them. A user may separately
-opt in to online speech synthesis, in which case an individual saying and the
-selected participant name used to address it may be sent to the selected speech
-service when spoken. The app does not upload or cloud-store the pack or roster
-as a collection, and disabling the opt-in stops future online speech requests.
+opt in to OpenAI features. Direct generation then sends the authoring guidance,
+crew profile, and only the participant profiles selected for that generation.
+Online speech sends one final utterance and its voice instructions. Direct
+generation requests `store: false`; neither path uploads routine data or the
+full saved roster. Disabling OpenAI features stops both kinds of requests.
 
 ## Import behavior
 
@@ -51,8 +52,14 @@ details such as IndexedDB do not need to be exposed to ordinary users.
 The primary creation path is **Create Personality** in the Settings Personality
 library.
 The user supplies a name and optional guidance for tone, themes or inside jokes,
-and subjects to avoid. The app creates a prompt that the user can copy to an AI
-assistant. The app does not contact the assistant or upload this guidance.
+and subjects to avoid, and selects either Classic call-outs or Crew-personalized
+sayings. Crew mode can include selected reusable participant profiles and the
+reusable crew profile. When OpenAI features are enabled, the primary action
+sends the brief directly to the Responses API using `gpt-5.6-luna`, structured
+JSON output, `store: false`, and the same device-local API key as speech.
+
+The copy-and-paste fallback creates a prompt that the user can use with another
+AI assistant without the app making a request. The prompt requests exactly one
 The prompt explicitly requests exactly one `json` code block containing a
 complete raw JSON object rather than quoted or escaped JSON, with nothing
 outside the block. In addition to categorized sayings, it requests one concise
@@ -64,7 +71,7 @@ spaces rather than HTML whitespace entities and verify that the content inside
 the block is valid JSON before returning it. The paste parser normalizes common
 HTML whitespace entities introduced by rich-text copying before validation.
 
-After returning to the app, the user pastes the generated response. Version 1
+After returning to the app, the user pastes the generated response. Version 2
 accepts the documented JSON object, including JSON copied inside a Markdown code
 fence. Plain pasted text is also accepted as one work saying per non-empty
 line. New authoring presents only `work`, `cycleRest`, and `finished`; it does
@@ -74,11 +81,10 @@ Personality**. Saving uses the same validation, conflict handling, and local
 storage as file import. Neither creation nor import changes the current workout
 selection.
 
-The v1 schema continues to accept `general` for backward compatibility with
-existing packs and plain-text file imports. It remains an internal fallback for
-those packs rather than a category shown during new Personality authoring. If a
-legacy pasted JSON object contains general sayings but no work sayings, the
-creator moves those sayings into Work for review rather than discarding them.
+The v2 schema accepts `general` for plain-text file imports. It remains an
+internal fallback rather than a category shown during new authoring. If pasted
+JSON contains general sayings but no work sayings, the creator moves those
+sayings into Work for review rather than discarding them.
 
 The unfinished authoring draft is saved locally as fields change so that mobile
 operating systems may discard and later reload the PWA while the user switches
@@ -109,8 +115,9 @@ Its required `name` field is authoritative rather than the filename.
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "name": "Tuesday Chaos Crew",
+  "addressingMode": "participant-prefix",
   "voiceInstructions": "Sound dry, theatrical, and encouraging. Use crisp pacing and confident emphasis without shouting.",
   "sayings": {
     "general": ["Prepare your excuses."],
@@ -126,13 +133,16 @@ Its required `name` field is authoritative rather than the filename.
 - `schemaVersion` is required and must equal a supported integer version.
 - `name` is required, trimmed, and must contain 1 through 80 Unicode
   characters.
+- `addressingMode` is required in exported v2 JSON. `participant-prefix` tells
+  playback to add the rotating participant name; `authored` tells playback to
+  speak the saying exactly as stored.
 - `voiceInstructions` is trimmed and must contain 1 through 500 Unicode
   characters when supplied. Older JSON packs and plain-text imports without
   the field receive the built-in default instructions; every normalized,
   saved, backed-up, and exported pack contains an explicit value.
 - `sayings` is required and must contain at least one non-empty supported
   category after normalization.
-- Supported v1 categories are `general`, `work`, `cycleRest`, and `finished`.
+- Supported v2 categories are `general`, `work`, `cycleRest`, and `finished`.
 - Each saying is trimmed and must contain 1 through 240 Unicode characters.
 - A category may contain at most 500 sayings and a pack at most 1,000 sayings
   total after exact duplicates within a category are removed.
@@ -168,9 +178,8 @@ Its required `name` field is authoritative rather than the filename.
 - Muting humorous content does not mute essential audio cues.
 - Sayings are spoken rather than shown on the active timer so users do not need
   to read while exercising.
-- Permission to send a saying and selected participant name to online speech is
-  an explicit opt-in in Settings, not an interruption in the workout or
-  pack-selection flow.
+- One OpenAI opt-in in Settings covers online speech and direct generation; it
+  is never an interruption in the workout or pack-selection flow.
 - Timer sounds and spoken motivation have independent settings. Spoken
   motivation is on by default when a Personality is selected.
 - The user may select System Default or a browser-exposed voice and choose a
@@ -194,10 +203,13 @@ phase changes:
 These moments use separate saying lists. Sayings are not spoken after every
 exercise and are not spoken for confirmed End Workout.
 
-The product supports a configurable device-local participant roster and
-addresses a selected participant in spoken sayings. The roster is independent
-of content packs: pack import and export do not include names. A broader local
-backup includes the roster.
+The product supports a configurable device-local participant roster. Each
+participant may have a spoken name, background facts, preferred motivation
+style, and subjects to avoid. A reusable crew profile stores shared context.
+It also stores the default motivation style inherited by participants whose
+profile selects **Use crew default**.
+These profiles are independent of content packs: pack import and export do not
+include them, while the broader local backup does.
 
 Participant selection uses a shuffled rotation:
 
@@ -217,13 +229,14 @@ Only participants checked as active on the pre-workout screen take part in the
 rotation. The last attendance selection is remembered for later workouts. If
 no names are active, sayings are spoken without a name.
 
-The app addresses the selected person by prefixing the saying with their name,
-for example, `Jarno! Form first. Complaining second.` Pack authors do not need
-to include a name placeholder in saying text.
+For `participant-prefix` packs, the app prefixes the saying with the selected
+person's spoken name when supplied, otherwise their display name—for example,
+`Jarno! Form first. Complaining second.` For `authored` packs, names and facts
+are already woven into the text and the app speaks it exactly as stored.
 
 ## Export and recovery
 
-- A saved pack can be exported as versioned JSON.
+- A saved pack can be exported as version 2 JSON.
 - A portable local backup includes routines, packs, preferences, and
   participants in one documented, versioned file.
 - Restoring a backup shows what will change and validates the entire backup

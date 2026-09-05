@@ -45,5 +45,32 @@ describe('participant repository', () => {
       ParticipantNameConflictError,
     )
   })
+
+  it('stores and updates reusable participant profile details', async () => {
+    const created = await repository.create({
+      name: 'Alexandra',
+      spokenName: 'Alex',
+      about: 'Always chooses the heaviest kettlebell.',
+      motivationStyle: 'competitive',
+      avoid: 'Knee jokes',
+    })
+
+    expect(created).toMatchObject({
+      spokenName: 'Alex',
+      about: 'Always chooses the heaviest kettlebell.',
+      motivationStyle: 'competitive',
+      avoid: 'Knee jokes',
+    })
+
+    const updated = await repository.update(created.id, {
+      name: 'Alexandra',
+      spokenName: 'Lex',
+      about: created.about,
+      motivationStyle: 'playful',
+      avoid: created.avoid,
+    })
+    expect(updated).toMatchObject({ spokenName: 'Lex', motivationStyle: 'playful' })
+    expect((await repository.get(created.id))?.spokenName).toBe('Lex')
+  })
 })
 
