@@ -62,7 +62,8 @@ export type AudioPreferencePatch = Pick<
   | 'transitionVolume'
   | 'spokenMotivationEnabled'
   | 'voiceVolume'
-  | 'allowOnlineVoices'
+  | 'openAiFeaturesEnabled'
+  | 'useOpenAiVoice'
   | 'voiceId'
   | 'speechRate'
 >
@@ -105,7 +106,8 @@ export function SettingsScreen({
   transitionVolume = 0.5,
   spokenMotivationEnabled,
   voiceVolume = 1,
-  allowOnlineVoices,
+  openAiFeaturesEnabled,
+  useOpenAiVoice,
   voiceId,
   speechRate,
   voiceInstructions = DEFAULT_VOICE_INSTRUCTIONS,
@@ -128,7 +130,6 @@ export function SettingsScreen({
     readonly fileName: string
     readonly backup: LocalBackup
   }>()
-  const [confirmOnlineVoices, setConfirmOnlineVoices] = useState(false)
   const [credential, setCredential] = useState<OpenAiCredentialStatus>({
     configured: false,
   })
@@ -160,7 +161,7 @@ export function SettingsScreen({
   )
   const eligibleVoices = voices.filter((voice) => voice.localService === true)
   const selectedVoiceUnavailable =
-    !allowOnlineVoices &&
+    !useOpenAiVoice &&
     voiceId !== null &&
     (selectedVoice === undefined || selectedVoice.localService !== true)
 
@@ -182,7 +183,7 @@ export function SettingsScreen({
 
   const preview = async () => {
     setPreviewNotice(undefined)
-    if (allowOnlineVoices) {
+    if (useOpenAiVoice) {
       if (!credential.configured) {
         setPreviewNotice('Save an OpenAI API key on this device first.')
         return
@@ -240,10 +241,11 @@ export function SettingsScreen({
     setPreviewNotice(undefined)
     try {
       const status = await openAiCredentialRepository.save(apiKey)
+      await onChange({ openAiFeaturesEnabled: true })
       setCredential(status)
       setApiKey('')
       setAcknowledgeLocalKey(false)
-      setPreviewNotice('OpenAI API key saved only on this device.')
+      setPreviewNotice('OpenAI features enabled on this device.')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'The API key could not be saved.')
     } finally {
@@ -260,7 +262,11 @@ export function SettingsScreen({
       setCredential({ configured: false })
       setApiKey('')
       setConfigureOnlineVoice(false)
-      if (allowOnlineVoices) await save({ allowOnlineVoices: false, voiceId: null })
+      await save({
+        openAiFeaturesEnabled: false,
+        useOpenAiVoice: false,
+        voiceId: null,
+      })
       setPreviewNotice('OpenAI API key removed from this device.')
     } catch {
       setError('The API key could not be removed. Try again.')
@@ -506,7 +512,7 @@ export function SettingsScreen({
                 />
               </Stack>
               <Typography variant="body2" color="text.secondary">
-                {allowOnlineVoices
+                {useOpenAiVoice
                   ? 'TV-compatible online voice uses generated media and requires internet access.'
                   : 'Device voice uses browser speech and may not follow the television audio route.'}
               </Typography>
@@ -516,7 +522,7 @@ export function SettingsScreen({
                   labelId="voice-label"
                   label="Voice"
                   value={
-                    allowOnlineVoices
+                    useOpenAiVoice
                       ? (OPENAI_SPEECH_VOICES.some(({ id }) => id === voiceId)
                           ? voiceId
                           : 'alloy')
@@ -534,7 +540,7 @@ export function SettingsScreen({
                     })
                   }
                 >
-                  {allowOnlineVoices ? (
+                  {useOpenAiVoice ? (
                     OPENAI_SPEECH_VOICES.map((voice) => (
                       <MenuItem key={voice.id} value={voice.id}>{voice.label}</MenuItem>
                     ))
@@ -584,7 +590,7 @@ export function SettingsScreen({
                 onClick={() => void preview()}
                 disabled={!spokenMotivationEnabled || credentialBusy}
               >
-                {allowOnlineVoices ? 'Test TV-compatible voice' : 'Preview device voice'}
+                {useOpenAiVoice ? 'Test TV-compatible voice' : 'Preview device voice'}
               </Button>
             </Stack>
           </Paper>
@@ -595,7 +601,7 @@ export function SettingsScreen({
               <FormControl>
                 <RadioGroup
                   aria-label="Motivational voice output"
-                  value={allowOnlineVoices || configureOnlineVoice ? 'openai' : 'device'}
+                  value={useOpenAiVoice || configureOnlineVoice ? 'openai' : 'device'}
                   onChange={(_, value) => {
                     if (value === 'openai') {
                       setConfigureOnlineVoice(true)
@@ -603,9 +609,9 @@ export function SettingsScreen({
                     }
                     setConfigureOnlineVoice(false)
                     appAudioPlayer.cancelSpeech()
-                    if (allowOnlineVoices) {
+                    if (useOpenAiVoice) {
                       void save({
-                        allowOnlineVoices: false,
+                        useOpenAiVoice: false,
                         voiceId: null,
                       })
                     }
@@ -643,17 +649,16 @@ export function SettingsScreen({
                   />
                 </RadioGroup>
               </FormControl>
-              {(allowOnlineVoices || configureOnlineVoice) && (
+              {(useOpenAiVoice || configureOnlineVoice || openAiFeaturesEnabled) && (
                 <Stack spacing={2}>
                   {!credential.configured && (
                     <Alert severity="info">
                       Enter and save an OpenAI API key below to continue.
                     </Alert>
                   )}
-                  <Alert severity="warning">
-                    Use a dedicated OpenAI project with a small hard spending limit and alert.
-                    OpenAI recommends keeping API keys on a server; this personal-use app stores
-                    the key in this device&apos;s IndexedDB instead.
+                  <Alert severity="info">
+                    OpenAI features use your API key for TV-compatible speech and personalized
+                    saying generation.
                   </Alert>
                   <Typography variant="body2">
                     {credential.configured
@@ -676,7 +681,7 @@ export function SettingsScreen({
                         onChange={(_, checked) => setAcknowledgeLocalKey(checked)}
                       />
                     }
-                    label="I understand this key stays on this device and can be read by code running as this app."
+                    label="Enable OpenAI features on this device. Sayings, voice instructions, and selected participant profile details may be sent when I use those features."
                   />
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                     <Button
@@ -686,11 +691,11 @@ export function SettingsScreen({
                     >
                       {credential.configured ? 'Replace key' : 'Save on this device'}
                     </Button>
-                    {credential.configured && !allowOnlineVoices && (
+                    {credential.configured && !useOpenAiVoice && (
                       <Button
                         variant="contained"
                         disabled={credentialBusy}
-                        onClick={() => setConfirmOnlineVoices(true)}
+                        onClick={() => void save({ useOpenAiVoice: true })}
                       >
                         Enable TV voice
                       </Button>
@@ -747,38 +752,6 @@ export function SettingsScreen({
           </Paper>
         </Stack>
       </Container>
-
-      <Dialog
-        open={confirmOnlineVoices}
-        onClose={() => {
-          if (!busy) setConfirmOnlineVoices(false)
-        }}
-      >
-        <DialogTitle>Enable TV-compatible online voice?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            One selected saying and the participant name used to address it, together with the
-            selected Personality&apos;s voice instructions, will be sent to OpenAI. Personalities,
-            rosters, routines, and workout history are never uploaded as collections.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button disabled={busy} onClick={() => setConfirmOnlineVoices(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            disabled={busy}
-            onClick={() => {
-              void save({ allowOnlineVoices: true }).then(() =>
-                setConfirmOnlineVoices(false),
-              )
-            }}
-          >
-            Enable online voice
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <Dialog
         open={restorePreview !== undefined}

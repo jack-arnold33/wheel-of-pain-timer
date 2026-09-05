@@ -1,4 +1,8 @@
-import type { Participant } from '../domain/participants/types'
+import {
+  participantMotivationStyles,
+  type Participant,
+  type ParticipantInput,
+} from '../domain/participants/types'
 import {
   appDatabase,
   type ParticipantRecord,
@@ -33,6 +37,26 @@ const normalizeName = (name: string) => {
   return normalized
 }
 
+const normalizeOptional = (value: string | undefined, limit: number) => {
+  const normalized = value?.trim() ?? ''
+  if (Array.from(normalized).length > limit) {
+    throw new Error(`Participant profile text exceeds the ${limit}-character limit.`)
+  }
+  return normalized
+}
+
+const normalizeInput = (input: ParticipantInput) => ({
+  name: normalizeName(input.name),
+  spokenName: normalizeOptional(input.spokenName, 80),
+  about: normalizeOptional(input.about, 2_000),
+  motivationStyle: participantMotivationStyles.includes(
+    input.motivationStyle ?? 'crew-default',
+  )
+    ? (input.motivationStyle ?? 'crew-default')
+    : 'crew-default',
+  avoid: normalizeOptional(input.avoid, 1_000),
+})
+
 const createParticipantId = () => `participant:${crypto.randomUUID()}`
 const copyParticipant = (record: ParticipantRecord): Participant => ({ ...record })
 
@@ -63,13 +87,15 @@ export class ParticipantRepository {
     if (conflict) throw new ParticipantNameConflictError(name)
   }
 
-  async create(name: string): Promise<Participant> {
-    const normalized = normalizeName(name)
-    await this.assertUnique(normalized)
+  async create(input: ParticipantInput | string): Promise<Participant> {
+    const normalized = normalizeInput(
+      typeof input === 'string' ? { name: input } : input,
+    )
+    await this.assertUnique(normalized.name)
     const timestamp = this.now()
     const record: ParticipantRecord = {
       id: this.newId(),
-      name: normalized,
+      ...normalized,
       createdAt: timestamp,
       updatedAt: timestamp,
     }
@@ -77,14 +103,20 @@ export class ParticipantRepository {
     return copyParticipant(record)
   }
 
-  async rename(id: string, name: string): Promise<Participant> {
+  async update(id: string, input: ParticipantInput): Promise<Participant> {
     const existing = await this.database.participants.get(id)
     if (existing === undefined) throw new ParticipantNotFoundError(id)
-    const normalized = normalizeName(name)
-    await this.assertUnique(normalized, id)
-    const record = { ...existing, name: normalized, updatedAt: this.now() }
+    const normalized = normalizeInput(input)
+    await this.assertUnique(normalized.name, id)
+    const record = { ...existing, ...normalized, updatedAt: this.now() }
     await this.database.participants.put(record)
     return copyParticipant(record)
+  }
+
+  async rename(id: string, name: string): Promise<Participant> {
+    const existing = await this.get(id)
+    if (existing === undefined) throw new ParticipantNotFoundError(id)
+    return this.update(id, { ...existing, name })
   }
 
   async delete(id: string): Promise<void> {

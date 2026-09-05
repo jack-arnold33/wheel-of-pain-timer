@@ -20,7 +20,8 @@ Product choices are final only when recorded in the specifications.
 - A protected **Wheel of Pain** routine plus locally saved custom routines
 - Accurate pause, resume, skip, completion, and interrupted-workout recovery
 - Essential timer audio, optional spoken Personalities, and participant rotation
-- Local-first Personality authoring, import, selection, and management
+- Reusable participant and crew profiles for name-aware personalized sayings
+- Direct OpenAI Personality generation with a copy-and-paste fallback
 - Portable backup and atomic restore of user routines, packs, participants,
   attendance, and preferences
 - Four selectable appearances: **Wheel of Pain**, **Cold Steel**,

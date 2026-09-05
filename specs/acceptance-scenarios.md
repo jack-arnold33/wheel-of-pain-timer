@@ -457,7 +457,7 @@ And analytics or tracking is not required for any core operation
 ```gherkin
 Given the user starts Create Personality on a phone
 And enters a name and optional tone, themes, and subjects to avoid
-When the user chooses Copy prompt for ChatGPT
+When the user chooses Copy prompt for another AI
 Then a schema-aware authoring prompt is copied or shown for manual copying
 And the prompt requests bounded voice-delivery instructions matching the
   Personality without names, sayings, sound effects, or additional dialogue
@@ -465,7 +465,7 @@ And the app does not contact ChatGPT or transmit the authoring fields
 And the unfinished draft is saved on this device
 When the PWA reloads after the user switches apps
 Then the unfinished draft is recovered
-When the user pastes valid v1 JSON with or without a Markdown code fence
+When the user pastes valid v2 JSON with or without a Markdown code fence
 And reviews or edits the AI voice instructions and categorized sayings
 And chooses Save Personality
 Then the same content-pack validation and conflict rules are applied
@@ -502,7 +502,7 @@ And the current Personality selection is unchanged
 **Requirements:** C-001, C-003, C-010, C-011, C-014, C-015
 
 ```gherkin
-Given a .timerpack.json file has schemaVersion 1, a valid name, and valid
+Given a .timerpack.json file has schemaVersion 2, a valid name, and valid
   general, work, cycleRest, or finished categories within every limit
 When the user imports it
 Then the normalized pack is saved without changing the current selection
@@ -574,7 +574,7 @@ Then its sayings and identity are unchanged
 When the user inspects it
 Then its name, category counts, total count, and privacy status are shown
 When the user exports it
-Then a documented schemaVersion 1 .timerpack.json file is produced locally
+Then a documented schemaVersion 2 .timerpack.json file is produced locally
 When the user confirms removal
 Then it is removed from this device
 And if it was selected, Personality becomes None - essential timer cues only
@@ -627,6 +627,58 @@ And none of the current device data changes
 ```
 
 ## Spoken motivation, participants, voices, and privacy
+
+### Participant and crew details are entered once and reused
+
+```gherkin
+Given the user has saved a participant
+When they edit that participant's spoken name, background, motivation style,
+  and subjects to avoid
+And they save a crew name, shared context, and crew-wide subjects to avoid
+Then those details remain available after reload
+And they are included in local backup
+And they are not included in an exported Personality pack
+```
+
+### Direct generation creates an editable crew-personalized Personality
+
+```gherkin
+Given an OpenAI project key and the shared OpenAI opt-in are enabled
+And reusable participant and crew profiles are saved
+When the user chooses Crew-personalized, selects participants, and chooses
+  Generate with OpenAI
+Then the request uses gpt-5.6-luna through the Responses API
+And response storage is disabled
+And only the selected profiles and current authoring guidance are sent
+And exactly 20 work, 8 Cycle Rest, and 5 finished sayings open in Review
+And the user may edit the result before saving
+```
+
+### Classic and crew-personalized playback address people differently
+
+```gherkin
+Scenario: Classic call-out
+  Given a selected Personality uses participant-prefix addressing
+  When a saying is spoken with an active participant
+  Then the app prepends that participant's spoken name or display name
+
+Scenario: Crew-personalized saying
+  Given a selected Personality uses authored addressing
+  When a saying is spoken
+  Then it is spoken exactly as authored
+  And the app does not prepend a rotating participant name
+```
+
+### One OpenAI notice covers generation and speech
+
+```gherkin
+Given OpenAI features are disabled
+When the user saves a project key and accepts the single OpenAI notice
+Then direct Personality generation is enabled
+And the same key can enable TV-compatible speech
+When the user removes that key
+Then both OpenAI generation and OpenAI speech are disabled
+```
 
 ### Category schedule and fallback
 

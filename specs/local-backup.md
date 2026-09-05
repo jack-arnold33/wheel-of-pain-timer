@@ -10,14 +10,14 @@ file or its contents.
 The app-supplied Wheel of Pain routine and built-in Personality are not stored
 as user data. They remain available after restore.
 
-## Version 1 schema
+## Version 2 schema
 
 The root object contains every required collection and one complete preference
 object:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "routines": [
     {
       "id": "routine:example",
@@ -42,21 +42,30 @@ object:
     "themeId": "wheel-of-pain",
     "timerSoundsEnabled": true,
     "spokenMotivationEnabled": true,
-    "allowOnlineVoices": false,
+    "openAiFeaturesEnabled": false,
+    "useOpenAiVoice": false,
     "voiceId": null,
     "speechRate": 1,
     "selectedContentPackId": null,
-    "activeParticipantIds": []
+    "activeParticipantIds": [],
+    "crewProfile": {
+      "name": "",
+      "about": "",
+      "motivationStyle": "encouraging",
+      "avoid": ""
+    }
   }
 }
 ```
 
-Content-pack entries use the stored version 1 pack fields: `id`,
-`schemaVersion`, `name`, `voiceInstructions`, `sayings`, `extensions`,
+Content-pack entries use the stored version 2 pack fields: `id`,
+`schemaVersion`, `name`, `addressingMode`, `voiceInstructions`, `sayings`, `extensions`,
 `createdAt`, and `updatedAt`.
-Participant entries use `id`, `name`, `createdAt`, and `updatedAt`.
+Participant entries use `id`, `name`, `spokenName`, `about`,
+`motivationStyle`, `avoid`, `createdAt`, and `updatedAt`. The preferences object
+contains the reusable crew profile. The OpenAI API key remains excluded.
 
-Version 1 recognizes the built-in theme identifiers `wheel-of-pain`,
+Version 2 recognizes the built-in theme identifiers `wheel-of-pain`,
 `cold-steel`, `neon-circuit`, and `day-shift`. A backup may still contain an
 unknown string for forward compatibility; restore preserves it, while the app
 uses Wheel of Pain and reports the fallback until that identifier becomes

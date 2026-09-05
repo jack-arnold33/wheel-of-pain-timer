@@ -13,7 +13,8 @@ let database: WheelOfPainDatabase
 let service: ContentPackService
 
 const draft: ContentPackDraft = {
-  schemaVersion: 1,
+  schemaVersion: 2,
+  addressingMode: 'participant-prefix',
   name: 'Local Pack',
   voiceInstructions: 'Sound upbeat and direct.',
   sayings: { general: ['Keep moving.'] },

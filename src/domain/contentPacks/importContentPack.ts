@@ -44,6 +44,7 @@ export async function importContentPackFile(
     return {
       schemaVersion: CONTENT_PACK_SCHEMA_VERSION,
       name: titleFromFilename(file.name),
+      addressingMode: 'participant-prefix',
       voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
       sayings: normalizeSayings({ general: text.split(/\r?\n/u) }),
       extensions: {},
