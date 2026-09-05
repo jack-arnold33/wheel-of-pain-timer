@@ -46,6 +46,23 @@ afterEach(() => {
 })
 
 describe('App workout flow', () => {
+  it('waits until the routine name is touched before showing its required error', async () => {
+    renderApp()
+
+    await screen.findByRole('heading', { name: 'Routines' })
+    fireEvent.click(screen.getByRole('button', { name: 'Create routine' }))
+
+    const nameInput = await screen.findByLabelText('Routine name')
+    expect(nameInput).toHaveAttribute('aria-invalid', 'false')
+    expect(screen.getByText('Stored only on this device.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save routine' })).toBeDisabled()
+
+    fireEvent.blur(nameInput)
+
+    expect(nameInput).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByText('Enter a routine name.')).toBeInTheDocument()
+  })
+
   it('opens device settings from Home and persists audio changes', async () => {
     const updatePreferences = vi.fn().mockImplementation(async (patch) => ({
       ...defaultAppPreferences,

@@ -96,6 +96,7 @@ export function RoutineEditor({
       countFields.map(([field]) => [field, initialTiming[field].toString()]),
     ) as Record<CountField, string>,
   )
+  const [nameTouched, setNameTouched] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string>()
 
@@ -135,6 +136,7 @@ export function RoutineEditor({
   }, [counts, durations])
 
   const nameError = name.trim().length === 0 ? 'Enter a routine name.' : undefined
+  const visibleNameError = nameTouched ? nameError : undefined
   const hasErrors =
     nameError !== undefined ||
     Object.keys(parsed.fieldErrors).length > 0 ||
@@ -181,8 +183,9 @@ export function RoutineEditor({
                 label="Routine name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                error={nameError !== undefined}
-                helperText={nameError ?? 'Stored only on this device.'}
+                onBlur={() => setNameTouched(true)}
+                error={visibleNameError !== undefined}
+                helperText={visibleNameError ?? 'Stored only on this device.'}
                 autoFocus
               />
 
