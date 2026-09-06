@@ -19,7 +19,7 @@ const pack: ContentPack = {
 }
 
 const participants: Participant[] = [
-  { id: 'a', name: 'A', createdAt: 1, updatedAt: 1 },
+  { id: 'a', name: 'A Full Name', spokenName: 'A', createdAt: 1, updatedAt: 1 },
   { id: 'b', name: 'B', createdAt: 1, updatedAt: 1 },
 ]
 

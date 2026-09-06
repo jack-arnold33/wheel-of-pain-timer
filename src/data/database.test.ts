@@ -36,11 +36,22 @@ describe('database migrations', () => {
       openAiFeaturesEnabled: true,
       crewProfile: { name: 'Crew' },
     })
+    await versionFive.table('participants').add({
+      id: 'participant:crew-era',
+      name: 'Jarno Arnold',
+      spokenName: 'Jarno',
+      about: 'Likes kettlebells.',
+      motivationStyle: 'drill-sergeant',
+      avoid: 'Burpees',
+      createdAt: 1,
+      updatedAt: 1,
+    })
     versionFive.close()
 
     const migrated = new WheelOfPainDatabase(name)
     const pack = await migrated.contentPacks.get('pack:crew-era')
     const preferences = await migrated.preferences.get('app')
+    const participant = await migrated.participants.get('participant:crew-era')
 
     expect(pack).toMatchObject({
       id: 'pack:crew-era',
@@ -51,6 +62,13 @@ describe('database migrations', () => {
     expect(preferences).toMatchObject({ allowOnlineVoices: true })
     expect(preferences).not.toHaveProperty('useOpenAiVoice')
     expect(preferences).not.toHaveProperty('crewProfile')
+    expect(participant).toMatchObject({
+      name: 'Jarno Arnold',
+      spokenName: 'Jarno',
+      about: 'Likes kettlebells.',
+    })
+    expect(participant).not.toHaveProperty('motivationStyle')
+    expect(participant).not.toHaveProperty('avoid')
     migrated.close()
   })
 })

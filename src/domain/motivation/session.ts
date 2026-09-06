@@ -65,7 +65,9 @@ export class MotivationSession {
     const saying = rotation.next()
     if (saying === undefined) return undefined
     const participant = this.participantRotation.next()
-    return participant === undefined ? saying : `${participant.name}! ${saying}`
+    return participant === undefined
+      ? saying
+      : `${participant.spokenName || participant.name}! ${saying}`
   }
 }
 

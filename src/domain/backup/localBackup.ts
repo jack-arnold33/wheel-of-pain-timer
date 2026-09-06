@@ -50,6 +50,24 @@ const text = (value: unknown, label: string): string => {
   return value
 }
 
+const optionalText = (
+  value: unknown,
+  label: string,
+  maximumLength: number,
+): string | undefined => {
+  if (value === undefined) return undefined
+  if (typeof value !== 'string') {
+    throw new InvalidLocalBackupError(`${label} must be text.`)
+  }
+  const normalized = value.trim()
+  if (Array.from(normalized).length > maximumLength) {
+    throw new InvalidLocalBackupError(
+      `${label} exceeds ${maximumLength} characters.`,
+    )
+  }
+  return normalized
+}
+
 const timestamp = (value: unknown, label: string): number => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
     throw new InvalidLocalBackupError(`${label} must be a valid timestamp.`)
@@ -134,6 +152,12 @@ const validateParticipant = (value: unknown, index: number): ParticipantRecord =
   return {
     id: text(input.id, `Participant ${index + 1} id`),
     name,
+    spokenName: optionalText(
+      input.spokenName,
+      `Participant ${index + 1} spokenName`,
+      80,
+    ),
+    about: optionalText(input.about, `Participant ${index + 1} about`, 2_000),
     createdAt: timestamp(input.createdAt, `Participant ${index + 1} createdAt`),
     updatedAt: timestamp(input.updatedAt, `Participant ${index + 1} updatedAt`),
   }

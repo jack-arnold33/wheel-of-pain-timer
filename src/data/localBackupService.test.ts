@@ -44,6 +44,8 @@ const backup = (): LocalBackup => ({
     {
       id: 'participant:backup',
       name: 'Jarno',
+      spokenName: 'J',
+      about: 'Prefers low-impact movements.',
       createdAt: 10,
       updatedAt: 20,
     },

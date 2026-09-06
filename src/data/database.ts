@@ -35,6 +35,8 @@ export interface ContentPackRecord {
 export interface ParticipantRecord {
   readonly id: string
   readonly name: string
+  readonly spokenName?: string
+  readonly about?: string
   readonly createdAt: number
   readonly updatedAt: number
 }
@@ -109,6 +111,10 @@ export class WheelOfPainDatabase extends Dexie {
         delete preferences.openAiFeaturesEnabled
         delete preferences.useOpenAiVoice
         delete preferences.crewProfile
+      })
+      await transaction.table('participants').toCollection().modify((participant) => {
+        delete participant.motivationStyle
+        delete participant.avoid
       })
     })
   }

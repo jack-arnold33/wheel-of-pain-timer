@@ -140,7 +140,10 @@ reused for a different behavior.
   speech synthesis but must not upload the pack or roster as a collection.
 - **D-005:** The app does not require analytics or tracking for core operation.
 - **D-006:** The user can manage an optional participant roster stored on the
-  current device. Names are independent of content packs and routines.
+  current device. Each participant has a required display name plus optional
+  spoken nickname and About notes. These fields are independent of content
+  packs and routines; the spoken nickname replaces the display name only when
+  spoken motivation addresses that participant.
 - **D-007:** The pre-workout screen lets the user include or exclude saved
   participants for the workout and remembers the last attendance selection.
 - **D-008:** The user can export and restore a portable local backup containing

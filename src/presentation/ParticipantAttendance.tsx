@@ -21,7 +21,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useState } from 'react'
-import type { Participant } from '../domain/participants/types'
+import type { Participant, ParticipantInput } from '../domain/participants/types'
 
 interface ParticipantAttendanceProps {
   readonly participants: readonly Participant[]
@@ -29,8 +29,8 @@ interface ParticipantAttendanceProps {
   readonly storageNotice?: string
   readonly onBack: () => void
   readonly onSave: (activeIds: readonly string[]) => Promise<void>
-  readonly onAdd: (name: string) => Promise<Participant>
-  readonly onRename: (id: string, name: string) => Promise<Participant>
+  readonly onAdd: (input: ParticipantInput) => Promise<Participant>
+  readonly onUpdate: (id: string, input: ParticipantInput) => Promise<Participant>
   readonly onDelete: (id: string) => Promise<void>
 }
 
@@ -41,14 +41,14 @@ export function ParticipantAttendance({
   onBack,
   onSave,
   onAdd,
-  onRename,
+  onUpdate,
   onDelete,
 }: ParticipantAttendanceProps) {
   const [active, setActive] = useState(() => new Set(activeIds))
   const [newName, setNewName] = useState('')
-  const [renaming, setRenaming] = useState<{
+  const [editing, setEditing] = useState<{
     readonly participant: Participant
-    readonly name: string
+    readonly input: ParticipantInput
   }>()
   const [deleting, setDeleting] = useState<Participant>()
   const [busy, setBusy] = useState(false)
@@ -121,9 +121,16 @@ export function ParticipantAttendance({
                       label={participant.name}
                     />
                     <IconButton
-                      aria-label={`Rename ${participant.name}`}
+                      aria-label={`Edit ${participant.name}`}
                       onClick={() =>
-                        setRenaming({ participant, name: participant.name })
+                        setEditing({
+                          participant,
+                          input: {
+                            name: participant.name,
+                            spokenName: participant.spokenName,
+                            about: participant.about,
+                          },
+                        })
                       }
                     >
                       <EditRoundedIcon />
@@ -154,7 +161,7 @@ export function ParticipantAttendance({
           <Stack spacing={1}>
             <Typography variant="h5">Manage roster</Typography>
             <Typography variant="body2" color="text.secondary">
-              Names are independent of routines and Personality packs.
+              Names, optional nicknames, and notes are stored only on this device.
             </Typography>
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -169,7 +176,7 @@ export function ParticipantAttendance({
               disabled={busy || newName.trim().length === 0}
               onClick={() =>
                 void run(async () => {
-                  const participant = await onAdd(newName)
+                  const participant = await onAdd({ name: newName })
                   setActive((current) => new Set([...current, participant.id]))
                   setNewName('')
                 })
@@ -181,32 +188,64 @@ export function ParticipantAttendance({
         </Stack>
       </Container>
 
-      <Dialog open={renaming !== undefined} onClose={() => setRenaming(undefined)} fullWidth>
-        <DialogTitle>Rename participant</DialogTitle>
+      <Dialog open={editing !== undefined} onClose={() => setEditing(undefined)} fullWidth>
+        <DialogTitle>Edit participant</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <TextField
             autoFocus
             fullWidth
             label="Participant name"
-            value={renaming?.name ?? ''}
+            value={editing?.input.name ?? ''}
             onChange={(event) =>
-              setRenaming((current) =>
-                current === undefined ? undefined : { ...current, name: event.target.value },
+              setEditing((current) =>
+                current === undefined
+                  ? undefined
+                  : { ...current, input: { ...current.input, name: event.target.value } },
               )
             }
             sx={{ mt: 1 }}
           />
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Nickname / spoken name"
+              helperText="Optional name used when spoken motivation addresses them."
+              value={editing?.input.spokenName ?? ''}
+              onChange={(event) =>
+                setEditing((current) => current === undefined ? undefined : {
+                  ...current,
+                  input: { ...current.input, spokenName: event.target.value },
+                })
+              }
+              slotProps={{ htmlInput: { maxLength: 80 } }}
+            />
+            <TextField
+              fullWidth
+              multiline
+              minRows={3}
+              label="About"
+              helperText="Optional notes for your reference."
+              value={editing?.input.about ?? ''}
+              onChange={(event) =>
+                setEditing((current) => current === undefined ? undefined : {
+                  ...current,
+                  input: { ...current.input, about: event.target.value },
+                })
+              }
+              slotProps={{ htmlInput: { maxLength: 2_000 } }}
+            />
+          </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRenaming(undefined)}>Cancel</Button>
+          <Button onClick={() => setEditing(undefined)}>Cancel</Button>
           <Button
-            disabled={busy || renaming?.name.trim().length === 0}
+            disabled={busy || editing?.input.name.trim().length === 0}
             onClick={() =>
               void run(async () => {
-                if (!renaming) return
-                await onRename(renaming.participant.id, renaming.name)
-                setRenaming(undefined)
+                if (!editing) return
+                await onUpdate(editing.participant.id, editing.input)
+                setEditing(undefined)
               })
             }
           >

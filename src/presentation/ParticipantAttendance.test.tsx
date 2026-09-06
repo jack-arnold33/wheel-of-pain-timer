@@ -24,7 +24,7 @@ describe('ParticipantAttendance', () => {
           onBack={vi.fn()}
           onSave={vi.fn()}
           onAdd={onAdd}
-          onRename={vi.fn()}
+          onUpdate={vi.fn()}
           onDelete={vi.fn()}
         />
       </ThemeProvider>,
@@ -34,7 +34,7 @@ describe('ParticipantAttendance', () => {
       target: { value: 'Jarno' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Add' }))
-    await waitFor(() => expect(onAdd).toHaveBeenCalledWith('Jarno'))
+    await waitFor(() => expect(onAdd).toHaveBeenCalledWith({ name: 'Jarno' }))
 
     rerender(
       <ThemeProvider theme={wheelOfPainTheme}>
@@ -44,7 +44,7 @@ describe('ParticipantAttendance', () => {
           onBack={vi.fn()}
           onSave={vi.fn()}
           onAdd={onAdd}
-          onRename={vi.fn()}
+          onUpdate={vi.fn()}
           onDelete={vi.fn()}
         />
       </ThemeProvider>,
@@ -53,6 +53,48 @@ describe('ParticipantAttendance', () => {
     expect(
       screen.getByRole('button', { name: 'Save attendance · 1 active' }),
     ).toBeInTheDocument()
+  })
+
+  it('edits a participant nickname and About notes', async () => {
+    const participant: Participant = {
+      id: 'participant:jarno',
+      name: 'Jarno Arnold',
+      spokenName: 'Jarno',
+      about: 'Prefers low-impact movements.',
+      createdAt: 1,
+      updatedAt: 1,
+    }
+    const onUpdate = vi.fn().mockResolvedValue(participant)
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <ParticipantAttendance
+          participants={[participant]}
+          activeIds={[participant.id]}
+          onBack={vi.fn()}
+          onSave={vi.fn()}
+          onAdd={vi.fn()}
+          onUpdate={onUpdate}
+          onDelete={vi.fn()}
+        />
+      </ThemeProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Jarno Arnold' }))
+    fireEvent.change(screen.getByLabelText('Nickname / spoken name'), {
+      target: { value: 'J' },
+    })
+    fireEvent.change(screen.getByLabelText('About'), {
+      target: { value: '  Recovering from a knee injury.  ' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(onUpdate).toHaveBeenCalledWith(participant.id, {
+        name: 'Jarno Arnold',
+        spokenName: 'J',
+        about: '  Recovering from a knee injury.  ',
+      }),
+    )
   })
 })
 

@@ -55,7 +55,9 @@ Participant attendance appears as a compact **Participants** row showing the
 number of active names. Choosing Change opens a checklist of the saved roster
 for inclusion in this workout and then returns to pre-workout. The last active
 selection is remembered, so the user does not normally need to revisit it.
-Adding, renaming, and removing roster entries remains in Settings.
+Adding, editing, and removing roster entries remains in Settings. Editing a
+participant supports a required display name, an optional nickname used for
+spoken motivation, and optional About notes kept for the user's reference.
 
 Pressing Play begins the configured Prepare phase immediately. A zero-second
 Prepare is omitted and the first Work phase begins.

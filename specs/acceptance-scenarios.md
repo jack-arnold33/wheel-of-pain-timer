@@ -673,7 +673,8 @@ Given multiple saved participants are checked active on pre-workout
 When the workout starts
 Then the active attendance is snapshotted for that workout
 And a new randomized participant order is initialized
-And each announcement prefixes the next selected name to its saying
+And each announcement prefixes the next selected participant's nickname when
+  present, otherwise their display name, to its saying
 And every active participant is selected once before anyone repeats
 And a new randomized order follows each complete pass
 And the final name of one pass is not the first name of the next pass
@@ -696,6 +697,20 @@ Scenario: One active participant
   Given exactly one participant is active
   When multiple sayings are spoken
   Then that participant prefixes every saying
+```
+
+### Participant details remain available without crew personalities
+
+**Requirements:** C-012, D-006, D-008
+
+```gherkin
+Given a saved participant has a display name, spoken nickname, and About notes
+When the user edits the participant or reloads the app
+Then all three fields remain available on this device
+And spoken motivation uses the nickname when addressing that participant
+And a local backup export and restore preserves all three fields
+And no crew role, motivation style, avoid list, or generated participant saying
+  is required
 ```
 
 ### Device and OpenAI voices respect consent and key containment

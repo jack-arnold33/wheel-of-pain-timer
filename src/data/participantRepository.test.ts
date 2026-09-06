@@ -23,14 +23,24 @@ afterEach(async () => database.delete())
 
 describe('participant repository', () => {
   it('creates, renames, lists, and removes participants', async () => {
-    const created = await repository.create('  Jarno  ')
+    const created = await repository.create({
+      name: '  Jarno Arnold  ',
+      spokenName: '  Jarno  ',
+      about: '  Likes kettlebells.  ',
+    })
     expect(created).toMatchObject({
       id: 'participant:test-1',
-      name: 'Jarno',
+      name: 'Jarno Arnold',
+      spokenName: 'Jarno',
+      about: 'Likes kettlebells.',
       createdAt: 1_000,
     })
     const renamed = await repository.rename(created.id, 'J')
-    expect(renamed.name).toBe('J')
+    expect(renamed).toMatchObject({
+      name: 'J',
+      spokenName: 'Jarno',
+      about: 'Likes kettlebells.',
+    })
     expect(await repository.list()).toEqual([renamed])
     await repository.delete(created.id)
     expect(await repository.list()).toEqual([])

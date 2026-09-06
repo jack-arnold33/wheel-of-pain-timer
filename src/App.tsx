@@ -15,7 +15,7 @@ import type {
   ContentPack,
   ContentPackDraft,
 } from './domain/contentPacks/types'
-import type { Participant } from './domain/participants/types'
+import type { Participant, ParticipantInput } from './domain/participants/types'
 import {
   defaultAppPreferences,
   type AppPreferences,
@@ -109,8 +109,8 @@ interface AppProps {
     readonly activeIds: readonly string[]
   }>
   saveAttendance?: (ids: readonly string[]) => Promise<readonly string[]>
-  createParticipant?: (name: string) => Promise<Participant>
-  renameParticipant?: (id: string, name: string) => Promise<Participant>
+  createParticipant?: (input: ParticipantInput) => Promise<Participant>
+  updateParticipant?: (id: string, input: ParticipantInput) => Promise<Participant>
   deleteParticipant?: (id: string) => Promise<void>
   updatePreferences?: (
     patch: Partial<AppPreferences>,
@@ -196,14 +196,14 @@ const saveStoredAttendance = async (ids: readonly string[]) => {
   return participantService.saveAttendance(ids)
 }
 
-const createStoredParticipant = async (name: string) => {
+const createStoredParticipant = async (input: ParticipantInput) => {
   const { participantService } = await import('./data/participantService')
-  return participantService.createAndActivate(name)
+  return participantService.createAndActivate(input)
 }
 
-const renameStoredParticipant = async (id: string, name: string) => {
+const updateStoredParticipant = async (id: string, input: ParticipantInput) => {
   const { participantService } = await import('./data/participantService')
-  return participantService.rename(id, name)
+  return participantService.update(id, input)
 }
 
 const deleteStoredParticipant = async (id: string) => {
@@ -251,7 +251,7 @@ export function App({
   loadParticipants = loadStoredParticipants,
   saveAttendance = saveStoredAttendance,
   createParticipant = createStoredParticipant,
-  renameParticipant = renameStoredParticipant,
+  updateParticipant = updateStoredParticipant,
   deleteParticipant = deleteStoredParticipant,
   updatePreferences = updateStoredPreferences,
   exportLocalBackup = exportStoredLocalBackup,
@@ -584,14 +584,14 @@ export function App({
               setActiveParticipantIds(saved)
               setScreen(participantReturnScreen)
             }}
-            onAdd={async (name) => {
-              const created = await createParticipant(name)
+            onAdd={async (input) => {
+              const created = await createParticipant(input)
               setParticipants((current) => [...current, created])
               setActiveParticipantIds((current) => [...current, created.id])
               return created
             }}
-            onRename={async (id, name) => {
-              const renamed = await renameParticipant(id, name)
+            onUpdate={async (id, input) => {
+              const renamed = await updateParticipant(id, input)
               setParticipants((current) =>
                 current.map((participant) =>
                   participant.id === renamed.id ? renamed : participant,
