@@ -34,7 +34,7 @@ describe('ParticipantAttendance', () => {
       target: { value: 'Jarno' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Add' }))
-    await waitFor(() => expect(onAdd).toHaveBeenCalledWith({ name: 'Jarno' }))
+    await waitFor(() => expect(onAdd).toHaveBeenCalledWith('Jarno'))
 
     rerender(
       <ThemeProvider theme={wheelOfPainTheme}>
@@ -53,43 +53,6 @@ describe('ParticipantAttendance', () => {
     expect(
       screen.getByRole('button', { name: 'Save attendance · 1 active' }),
     ).toBeInTheDocument()
-  })
-
-  it('saves an explicit crew motivation default', async () => {
-    const onSaveCrewProfile = vi.fn().mockResolvedValue(undefined)
-    render(
-      <ThemeProvider theme={wheelOfPainTheme}>
-        <ParticipantAttendance
-          participants={[]}
-          activeIds={[]}
-          crewProfile={{
-            name: 'Dawn Patrol',
-            about: 'Early garage workouts.',
-            motivationStyle: 'encouraging',
-            avoid: '',
-          }}
-          onBack={vi.fn()}
-          onSave={vi.fn()}
-          onAdd={vi.fn()}
-          onRename={vi.fn()}
-          onSaveCrewProfile={onSaveCrewProfile}
-          onDelete={vi.fn()}
-        />
-      </ThemeProvider>,
-    )
-
-    fireEvent.mouseDown(screen.getByLabelText('Crew motivation style'))
-    fireEvent.click(screen.getByRole('option', { name: 'Playful' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Save crew profile' }))
-
-    await waitFor(() =>
-      expect(onSaveCrewProfile).toHaveBeenCalledWith({
-        name: 'Dawn Patrol',
-        about: 'Early garage workouts.',
-        motivationStyle: 'playful',
-        avoid: '',
-      }),
-    )
   })
 })
 

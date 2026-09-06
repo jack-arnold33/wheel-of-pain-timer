@@ -1,11 +1,9 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { AppPreferences } from '../domain/preferences/appPreferences'
 import type {
-  ContentPackAddressingMode,
   ContentPackSayings,
 } from '../domain/contentPacks/types'
 import type { RoutineTiming } from '../domain/timer/types'
-import type { ParticipantMotivationStyle } from '../domain/participants/types'
 
 export const DATABASE_NAME = 'wheel-of-pain'
 export const APP_PREFERENCES_ID = 'app'
@@ -25,9 +23,8 @@ export interface AppPreferencesRecord extends AppPreferences {
 
 export interface ContentPackRecord {
   readonly id: string
-  readonly schemaVersion: 2
+  readonly schemaVersion: 1
   readonly name: string
-  readonly addressingMode: ContentPackAddressingMode
   readonly voiceInstructions?: string
   readonly sayings: ContentPackSayings
   readonly extensions: Readonly<Record<string, unknown>>
@@ -38,10 +35,6 @@ export interface ContentPackRecord {
 export interface ParticipantRecord {
   readonly id: string
   readonly name: string
-  readonly spokenName: string
-  readonly about: string
-  readonly motivationStyle: ParticipantMotivationStyle
-  readonly avoid: string
   readonly createdAt: number
   readonly updatedAt: number
 }
@@ -84,12 +77,39 @@ export class WheelOfPainDatabase extends Dexie {
       participants: '&id, name, updatedAt',
       credentials: '&id',
     })
+    // Version 5 briefly introduced crew-personalized content. Keep the version
+    // declaration so devices that opened that build can still open the database.
     this.version(5).stores({
       routines: '&id, name, updatedAt',
       preferences: '&id',
       contentPacks: '&id, name, updatedAt',
       participants: '&id, name, updatedAt',
       credentials: '&id',
+    })
+    this.version(6).stores({
+      routines: '&id, name, updatedAt',
+      preferences: '&id',
+      contentPacks: '&id, name, updatedAt',
+      participants: '&id, name, updatedAt',
+      credentials: '&id',
+    }).upgrade(async (transaction) => {
+      await transaction.table('contentPacks').toCollection().modify((pack) => {
+        if (pack.schemaVersion === 2) {
+          pack.schemaVersion = 1
+          delete pack.addressingMode
+        }
+      })
+      await transaction.table('preferences').toCollection().modify((preferences) => {
+        if (
+          typeof preferences.allowOnlineVoices !== 'boolean' &&
+          typeof preferences.useOpenAiVoice === 'boolean'
+        ) {
+          preferences.allowOnlineVoices = preferences.useOpenAiVoice
+        }
+        delete preferences.openAiFeaturesEnabled
+        delete preferences.useOpenAiVoice
+        delete preferences.crewProfile
+      })
     })
   }
 }

@@ -31,7 +31,6 @@ import {
   type ContentPackDraft,
 } from '../domain/contentPacks/types'
 import { PersonalityCreator } from './PersonalityCreator'
-import { emptyCrewProfile, type CrewProfile, type Participant } from '../domain/participants/types'
 
 export type ContentPackImportResult =
   | { readonly status: 'saved'; readonly pack: ContentPack }
@@ -39,10 +38,6 @@ export type ContentPackImportResult =
 
 interface ContentPackLibraryProps {
   readonly packs: readonly ContentPack[]
-  readonly participants?: readonly Participant[]
-  readonly activeParticipantIds?: readonly string[]
-  readonly crewProfile?: CrewProfile
-  readonly openAiFeaturesEnabled?: boolean
   readonly storageNotice?: string
   readonly onBack: () => void
   readonly onImport: (draft: ContentPackDraft) => Promise<ContentPackImportResult>
@@ -62,7 +57,6 @@ const exportPack = (pack: ContentPack) => {
     ...pack.extensions,
     schemaVersion: pack.schemaVersion,
     name: pack.name,
-    addressingMode: pack.addressingMode,
     voiceInstructions: pack.voiceInstructions,
     sayings: pack.sayings,
   }
@@ -82,10 +76,6 @@ const exportPack = (pack: ContentPack) => {
 
 export function ContentPackLibrary({
   packs,
-  participants = [],
-  activeParticipantIds = [],
-  crewProfile = emptyCrewProfile,
-  openAiFeaturesEnabled = false,
   storageNotice,
   onBack,
   onImport,
@@ -149,10 +139,6 @@ export function ContentPackLibrary({
   if (creating) {
     return (
       <PersonalityCreator
-        participants={participants}
-        activeParticipantIds={activeParticipantIds}
-        crewProfile={crewProfile}
-        openAiFeaturesEnabled={openAiFeaturesEnabled}
         onCancel={() => setCreating(false)}
         onSave={saveCreatedPack}
       />
@@ -217,9 +203,6 @@ export function ContentPackLibrary({
                       </Stack>
                       <Typography variant="body2" color="text.secondary">
                         {totalSayings(pack)} sayings ·{' '}
-                        {pack.addressingMode === 'authored'
-                          ? 'Crew-personalized'
-                          : 'Classic call-outs'} ·{' '}
                         {isBuiltInContentPack(pack.id) ? 'included with app' : 'saved on this device'}
                       </Typography>
                     </Stack>
@@ -246,11 +229,6 @@ export function ContentPackLibrary({
                     : 'Saved on this device'}
                 </Typography>
                 <Typography variant="h5">{totalSayings(inspection)} sayings</Typography>
-                <Typography color="text.secondary">
-                  {inspection.addressingMode === 'authored'
-                    ? 'Crew-personalized · spoken exactly as authored'
-                    : 'Classic call-outs · rotating participant names are added during playback'}
-                </Typography>
                 <Stack spacing={0.5}>
                   <Typography variant="h6">AI voice instructions</Typography>
                   <Typography color="text.secondary">

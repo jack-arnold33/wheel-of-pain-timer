@@ -8,7 +8,6 @@ import {
   type AppPreferencesRecord,
   type WheelOfPainDatabase,
 } from './database'
-import { crewMotivationStyles, emptyCrewProfile } from '../domain/participants/types'
 
 function normalizePreferences(
   stored: Partial<AppPreferencesRecord> | undefined,
@@ -41,14 +40,10 @@ function normalizePreferences(
       stored.voiceVolume <= 1
         ? stored.voiceVolume
         : defaultAppPreferences.voiceVolume,
-    openAiFeaturesEnabled:
-      typeof stored?.openAiFeaturesEnabled === 'boolean'
-        ? stored.openAiFeaturesEnabled
-        : defaultAppPreferences.openAiFeaturesEnabled,
-    useOpenAiVoice:
-      typeof stored?.useOpenAiVoice === 'boolean'
-        ? stored.useOpenAiVoice
-        : defaultAppPreferences.useOpenAiVoice,
+    allowOnlineVoices:
+      typeof stored?.allowOnlineVoices === 'boolean'
+        ? stored.allowOnlineVoices
+        : defaultAppPreferences.allowOnlineVoices,
     voiceId: typeof stored?.voiceId === 'string' ? stored.voiceId : null,
     speechRate:
       typeof stored?.speechRate === 'number' &&
@@ -66,25 +61,6 @@ function normalizePreferences(
           (id): id is string => typeof id === 'string',
         )
       : [],
-    crewProfile: {
-      name:
-        typeof stored?.crewProfile?.name === 'string'
-          ? stored.crewProfile.name.slice(0, 80)
-          : emptyCrewProfile.name,
-      about:
-        typeof stored?.crewProfile?.about === 'string'
-          ? stored.crewProfile.about.slice(0, 2_000)
-          : emptyCrewProfile.about,
-      motivationStyle: crewMotivationStyles.includes(
-        stored?.crewProfile?.motivationStyle as never,
-      )
-        ? stored!.crewProfile!.motivationStyle
-        : emptyCrewProfile.motivationStyle,
-      avoid:
-        typeof stored?.crewProfile?.avoid === 'string'
-          ? stored.crewProfile.avoid.slice(0, 1_000)
-          : emptyCrewProfile.avoid,
-    },
   }
 }
 
@@ -94,13 +70,11 @@ const withoutId = (record: AppPreferencesRecord): AppPreferences => ({
   transitionVolume: record.transitionVolume,
   spokenMotivationEnabled: record.spokenMotivationEnabled,
   voiceVolume: record.voiceVolume,
-  openAiFeaturesEnabled: record.openAiFeaturesEnabled,
-  useOpenAiVoice: record.useOpenAiVoice,
+  allowOnlineVoices: record.allowOnlineVoices,
   voiceId: record.voiceId,
   speechRate: record.speechRate,
   selectedContentPackId: record.selectedContentPackId,
   activeParticipantIds: [...record.activeParticipantIds],
-  crewProfile: { ...record.crewProfile },
 })
 
 export class PreferencesRepository {

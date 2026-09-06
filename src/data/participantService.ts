@@ -1,4 +1,4 @@
-import type { Participant, ParticipantInput } from '../domain/participants/types'
+import type { Participant } from '../domain/participants/types'
 import { appDatabase, type WheelOfPainDatabase } from './database'
 import {
   ParticipantRepository,
@@ -45,12 +45,12 @@ export class ParticipantService {
     return activeIds
   }
 
-  async createAndActivate(input: ParticipantInput | string): Promise<Participant> {
+  async createAndActivate(name: string): Promise<Participant> {
     return this.database.transaction(
       'rw',
       [this.database.participants, this.database.preferences],
       async () => {
-        const participant = await this.participants.create(input)
+        const participant = await this.participants.create(name)
         const preferences = await this.preferences.get()
         await this.preferences.update({
           activeParticipantIds: [
@@ -63,8 +63,8 @@ export class ParticipantService {
     )
   }
 
-  async update(id: string, input: ParticipantInput): Promise<Participant> {
-    return this.participants.update(id, input)
+  async rename(id: string, name: string): Promise<Participant> {
+    return this.participants.rename(id, name)
   }
 
   async remove(id: string): Promise<void> {
