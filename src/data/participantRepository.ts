@@ -1,8 +1,4 @@
-import {
-  participantMotivationStyles,
-  type Participant,
-  type ParticipantInput,
-} from '../domain/participants/types'
+import type { Participant, ParticipantInput } from '../domain/participants/types'
 import {
   appDatabase,
   type ParticipantRecord,
@@ -49,16 +45,17 @@ const normalizeInput = (input: ParticipantInput) => ({
   name: normalizeName(input.name),
   spokenName: normalizeOptional(input.spokenName, 80),
   about: normalizeOptional(input.about, 2_000),
-  motivationStyle: participantMotivationStyles.includes(
-    input.motivationStyle ?? 'crew-default',
-  )
-    ? (input.motivationStyle ?? 'crew-default')
-    : 'crew-default',
-  avoid: normalizeOptional(input.avoid, 1_000),
 })
 
 const createParticipantId = () => `participant:${crypto.randomUUID()}`
-const copyParticipant = (record: ParticipantRecord): Participant => ({ ...record })
+const copyParticipant = (record: ParticipantRecord): Participant => ({
+  id: record.id,
+  name: record.name,
+  spokenName: record.spokenName ?? '',
+  about: record.about ?? '',
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
+})
 
 export class ParticipantRepository {
   constructor(

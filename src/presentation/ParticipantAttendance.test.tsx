@@ -24,7 +24,7 @@ describe('ParticipantAttendance', () => {
           onBack={vi.fn()}
           onSave={vi.fn()}
           onAdd={onAdd}
-          onRename={vi.fn()}
+          onUpdate={vi.fn()}
           onDelete={vi.fn()}
         />
       </ThemeProvider>,
@@ -44,7 +44,7 @@ describe('ParticipantAttendance', () => {
           onBack={vi.fn()}
           onSave={vi.fn()}
           onAdd={onAdd}
-          onRename={vi.fn()}
+          onUpdate={vi.fn()}
           onDelete={vi.fn()}
         />
       </ThemeProvider>,
@@ -55,39 +55,44 @@ describe('ParticipantAttendance', () => {
     ).toBeInTheDocument()
   })
 
-  it('saves an explicit crew motivation default', async () => {
-    const onSaveCrewProfile = vi.fn().mockResolvedValue(undefined)
+  it('edits a participant nickname and About notes', async () => {
+    const participant: Participant = {
+      id: 'participant:jarno',
+      name: 'Jarno Arnold',
+      spokenName: 'Jarno',
+      about: 'Prefers low-impact movements.',
+      createdAt: 1,
+      updatedAt: 1,
+    }
+    const onUpdate = vi.fn().mockResolvedValue(participant)
     render(
       <ThemeProvider theme={wheelOfPainTheme}>
         <ParticipantAttendance
-          participants={[]}
-          activeIds={[]}
-          crewProfile={{
-            name: 'Dawn Patrol',
-            about: 'Early garage workouts.',
-            motivationStyle: 'encouraging',
-            avoid: '',
-          }}
+          participants={[participant]}
+          activeIds={[participant.id]}
           onBack={vi.fn()}
           onSave={vi.fn()}
           onAdd={vi.fn()}
-          onRename={vi.fn()}
-          onSaveCrewProfile={onSaveCrewProfile}
+          onUpdate={onUpdate}
           onDelete={vi.fn()}
         />
       </ThemeProvider>,
     )
 
-    fireEvent.mouseDown(screen.getByLabelText('Crew motivation style'))
-    fireEvent.click(screen.getByRole('option', { name: 'Playful' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Save crew profile' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Jarno Arnold' }))
+    fireEvent.change(screen.getByLabelText('Nickname / spoken name'), {
+      target: { value: 'J' },
+    })
+    fireEvent.change(screen.getByLabelText('About'), {
+      target: { value: '  Recovering from a knee injury.  ' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(onSaveCrewProfile).toHaveBeenCalledWith({
-        name: 'Dawn Patrol',
-        about: 'Early garage workouts.',
-        motivationStyle: 'playful',
-        avoid: '',
+      expect(onUpdate).toHaveBeenCalledWith(participant.id, {
+        name: 'Jarno Arnold',
+        spokenName: 'J',
+        about: '  Recovering from a knee injury.  ',
       }),
     )
   })

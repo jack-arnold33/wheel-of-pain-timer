@@ -72,9 +72,9 @@ reused for a different behavior.
 - **C-001:** The user can import a supported content-pack file using the
   device's standard file picker.
 - **C-002:** Import processing and pack storage occur locally. Importing a pack
-  does not upload it. OpenAI features may transmit either the fields required
-  for a user-initiated Personality generation or one saying plus voice
-  instructions for speech, only after the single OpenAI opt-in is enabled.
+  does not upload it; an individual saying, selected participant name, and the
+  selected pack's voice instructions may leave the device only under the
+  separately enabled online-speech policy.
 - **C-003:** A successfully imported pack is saved on the current device and is
   available offline for later workouts.
 - **C-004:** Importing a pack does not require a separate session-only or
@@ -101,35 +101,30 @@ reused for a different behavior.
   name before repeating and avoids an immediate repeat across reshuffles when
   at least two names exist. Rotation is initialized per workout from the active
   attendance snapshot.
-- **C-014:** A v2 pack is limited to 512 KB, a name of 1 through 80 Unicode
+- **C-014:** A v1 pack is limited to 512 KB, a name of 1 through 80 Unicode
   characters, voice instructions of 1 through 500 Unicode characters when
   supplied, sayings of 1 through 240 Unicode characters, 500 sayings per
   category, and 1,000 sayings total. Older and plain-text packs without voice
   instructions receive the built-in default.
-- **C-015:** V2 supports `general`, `work`, `cycleRest`, and `finished` saying
+- **C-015:** V1 supports `general`, `work`, `cycleRest`, and `finished` saying
   categories. A missing specific category falls back to `general`; unknown
   saying categories are rejected.
 - **C-016:** A protected generic starter Personality is included with the app
   so spoken motivation can be used without importing a pack. It can be selected
   or inspected but not renamed, exported, or removed. Its voice instructions
   are the default for packs that do not supply their own.
-- **C-017:** With OpenAI features enabled, the user can generate a Personality
-  directly with the Responses API using the same locally stored project key as
-  speech. The app uses `gpt-5.6-luna`, requests structured JSON, disables response
-  storage, and still supports copying a prompt to another assistant as a fallback.
-- **C-018:** Pasted authoring content accepts a valid v2 JSON object with or
+- **C-017:** The user can create a Personality on the current device by copying
+  an app-generated prompt to an AI assistant, pasting the response, reviewing
+  and editing the generated voice instructions and categorized sayings, and
+  choosing Save Personality. The app does not contact the assistant or transmit
+  the authoring fields itself.
+- **C-018:** Pasted authoring content accepts a valid v1 JSON object with or
   without a Markdown code fence, or plain text as work sayings. New authoring
   presents and creates only work, cycleRest, and finished sayings; `general`
   remains supported for backward compatibility with existing and plain-text
   file packs. It uses the same validation and conflict rules as file import.
 - **C-019:** An unfinished Personality authoring draft is saved locally as it
   changes and is recovered after the PWA reloads. Successful save clears it.
-- **C-020:** Personality authoring offers Classic call-outs, whose sayings omit
-  names and receive the rotating participant prefix during playback, and
-  Crew-personalized sayings, which naturally include selected names and facts
-  and are spoken exactly as authored without an added prefix.
-- **C-021:** Direct generation creates exactly 20 work, 8 Cycle Rest, and 5
-  finished sayings, then opens the same editable review used by pasted content.
 
 ## Local storage and privacy
 
@@ -138,17 +133,17 @@ reused for a different behavior.
 - **D-002:** The app explains that clearing site data or removing the app may
   delete locally stored information.
 - **D-003:** The app provides an export path before destructive bulk deletion.
-- **D-004:** The app makes no network request containing a routine, pack,
-  participant profile, crew profile, or preference except for a user-invoked
-  OpenAI feature after opt-in. Generation sends its authoring guidance and only
-  selected participant profiles; speech sends one utterance and the selected
-  pack's voice instructions. Routine data and the full saved roster are not sent.
+- **D-004:** The app makes no network request containing a routine, pack, or
+  preference except when the user explicitly exports or shares it. After a
+  separate opt-in, the app may transmit an individual saying and selected
+  participant name plus the selected pack's voice instructions for online
+  speech synthesis but must not upload the pack or roster as a collection.
 - **D-005:** The app does not require analytics or tracking for core operation.
 - **D-006:** The user can manage an optional participant roster stored on the
-  current device. Each reusable profile may include a display name, spoken name,
-  background, motivation style, and subjects to avoid. A reusable crew profile
-  may include a name, shared context, default motivation style, and crew-wide
-  subjects to avoid. A participant may inherit that crew motivation style.
+  current device. Each participant has a required display name plus optional
+  spoken nickname and About notes. These fields are independent of content
+  packs and routines; the spoken nickname replaces the display name only when
+  spoken motivation addresses that participant.
 - **D-007:** The pre-workout screen lets the user include or exclude saved
   participants for the workout and remembers the last attendance selection.
 - **D-008:** The user can export and restore a portable local backup containing
@@ -163,8 +158,6 @@ reused for a different behavior.
   dedicated device-local credential record. It is excluded from preferences,
   backup, restore, logs, service-worker messages, and build output, and can be
   replaced or removed from Settings.
-- **D-011:** One Settings notice and opt-in covers both direct Personality
-  generation and OpenAI speech. Removing the key disables both features.
 
 ## PWA and offline operation
 
@@ -194,7 +187,7 @@ reused for a different behavior.
   active timer and never replace essential visual or audible timer cues.
 - **A-007:** Timer sounds and spoken motivation can be enabled independently.
   Settings distinguishes a device voice, whose media route is not promised,
-  from an optionally enabled OpenAI-generated voice played through HTML media.
+  from an explicitly enabled OpenAI-generated voice played through HTML media.
   Both paths use generic preview text and offer supported speech speeds. The
   online preview uses the selected Personality's voice instructions.
 - **A-008:** App presentation is provided by named, replaceable themes. A theme

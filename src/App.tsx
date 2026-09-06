@@ -15,12 +15,7 @@ import type {
   ContentPack,
   ContentPackDraft,
 } from './domain/contentPacks/types'
-import {
-  emptyCrewProfile,
-  type CrewProfile,
-  type Participant,
-  type ParticipantInput,
-} from './domain/participants/types'
+import type { Participant, ParticipantInput } from './domain/participants/types'
 import {
   defaultAppPreferences,
   type AppPreferences,
@@ -97,14 +92,12 @@ interface AppProps {
     readonly packs: readonly ContentPack[]
     readonly selectedId: string | null
     readonly spokenMotivationEnabled?: boolean
-    readonly openAiFeaturesEnabled?: boolean
-    readonly useOpenAiVoice?: boolean
+    readonly allowOnlineVoices?: boolean
     readonly voiceId?: string | null
     readonly speechRate?: number
     readonly timerSoundsEnabled?: boolean
     readonly transitionVolume?: number
     readonly voiceVolume?: number
-    readonly crewProfile?: CrewProfile
   }>
   selectContentPack?: (id: string | null) => Promise<void>
   importContentPack?: (draft: ContentPackDraft) => Promise<ContentPack>
@@ -159,14 +152,12 @@ const loadStoredContentPacks = async () => {
     packs: state.packs,
     selectedId,
     spokenMotivationEnabled: state.preferences.spokenMotivationEnabled,
-    openAiFeaturesEnabled: state.preferences.openAiFeaturesEnabled,
-    useOpenAiVoice: state.preferences.useOpenAiVoice,
+    allowOnlineVoices: state.preferences.allowOnlineVoices,
     voiceId: state.preferences.voiceId,
     speechRate: state.preferences.speechRate,
     timerSoundsEnabled: state.preferences.timerSoundsEnabled,
     transitionVolume: state.preferences.transitionVolume,
     voiceVolume: state.preferences.voiceVolume,
-    crewProfile: state.preferences.crewProfile,
   }
 }
 
@@ -278,13 +269,11 @@ export function App({
   const [transitionVolume, setTransitionVolume] = useState(
     defaultAppPreferences.transitionVolume,
   )
-  const [openAiFeaturesEnabled, setOpenAiFeaturesEnabled] = useState(false)
-  const [useOpenAiVoice, setUseOpenAiVoice] = useState(false)
+  const [allowOnlineVoices, setAllowOnlineVoices] = useState(false)
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null)
   const [speechRate, setSpeechRate] = useState(1)
   const [voiceVolume, setVoiceVolume] = useState(defaultAppPreferences.voiceVolume)
   const [participants, setParticipants] = useState<readonly Participant[]>([])
-  const [crewProfile, setCrewProfile] = useState<CrewProfile>(emptyCrewProfile)
   const [activeParticipantIds, setActiveParticipantIds] = useState<readonly string[]>([])
   const [participantNotice, setParticipantNotice] = useState<string>()
   const [storageNotice, setStorageNotice] = useState<string>()
@@ -387,11 +376,8 @@ export function App({
         if (state.spokenMotivationEnabled !== undefined) {
           setSpokenMotivationEnabled(state.spokenMotivationEnabled)
         }
-        if (state.openAiFeaturesEnabled !== undefined) {
-          setOpenAiFeaturesEnabled(state.openAiFeaturesEnabled)
-        }
-        if (state.useOpenAiVoice !== undefined) {
-          setUseOpenAiVoice(state.useOpenAiVoice)
+        if (state.allowOnlineVoices !== undefined) {
+          setAllowOnlineVoices(state.allowOnlineVoices)
         }
         if (state.voiceId !== undefined) setSelectedVoiceId(state.voiceId)
         if (state.speechRate !== undefined) setSpeechRate(state.speechRate)
@@ -402,7 +388,6 @@ export function App({
           setTransitionVolume(state.transitionVolume)
         }
         if (state.voiceVolume !== undefined) setVoiceVolume(state.voiceVolume)
-        if (state.crewProfile !== undefined) setCrewProfile(state.crewProfile)
       })
       .catch(() => {
         if (!active) return
@@ -544,8 +529,7 @@ export function App({
             transitionVolume={transitionVolume}
             spokenMotivationEnabled={spokenMotivationEnabled}
             voiceVolume={voiceVolume}
-            openAiFeaturesEnabled={openAiFeaturesEnabled}
-            useOpenAiVoice={useOpenAiVoice}
+            allowOnlineVoices={allowOnlineVoices}
             voiceId={selectedVoiceId}
             speechRate={speechRate}
             voiceInstructions={
@@ -566,8 +550,7 @@ export function App({
               setTransitionVolume(saved.transitionVolume)
               setSpokenMotivationEnabled(saved.spokenMotivationEnabled)
               setVoiceVolume(saved.voiceVolume)
-              setOpenAiFeaturesEnabled(saved.openAiFeaturesEnabled)
-              setUseOpenAiVoice(saved.useOpenAiVoice)
+              setAllowOnlineVoices(saved.allowOnlineVoices)
               setSelectedVoiceId(saved.voiceId)
               setSpeechRate(saved.speechRate)
               onPreferencesChanged?.(saved)
@@ -594,7 +577,6 @@ export function App({
           <ParticipantAttendance
             participants={participants}
             activeIds={activeParticipantIds}
-            crewProfile={crewProfile}
             storageNotice={participantNotice}
             onBack={() => setScreen(participantReturnScreen)}
             onSave={async (ids) => {
@@ -616,11 +598,6 @@ export function App({
                 ),
               )
               return renamed
-            }}
-            onSaveCrewProfile={async (profile) => {
-              const saved = await updatePreferences({ crewProfile: profile })
-              setCrewProfile(saved.crewProfile)
-              onPreferencesChanged?.(saved)
             }}
             onDelete={async (id) => {
               await deleteParticipant(id)
@@ -650,10 +627,6 @@ export function App({
         >
           <ContentPackLibrary
             packs={contentPacks}
-            participants={participants}
-            activeParticipantIds={activeParticipantIds}
-            crewProfile={crewProfile}
-            openAiFeaturesEnabled={openAiFeaturesEnabled}
             storageNotice={contentPackNotice}
             onBack={() => setScreen('settings')}
             onImport={async (draft): Promise<ContentPackImportResult> => {
@@ -745,7 +718,7 @@ export function App({
               participants: participants.filter(({ id }) => activeIds.has(id)),
               enabled: spokenMotivationEnabled,
               speech: {
-                allowOnlineVoices: useOpenAiVoice,
+                allowOnlineVoices,
                 voiceId: selectedVoiceId,
                 rate: speechRate,
                 volume: voiceVolume,

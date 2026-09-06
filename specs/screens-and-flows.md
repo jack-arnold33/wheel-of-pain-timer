@@ -55,7 +55,9 @@ Participant attendance appears as a compact **Participants** row showing the
 number of active names. Choosing Change opens a checklist of the saved roster
 for inclusion in this workout and then returns to pre-workout. The last active
 selection is remembered, so the user does not normally need to revisit it.
-Adding, renaming, and removing roster entries remains in Settings.
+Adding, editing, and removing roster entries remains in Settings. Editing a
+participant supports a required display name, an optional nickname used for
+spoken motivation, and optional About notes kept for the user's reference.
 
 Pressing Play begins the configured Prepare phase immediately. A zero-second
 Prepare is omitted and the first Work phase begins.
@@ -82,10 +84,10 @@ Completion.
 
 ## Settings
 
-Settings contains one explicit OpenAI feature notice and opt-in. It covers
-direct Personality generation and TV-compatible online speech and explains
-that sayings, voice instructions, and selected participant profile details may
-be sent when those features are used. It is not requested during a workout.
+Settings contains the explicit opt-in for OpenAI voice. The
+option explains that one saying and the participant name used to address it
+may be sent to OpenAI. This permission is not requested within the pre-workout
+or active workout flow.
 
 Audio settings are:
 
@@ -94,13 +96,14 @@ Audio settings are:
 - **Spoken motivation**, on by default when a Personality is selected
 - **Motivational voice volume**, independently adjustable and 100% by default
 - **Voice**, defaulting to the device System Default or OpenAI Alloy when the
-  TV-compatible path is enabled
+  OpenAI path is enabled
 - **Speech speed**, with Slow, Normal, and Fast choices and Normal as default
 - **Voice output**, an explicit choice between **Device voice** (free, offline,
-  and not guaranteed to follow the television route) and **TV voice through
-  OpenAI** (internet and API credit required). Selecting the OpenAI choice
-  reveals its key storage and enablement controls. The shared OpenAI notice and
-  acknowledgment serves as the explicit opt-in for generation and speech.
+  and not guaranteed to follow the television route) and **OpenAI voice**
+  (internet and API credit required). Selecting the OpenAI choice
+  reveals its key storage, acknowledgment, and enablement controls; those
+  controls remain hidden while Device voice is selected. Its confirmation
+  serves as the explicit privacy opt-in.
 
 The device path lists System Default plus on-device voices exposed by the
 browser. Browser-identified online voices are not presented as TV-compatible.
@@ -109,22 +112,19 @@ through `HTMLAudioElement`. Each path previews generic built-in text rather
 than private pack content, such as `The Wheel of Pain awaits.`
 
 The online control remains unavailable until Settings reports a locally saved
-OpenAI project key. Key entry is password-masked and provides save, replace,
-test, and remove actions. Only a redacted configured state is shown after
-saving; the key is not included in local backup. Removing it disables both
-OpenAI generation and OpenAI speech.
+OpenAI project key. Key entry is password-masked, requires acknowledgement of
+the client-side storage risk, and provides save, replace, test, and remove
+actions. Only a redacted configured state is shown after saving; the key is not
+included in local backup.
 
 If a selected device voice is no longer available, speech falls back to an
 eligible System Default and Settings reports the fallback. If an OpenAI voice
 identifier is unavailable, Alloy is used. Pitch adjustment is not part of MVP.
 
-Settings also provides a **Participants** roster. The user can add and remove
-participants and edit reusable display name, spoken name, background,
-motivation style, and subjects to avoid. The same screen stores reusable crew
-name, shared context, default motivation style, and crew-wide avoid guidance.
-A participant's **Use crew default** selection resolves to that saved style.
-Profiles remain separate
-from routine configuration and content-pack export.
+Settings also provides a **Participants** roster. The user can add, rename, and
+remove names stored on the current device. The roster is optional and applies
+to spoken sayings from any selected content pack; it does not appear in routine
+configuration or content-pack export.
 
 Settings also provides a **Personalities** library. The user can create, import,
 inspect, rename, export, and remove packs stored on the current device. Saving a
@@ -175,14 +175,11 @@ The management library is opened from Settings. Pack inspection shows the pack n
 instructions, category counts, total saying count, and that it is saved on this
 device; sayings need not be presented on the active workout screen.
 
-**Create Personality** opens a phone-first authoring screen. The user selects
-**Classic call-outs** or **Crew-personalized**, then enters a name and optional
-tone, theme or inside-joke context, and subjects to avoid. Crew mode also lets
-the user choose which saved participant profiles to include. With OpenAI
-features enabled, **Generate with OpenAI** sends this brief to `gpt-5.6-luna`
-through the Responses API and opens Review. **Copy prompt for another AI**
-retains the self-contained manual workflow: the user pastes JSON or plain text
-and chooses **Review sayings**.
+**Create Personality** opens a phone-first authoring screen. The user enters a
+name and optional tone, theme or inside-joke context, and subjects to avoid.
+**Copy prompt for ChatGPT** copies a self-contained schema-aware prompt while
+also showing it for manual copying. The app does not open or contact ChatGPT.
+The user returns, pastes JSON or plain text, and chooses **Review sayings**.
 **Clear pasted response** empties only the response field so the complete AI
 output can be replaced without clearing the name or authoring guidance.
 
@@ -193,10 +190,6 @@ visually distinct without becoming part of saved or spoken content. **Save
 Personality** validates and stores the pack without changing the current workout
 selection. The draft persists locally through app switching and reload until a
 successful save. File import is a secondary action in the Settings library.
-
-Classic sayings omit names; playback adds the next active participant's spoken
-name or display name. Crew-personalized sayings include names and facts in the
-authored text and playback never prepends another name.
 
 Import errors remain in the import flow, identify the invalid field or limit,
 and do not change saved data. A name or identity conflict offers Replace, Save

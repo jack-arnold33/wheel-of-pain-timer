@@ -5,8 +5,7 @@ import { MotivationSession } from './session'
 
 const pack: ContentPack = {
   id: 'pack:test',
-  schemaVersion: 2,
-  addressingMode: 'participant-prefix',
+  schemaVersion: 1,
   name: 'Test',
   voiceInstructions: 'Sound upbeat and direct.',
   sayings: {
@@ -20,7 +19,7 @@ const pack: ContentPack = {
 }
 
 const participants: Participant[] = [
-  { id: 'a', name: 'A', createdAt: 1, updatedAt: 1 },
+  { id: 'a', name: 'A Full Name', spokenName: 'A', createdAt: 1, updatedAt: 1 },
   { id: 'b', name: 'B', createdAt: 1, updatedAt: 1 },
 ]
 
@@ -43,26 +42,6 @@ describe('MotivationSession', () => {
       [],
     )
     expect(session.next('finished')).toBeUndefined()
-  })
-
-  it('speaks crew-authored sayings exactly as written', () => {
-    const session = new MotivationSession(
-      { ...pack, addressingMode: 'authored', sayings: { work: ['A, chase B up that hill.'] } },
-      participants,
-      () => 0.99,
-    )
-
-    expect(session.next('work')).toBe('A, chase B up that hill.')
-  })
-
-  it('uses a participant spoken name for classic call-outs', () => {
-    const session = new MotivationSession(
-      pack,
-      [{ ...participants[0], spokenName: 'Ace' }],
-      () => 0.99,
-    )
-
-    expect(session.next('work')).toBe('Ace! Work now.')
   })
 })
 

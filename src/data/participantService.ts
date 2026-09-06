@@ -63,6 +63,10 @@ export class ParticipantService {
     )
   }
 
+  async rename(id: string, name: string): Promise<Participant> {
+    return this.participants.rename(id, name)
+  }
+
   async update(id: string, input: ParticipantInput): Promise<Participant> {
     return this.participants.update(id, input)
   }

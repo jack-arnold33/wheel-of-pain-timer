@@ -1,6 +1,5 @@
 import {
   CONTENT_PACK_SCHEMA_VERSION,
-  contentPackAddressingModes,
   contentPackCategories,
   type ContentPackDraft,
   type ContentPackSayings,
@@ -124,14 +123,13 @@ export function normalizeContentPack(value: unknown): ContentPackDraft {
   const input = value as Record<string, unknown>
   if (input.schemaVersion !== CONTENT_PACK_SCHEMA_VERSION) {
     throw new InvalidContentPackError(
-      'schemaVersion is required and must be the supported integer version 2.',
+      'schemaVersion is required and must be the supported integer version 1.',
     )
   }
 
   const {
     schemaVersion: _schemaVersion,
     name,
-    addressingMode,
     voiceInstructions,
     sayings,
     ...extensions
@@ -140,15 +138,6 @@ export function normalizeContentPack(value: unknown): ContentPackDraft {
   return {
     schemaVersion: CONTENT_PACK_SCHEMA_VERSION,
     name: normalizeContentPackName(name),
-    addressingMode: addressingMode === undefined
-      ? 'participant-prefix'
-      : contentPackAddressingModes.includes(addressingMode as never)
-        ? (addressingMode as ContentPackDraft['addressingMode'])
-        : (() => {
-          throw new InvalidContentPackError(
-            'addressingMode must be participant-prefix or authored.',
-          )
-        })(),
     voiceInstructions: normalizeVoiceInstructions(voiceInstructions),
     sayings: normalizeSayings(sayings),
     extensions,

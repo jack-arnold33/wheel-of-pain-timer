@@ -16,46 +16,32 @@ import {
   FormControlLabel,
   IconButton,
   Paper,
-  MenuItem,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
 import { useState } from 'react'
-import {
-  crewMotivationStyles,
-  emptyCrewProfile,
-  participantMotivationStyles,
-  type CrewProfile,
-  type Participant,
-  type ParticipantInput,
-} from '../domain/participants/types'
+import type { Participant, ParticipantInput } from '../domain/participants/types'
 
 interface ParticipantAttendanceProps {
   readonly participants: readonly Participant[]
   readonly activeIds: readonly string[]
-  readonly crewProfile?: CrewProfile
   readonly storageNotice?: string
   readonly onBack: () => void
   readonly onSave: (activeIds: readonly string[]) => Promise<void>
   readonly onAdd: (input: ParticipantInput) => Promise<Participant>
-  readonly onUpdate?: (id: string, input: ParticipantInput) => Promise<Participant>
-  readonly onRename?: (id: string, name: string) => Promise<Participant>
-  readonly onSaveCrewProfile?: (profile: CrewProfile) => Promise<void>
+  readonly onUpdate: (id: string, input: ParticipantInput) => Promise<Participant>
   readonly onDelete: (id: string) => Promise<void>
 }
 
 export function ParticipantAttendance({
   participants,
   activeIds,
-  crewProfile = emptyCrewProfile,
   storageNotice,
   onBack,
   onSave,
   onAdd,
   onUpdate,
-  onRename,
-  onSaveCrewProfile = async () => undefined,
   onDelete,
 }: ParticipantAttendanceProps) {
   const [active, setActive] = useState(() => new Set(activeIds))
@@ -64,7 +50,6 @@ export function ParticipantAttendance({
     readonly participant: Participant
     readonly input: ParticipantInput
   }>()
-  const [crew, setCrew] = useState(crewProfile)
   const [deleting, setDeleting] = useState<Participant>()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
@@ -136,7 +121,7 @@ export function ParticipantAttendance({
                       label={participant.name}
                     />
                     <IconButton
-                      aria-label={`Rename ${participant.name}`}
+                      aria-label={`Edit ${participant.name}`}
                       onClick={() =>
                         setEditing({
                           participant,
@@ -144,8 +129,6 @@ export function ParticipantAttendance({
                             name: participant.name,
                             spokenName: participant.spokenName,
                             about: participant.about,
-                            motivationStyle: participant.motivationStyle,
-                            avoid: participant.avoid,
                           },
                         })
                       }
@@ -178,7 +161,7 @@ export function ParticipantAttendance({
           <Stack spacing={1}>
             <Typography variant="h5">Manage roster</Typography>
             <Typography variant="body2" color="text.secondary">
-              Profiles are reused when generating crew-personalized sayings.
+              Names, optional nicknames, and notes are stored only on this device.
             </Typography>
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -200,60 +183,6 @@ export function ParticipantAttendance({
               }
             >
               Add
-            </Button>
-          </Stack>
-
-          <Divider />
-          <Stack spacing={2}>
-            <Stack spacing={0.5}>
-              <Typography variant="h5">Crew profile</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Shared context and running jokes used for personalized generation.
-              </Typography>
-            </Stack>
-            <TextField
-              label="Crew name"
-              value={crew.name}
-              onChange={(event) => setCrew({ ...crew, name: event.target.value })}
-              slotProps={{ htmlInput: { maxLength: 80 } }}
-            />
-            <TextField
-              multiline
-              minRows={3}
-              label="About the crew"
-              value={crew.about}
-              onChange={(event) => setCrew({ ...crew, about: event.target.value })}
-              slotProps={{ htmlInput: { maxLength: 2_000 } }}
-            />
-            <TextField
-              select
-              label="Crew motivation style"
-              value={crew.motivationStyle}
-              onChange={(event) => setCrew({
-                ...crew,
-                motivationStyle: event.target.value as CrewProfile['motivationStyle'],
-              })}
-            >
-              {crewMotivationStyles.map((style) => (
-                <MenuItem key={style} value={style}>
-                  {`${style[0].toUpperCase()}${style.slice(1)}`}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              multiline
-              minRows={2}
-              label="Crew-wide things to avoid"
-              value={crew.avoid}
-              onChange={(event) => setCrew({ ...crew, avoid: event.target.value })}
-              slotProps={{ htmlInput: { maxLength: 1_000 } }}
-            />
-            <Button
-              variant="outlined"
-              disabled={busy}
-              onClick={() => void run(() => onSaveCrewProfile(crew))}
-            >
-              Save crew profile
             </Button>
           </Stack>
         </Stack>
@@ -280,8 +209,8 @@ export function ParticipantAttendance({
           <Stack spacing={2} sx={{ mt: 2 }}>
             <TextField
               fullWidth
-              label="Spoken name"
-              helperText="Optional pronunciation-friendly spelling or nickname."
+              label="Nickname / spoken name"
+              helperText="Optional name used when spoken motivation addresses them."
               value={editing?.input.spokenName ?? ''}
               onChange={(event) =>
                 setEditing((current) => current === undefined ? undefined : {
@@ -289,12 +218,14 @@ export function ParticipantAttendance({
                   input: { ...current.input, spokenName: event.target.value },
                 })
               }
+              slotProps={{ htmlInput: { maxLength: 80 } }}
             />
             <TextField
               fullWidth
               multiline
               minRows={3}
-              label="About them"
+              label="About"
+              helperText="Optional notes for your reference."
               value={editing?.input.about ?? ''}
               onChange={(event) =>
                 setEditing((current) => current === undefined ? undefined : {
@@ -302,42 +233,7 @@ export function ParticipantAttendance({
                   input: { ...current.input, about: event.target.value },
                 })
               }
-            />
-            <TextField
-              select
-              fullWidth
-              label="Motivation style"
-              value={editing?.input.motivationStyle ?? 'crew-default'}
-              onChange={(event) =>
-                setEditing((current) => current === undefined ? undefined : {
-                  ...current,
-                  input: {
-                    ...current.input,
-                    motivationStyle: event.target.value as ParticipantInput['motivationStyle'],
-                  },
-                })
-              }
-            >
-              {participantMotivationStyles.map((style) => (
-                <MenuItem key={style} value={style}>
-                  {style === 'crew-default'
-                    ? 'Use crew default'
-                    : `${style[0].toUpperCase()}${style.slice(1)}`}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              fullWidth
-              multiline
-              minRows={2}
-              label="Things to avoid"
-              value={editing?.input.avoid ?? ''}
-              onChange={(event) =>
-                setEditing((current) => current === undefined ? undefined : {
-                  ...current,
-                  input: { ...current.input, avoid: event.target.value },
-                })
-              }
+              slotProps={{ htmlInput: { maxLength: 2_000 } }}
             />
           </Stack>
         </DialogContent>
@@ -348,10 +244,7 @@ export function ParticipantAttendance({
             onClick={() =>
               void run(async () => {
                 if (!editing) return
-                if (onUpdate) await onUpdate(editing.participant.id, editing.input)
-                else if (onRename) {
-                  await onRename(editing.participant.id, editing.input.name)
-                }
+                await onUpdate(editing.participant.id, editing.input)
                 setEditing(undefined)
               })
             }

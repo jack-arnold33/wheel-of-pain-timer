@@ -18,8 +18,7 @@ const phases = buildWorkoutSequence({
 
 const pack: ContentPack = {
   id: 'test',
-  schemaVersion: 2,
-  addressingMode: 'participant-prefix',
+  schemaVersion: 1,
   name: 'Test',
   voiceInstructions: 'Sound calm but firm.',
   sayings: { work: ['Work.'], cycleRest: ['Rest.'], finished: ['Done.'] },

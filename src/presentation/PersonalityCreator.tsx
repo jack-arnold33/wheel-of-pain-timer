@@ -1,18 +1,13 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
-import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import {
   Alert,
   Box,
   Button,
-  Checkbox,
   Container,
   Divider,
-  FormControlLabel,
   Paper,
-  Radio,
-  RadioGroup,
   Stack,
   TextField,
   Typography,
@@ -31,17 +26,8 @@ import {
   type PersonalityAuthoringDraft,
 } from '../domain/contentPacks/personalityAuthoring'
 import type { ContentPackDraft } from '../domain/contentPacks/types'
-import type { CrewProfile, Participant } from '../domain/participants/types'
-import {
-  generateOpenAiPersonality,
-  OpenAiPersonalityError,
-} from '../services/openAiPersonality'
 
 interface PersonalityCreatorProps {
-  readonly participants: readonly Participant[]
-  readonly activeParticipantIds: readonly string[]
-  readonly crewProfile: CrewProfile
-  readonly openAiFeaturesEnabled: boolean
   readonly onCancel: () => void
   readonly onSave: (draft: ContentPackDraft) => Promise<boolean>
 }
@@ -69,41 +55,14 @@ const lineCount = (value: string) =>
     .split(/\r?\n/u)
     .filter((line) => line.trim().replace(/^•\s*/u, '').length > 0).length
 
-const generationError = (error: unknown) => {
-  if (!(error instanceof OpenAiPersonalityError)) {
-    return error instanceof Error ? error.message : 'The sayings could not be generated.'
-  }
-  if (error.code === 'not-configured') return 'Save an OpenAI API key in Settings first.'
-  if (error.code === 'authentication') return 'The OpenAI API key was rejected.'
-  if (error.code === 'rate-limited') return 'OpenAI is rate limited. Try again shortly.'
-  if (error.code === 'timeout') return 'Generation took too long. Try again.'
-  if (error.code === 'invalid-response') return 'OpenAI returned sayings the app could not validate. Try again.'
-  return 'OpenAI generation is unavailable right now. You can still use the copy-and-paste option.'
-}
-
-export function PersonalityCreator({
-  participants,
-  activeParticipantIds,
-  crewProfile,
-  openAiFeaturesEnabled,
-  onCancel,
-  onSave,
-}: PersonalityCreatorProps) {
-  const [draft, setDraft] = useState(() => {
-    const stored = loadPersonalityAuthoringDraft()
-    return stored.selectedParticipantIds.length === 0
-      ? { ...stored, selectedParticipantIds: [...activeParticipantIds] }
-      : stored
-  })
+export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps) {
+  const [draft, setDraft] = useState(loadPersonalityAuthoringDraft)
   const [error, setError] = useState<string>()
   const [notice, setNotice] = useState<string>()
   const [showPrompt, setShowPrompt] = useState(false)
   const [busy, setBusy] = useState(false)
   const errorRef = useRef<HTMLDivElement>(null)
-  const prompt = useMemo(
-    () => buildPersonalityPrompt(draft, participants, crewProfile),
-    [crewProfile, draft, participants],
-  )
+  const prompt = useMemo(() => buildPersonalityPrompt(draft), [draft])
 
   useEffect(() => savePersonalityAuthoringDraft(draft), [draft])
   useEffect(() => {
@@ -138,20 +97,6 @@ export function PersonalityCreator({
       setNotice(undefined)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'The response could not be read.')
-    }
-  }
-
-  const generate = async () => {
-    setError(undefined)
-    setNotice(undefined)
-    setBusy(true)
-    try {
-      const pack = await generateOpenAiPersonality(draft, participants, crewProfile)
-      setDraft((current) => authoringDraftFromPack(current, pack))
-    } catch (caught) {
-      setError(generationError(caught))
-    } finally {
-      setBusy(false)
     }
   }
 
@@ -209,55 +154,6 @@ export function PersonalityCreator({
                     onChange={(event) => update('name', event.target.value)}
                     slotProps={{ htmlInput: { maxLength: 80 } }}
                   />
-                  <Stack spacing={1}>
-                    <Typography variant="h6">Saying style</Typography>
-                    <RadioGroup
-                      value={draft.mode}
-                      onChange={(_, value) => update('mode', value as 'classic' | 'crew')}
-                    >
-                      <FormControlLabel
-                        value="classic"
-                        control={<Radio />}
-                        label="Classic call-outs — the app adds a rotating participant name"
-                      />
-                      <FormControlLabel
-                        value="crew"
-                        control={<Radio />}
-                        label="Crew-personalized — names and profile facts are written into the sayings"
-                      />
-                    </RadioGroup>
-                  </Stack>
-                  {draft.mode === 'crew' && (
-                    <Stack spacing={1}>
-                      <Typography variant="h6">People to include</Typography>
-                      {participants.length === 0 ? (
-                        <Alert severity="info">Add participant profiles before generating crew sayings.</Alert>
-                      ) : participants.map((participant) => (
-                        <FormControlLabel
-                          key={participant.id}
-                          control={
-                            <Checkbox
-                              checked={draft.selectedParticipantIds.includes(participant.id)}
-                              onChange={(_, checked) =>
-                                update(
-                                  'selectedParticipantIds',
-                                  checked
-                                    ? [...draft.selectedParticipantIds, participant.id]
-                                    : draft.selectedParticipantIds.filter((id) => id !== participant.id),
-                                )
-                              }
-                            />
-                          }
-                          label={participant.name}
-                        />
-                      ))}
-                      {crewProfile.name && (
-                        <Typography variant="body2" color="text.secondary">
-                          Using the saved {crewProfile.name} crew profile.
-                        </Typography>
-                      )}
-                    </Stack>
-                  )}
                   <TextField
                     fullWidth
                     multiline
@@ -291,32 +187,14 @@ export function PersonalityCreator({
               <Stack spacing={1.5}>
                 <Button
                   variant="contained"
-                  startIcon={<AutoAwesomeRoundedIcon />}
-                  disabled={
-                    busy ||
-                    !openAiFeaturesEnabled ||
-                    draft.name.trim().length === 0 ||
-                    (draft.mode === 'crew' && draft.selectedParticipantIds.length === 0)
-                  }
-                  onClick={() => void generate()}
-                >
-                  {busy ? 'Generating…' : 'Generate with OpenAI'}
-                </Button>
-                {!openAiFeaturesEnabled && (
-                  <Typography variant="body2" color="text.secondary">
-                    Enable OpenAI features in Settings to generate here.
-                  </Typography>
-                )}
-                <Button
-                  variant="outlined"
                   startIcon={<ContentCopyRoundedIcon />}
                   disabled={draft.name.trim().length === 0}
                   onClick={() => void copyPrompt()}
                 >
-                  Copy prompt for another AI
+                  Copy prompt for ChatGPT
                 </Button>
                 <Typography variant="body2" color="text.secondary">
-                  The copy-and-paste workflow remains available as a fallback.
+                  The app does not contact ChatGPT. You choose what to copy and paste.
                 </Typography>
               </Stack>
 

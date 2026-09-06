@@ -55,8 +55,8 @@ Version 1 does not require accounts or a centralized list of users.
 2. **Reliable before clever.** Humor and visual effects must not compromise
    timer accuracy or controls.
 3. **Local by default.** Routines, preferences, and imported content stay on the
-   device unless the user explicitly exports them or invokes an enabled OpenAI
-   generation or speech feature.
+   device unless the user explicitly exports them or opts in to online speech
+   synthesis for sayings.
 4. **Fun is configurable.** A generic timer works without a content pack; each
    user or workout group can supply its own personality.
 5. **No workout-time surprises.** Core timer behavior works without a network
@@ -74,9 +74,7 @@ Version 1 does not require accounts or a centralized list of users.
 - Store routines and preferences locally
 - Offer Wheel of Pain, Cold Steel, Neon Circuit, and Day Shift as selectable
   built-in themes with a device-local preference and safe default fallback
-- Configure reusable device-local participant and crew profiles
-- Generate either classic rotating call-outs or name-aware crew sayings through
-  OpenAI, with a manual copy-and-paste authoring fallback
+- Configure a device-local participant roster for spoken motivation
 - Import, select, and remove local-first content packs
 - Save imported content packs on the current device for later selection or
   removal
@@ -104,11 +102,12 @@ Version 1 does not require accounts or a centralized list of users.
 - Timer state remains correct after ordinary browser callback delays or brief
   foreground/background transitions, within documented iOS limitations.
 - A user can import a private pack without its contents being sent to a server.
-- One explicit OpenAI opt-in covers direct saying generation and speech. Direct
-  generation sends its guidance and selected profiles with response storage
-  disabled; speech sends one utterance and voice instructions.
-- Participant and crew profiles are stored on-device, included in local backup,
-  and remain separate from portable content packs.
+- Online speech synthesis may transmit an individual saying and selected
+  participant name only after explicit opt-in; pack files are never bundled
+  with the app or committed to its public source repository.
+- The participant roster is stored on-device and remains separate from portable
+  content packs. Under the online-speech opt-in, the selected name may be sent
+  with an individual saying for synthesis.
 - The interface remains fully usable when all humorous content is disabled.
 - Adding a built-in theme does not require changes to timer behavior, routine
   data, content packs, or screen semantics, and every theme preserves the same

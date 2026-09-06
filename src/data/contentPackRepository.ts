@@ -31,7 +31,6 @@ const copyPack = (record: ContentPackRecord): ContentPack => {
     ...record.extensions,
     schemaVersion: record.schemaVersion,
     name: record.name,
-    addressingMode: record.addressingMode,
     voiceInstructions: record.voiceInstructions,
     sayings: record.sayings,
   })
@@ -56,7 +55,6 @@ const normalizeDraft = (draft: ContentPackDraft) =>
     ...draft.extensions,
     schemaVersion: draft.schemaVersion,
     name: draft.name,
-    addressingMode: draft.addressingMode,
     voiceInstructions: draft.voiceInstructions,
     sayings: draft.sayings,
   })

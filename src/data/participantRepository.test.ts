@@ -23,14 +23,24 @@ afterEach(async () => database.delete())
 
 describe('participant repository', () => {
   it('creates, renames, lists, and removes participants', async () => {
-    const created = await repository.create('  Jarno  ')
+    const created = await repository.create({
+      name: '  Jarno Arnold  ',
+      spokenName: '  Jarno  ',
+      about: '  Likes kettlebells.  ',
+    })
     expect(created).toMatchObject({
       id: 'participant:test-1',
-      name: 'Jarno',
+      name: 'Jarno Arnold',
+      spokenName: 'Jarno',
+      about: 'Likes kettlebells.',
       createdAt: 1_000,
     })
     const renamed = await repository.rename(created.id, 'J')
-    expect(renamed.name).toBe('J')
+    expect(renamed).toMatchObject({
+      name: 'J',
+      spokenName: 'Jarno',
+      about: 'Likes kettlebells.',
+    })
     expect(await repository.list()).toEqual([renamed])
     await repository.delete(created.id)
     expect(await repository.list()).toEqual([])
@@ -44,33 +54,6 @@ describe('participant repository', () => {
     await expect(repository.create('jarno')).rejects.toBeInstanceOf(
       ParticipantNameConflictError,
     )
-  })
-
-  it('stores and updates reusable participant profile details', async () => {
-    const created = await repository.create({
-      name: 'Alexandra',
-      spokenName: 'Alex',
-      about: 'Always chooses the heaviest kettlebell.',
-      motivationStyle: 'competitive',
-      avoid: 'Knee jokes',
-    })
-
-    expect(created).toMatchObject({
-      spokenName: 'Alex',
-      about: 'Always chooses the heaviest kettlebell.',
-      motivationStyle: 'competitive',
-      avoid: 'Knee jokes',
-    })
-
-    const updated = await repository.update(created.id, {
-      name: 'Alexandra',
-      spokenName: 'Lex',
-      about: created.about,
-      motivationStyle: 'playful',
-      avoid: created.avoid,
-    })
-    expect(updated).toMatchObject({ spokenName: 'Lex', motivationStyle: 'playful' })
-    expect((await repository.get(created.id))?.spokenName).toBe('Lex')
   })
 })
 

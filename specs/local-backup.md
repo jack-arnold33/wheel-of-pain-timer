@@ -10,14 +10,14 @@ file or its contents.
 The app-supplied Wheel of Pain routine and built-in Personality are not stored
 as user data. They remain available after restore.
 
-## Version 2 schema
+## Version 1 schema
 
 The root object contains every required collection and one complete preference
 object:
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 1,
   "routines": [
     {
       "id": "routine:example",
@@ -42,30 +42,23 @@ object:
     "themeId": "wheel-of-pain",
     "timerSoundsEnabled": true,
     "spokenMotivationEnabled": true,
-    "openAiFeaturesEnabled": false,
-    "useOpenAiVoice": false,
+    "allowOnlineVoices": false,
     "voiceId": null,
     "speechRate": 1,
     "selectedContentPackId": null,
-    "activeParticipantIds": [],
-    "crewProfile": {
-      "name": "",
-      "about": "",
-      "motivationStyle": "encouraging",
-      "avoid": ""
-    }
+    "activeParticipantIds": []
   }
 }
 ```
 
-Content-pack entries use the stored version 2 pack fields: `id`,
-`schemaVersion`, `name`, `addressingMode`, `voiceInstructions`, `sayings`, `extensions`,
+Content-pack entries use the stored version 1 pack fields: `id`,
+`schemaVersion`, `name`, `voiceInstructions`, `sayings`, `extensions`,
 `createdAt`, and `updatedAt`.
-Participant entries use `id`, `name`, `spokenName`, `about`,
-`motivationStyle`, `avoid`, `createdAt`, and `updatedAt`. The preferences object
-contains the reusable crew profile. The OpenAI API key remains excluded.
+Participant entries use `id`, `name`, optional `spokenName`, optional `about`,
+`createdAt`, and `updatedAt`. The spoken name is limited to 80 characters and
+About notes are limited to 2,000 characters.
 
-Version 2 recognizes the built-in theme identifiers `wheel-of-pain`,
+Version 1 recognizes the built-in theme identifiers `wheel-of-pain`,
 `cold-steel`, `neon-circuit`, and `day-shift`. A backup may still contain an
 unknown string for forward compatibility; restore preserves it, while the app
 uses Wheel of Pain and reports the fallback until that identifier becomes

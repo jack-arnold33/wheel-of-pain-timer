@@ -11,9 +11,8 @@ import type {
   ParticipantRecord,
   UserRoutineRecord,
 } from '../../data/database'
-import { crewMotivationStyles, participantMotivationStyles } from '../participants/types'
 
-export const LOCAL_BACKUP_SCHEMA_VERSION = 2 as const
+export const LOCAL_BACKUP_SCHEMA_VERSION = 1 as const
 
 export interface LocalBackup {
   readonly schemaVersion: typeof LOCAL_BACKUP_SCHEMA_VERSION
@@ -51,14 +50,20 @@ const text = (value: unknown, label: string): string => {
   return value
 }
 
-const optionalText = (value: unknown, label: string, limit: number): string => {
-  if (value === undefined) return ''
+const optionalText = (
+  value: unknown,
+  label: string,
+  maximumLength: number,
+): string | undefined => {
+  if (value === undefined) return undefined
   if (typeof value !== 'string') {
     throw new InvalidLocalBackupError(`${label} must be text.`)
   }
   const normalized = value.trim()
-  if (Array.from(normalized).length > limit) {
-    throw new InvalidLocalBackupError(`${label} exceeds ${limit} characters.`)
+  if (Array.from(normalized).length > maximumLength) {
+    throw new InvalidLocalBackupError(
+      `${label} exceeds ${maximumLength} characters.`,
+    )
   }
   return normalized
 }
@@ -121,7 +126,6 @@ const validatePack = (value: unknown, index: number): ContentPackRecord => {
       ...(record(input.extensions, `Content pack ${index + 1} extensions`)),
       schemaVersion: input.schemaVersion,
       name: input.name,
-      addressingMode: input.addressingMode,
       voiceInstructions: input.voiceInstructions,
       sayings: input.sayings,
     })
@@ -148,12 +152,12 @@ const validateParticipant = (value: unknown, index: number): ParticipantRecord =
   return {
     id: text(input.id, `Participant ${index + 1} id`),
     name,
-    spokenName: optionalText(input.spokenName, `Participant ${index + 1} spoken name`, 80),
-    about: optionalText(input.about, `Participant ${index + 1} background`, 2_000),
-    motivationStyle: participantMotivationStyles.includes(input.motivationStyle as never)
-      ? input.motivationStyle as ParticipantRecord['motivationStyle']
-      : 'crew-default',
-    avoid: optionalText(input.avoid, `Participant ${index + 1} avoid guidance`, 1_000),
+    spokenName: optionalText(
+      input.spokenName,
+      `Participant ${index + 1} spokenName`,
+      80,
+    ),
+    about: optionalText(input.about, `Participant ${index + 1} about`, 2_000),
     createdAt: timestamp(input.createdAt, `Participant ${index + 1} createdAt`),
     updatedAt: timestamp(input.updatedAt, `Participant ${index + 1} updatedAt`),
   }
@@ -221,27 +225,17 @@ const validatePreferences = (
       'Remembered attendance references a participant not contained in the backup.',
     )
   }
-  const crewProfile = record(input.crewProfile, 'Crew profile')
   return {
     themeId,
     timerSoundsEnabled: boolean('timerSoundsEnabled'),
     transitionVolume: volume('transitionVolume'),
     spokenMotivationEnabled: boolean('spokenMotivationEnabled'),
     voiceVolume: volume('voiceVolume'),
-    openAiFeaturesEnabled: boolean('openAiFeaturesEnabled'),
-    useOpenAiVoice: boolean('useOpenAiVoice'),
+    allowOnlineVoices: boolean('allowOnlineVoices'),
     voiceId,
     speechRate,
     selectedContentPackId,
     activeParticipantIds,
-    crewProfile: {
-      name: optionalText(crewProfile.name, 'Crew profile name', 80),
-      about: optionalText(crewProfile.about, 'Crew profile background', 2_000),
-      motivationStyle: crewMotivationStyles.includes(crewProfile.motivationStyle as never)
-        ? crewProfile.motivationStyle as AppPreferences['crewProfile']['motivationStyle']
-        : 'encouraging',
-      avoid: optionalText(crewProfile.avoid, 'Crew profile avoid guidance', 1_000),
-    },
   }
 }
 
@@ -249,7 +243,7 @@ export function validateLocalBackup(value: unknown): LocalBackup {
   const input = record(value, 'Backup')
   if (input.schemaVersion !== LOCAL_BACKUP_SCHEMA_VERSION) {
     throw new InvalidLocalBackupError(
-      'schemaVersion is required and must be the supported integer version 2.',
+      'schemaVersion is required and must be the supported integer version 1.',
     )
   }
   const routines = collection(input.routines, 'Routines').map(validateRoutine)

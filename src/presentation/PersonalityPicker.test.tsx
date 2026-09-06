@@ -7,8 +7,7 @@ import { wheelOfPainTheme } from './themes/wheelOfPainTheme'
 
 const pack: ContentPack = {
   id: 'pack:test',
-  schemaVersion: 2,
-  addressingMode: 'participant-prefix',
+  schemaVersion: 1,
   name: 'Tuesday Chaos',
   voiceInstructions: 'Sound dry and theatrical.',
   sayings: { general: ['Move.'], work: ['Go.'] },

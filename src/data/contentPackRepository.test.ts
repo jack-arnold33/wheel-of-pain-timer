@@ -11,8 +11,7 @@ let database: WheelOfPainDatabase
 let repository: ContentPackRepository
 
 const draft: ContentPackDraft = {
-  schemaVersion: 2,
-  addressingMode: 'participant-prefix',
+  schemaVersion: 1,
   name: 'Tuesday Chaos',
   voiceInstructions: 'Sound dry, theatrical, and encouraging.',
   sayings: { general: ['Move.'] },
@@ -94,9 +93,8 @@ describe('content-pack repository', () => {
   it('normalizes a legacy stored pack with the default voice instructions', async () => {
     await database.contentPacks.add({
       id: 'pack:legacy',
-      schemaVersion: 2,
+      schemaVersion: 1,
       name: 'Legacy',
-      addressingMode: 'participant-prefix',
       sayings: { general: ['Move.'] },
       extensions: {},
       createdAt: 1,

@@ -147,8 +147,7 @@ describe('App workout flow', () => {
     }
     const pack: ContentPack = {
       id: 'pack:spoken',
-      schemaVersion: 2,
-      addressingMode: 'participant-prefix',
+      schemaVersion: 1,
       name: 'Spoken Pack',
       voiceInstructions: 'Sound upbeat and direct.',
       sayings: { work: ['Move now.'] },
@@ -253,8 +252,7 @@ describe('App workout flow', () => {
   it('selects a saved Personality and returns to the same pre-workout screen', async () => {
     const pack: ContentPack = {
       id: 'pack:chaos',
-      schemaVersion: 2,
-      addressingMode: 'participant-prefix',
+      schemaVersion: 1,
       name: 'Tuesday Chaos',
       voiceInstructions: 'Sound dry and theatrical.',
       sayings: { general: ['Move.'], work: ['Go.'] },
@@ -291,8 +289,7 @@ describe('App workout flow', () => {
   it('imports a Personality in Settings without selecting it', async () => {
     const imported: ContentPack = {
       id: 'pack:phone',
-      schemaVersion: 2,
-      addressingMode: 'participant-prefix',
+      schemaVersion: 1,
       name: 'Phone Fun',
       voiceInstructions: 'Sound warm and encouraging.',
       sayings: { general: ['Keep moving.'] },
