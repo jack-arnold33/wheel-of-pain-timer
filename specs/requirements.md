@@ -113,12 +113,12 @@ reused for a different behavior.
   so spoken motivation can be used without importing a pack. It can be selected
   or inspected but not renamed, exported, or removed. Its voice instructions
   are the default for packs that do not supply their own.
-- **C-017:** The user can create a Personality on the current device by copying
-  an app-generated prompt to an AI assistant, pasting the response, reviewing
-  and editing the generated voice instructions and categorized sayings, and
-  choosing Save Personality. The prompt may include only participant profiles
-  explicitly selected by the user. The app does not contact the assistant or
-  transmit the authoring fields itself.
+- **C-017:** The user can create a Personality on the current device either by
+  sending the authoring brief directly to OpenAI with the project API key saved
+  in Settings, or by copying the same app-generated brief to an AI assistant
+  and pasting its response. Both paths open the same review and editing step
+  before Save Personality. Only participant profiles explicitly selected by the
+  user may be included. Manual copy/paste does not contact the assistant.
 - **C-018:** Pasted authoring content accepts a valid v1 JSON object with or
   without a Markdown code fence, or plain text as work sayings. New authoring
   presents and creates only work, cycleRest, and finished sayings; `general`
@@ -131,6 +131,11 @@ reused for a different behavior.
   notes. Classic sayings receive the shuffled participant prefix during
   playback; personalized sayings are spoken exactly as authored without an
   additional prefix.
+- **C-021:** Direct OpenAI authoring requests structured v1 Personality data,
+  does not store the response at OpenAI when the API supports that option,
+  preserves the user-selected classic or personalized addressing mode, and
+  reports missing-key, authentication, rate-limit, timeout, network, service,
+  and invalid-response failures without discarding the local authoring draft.
 
 ## Local storage and privacy
 
@@ -140,10 +145,11 @@ reused for a different behavior.
   delete locally stored information.
 - **D-003:** The app provides an export path before destructive bulk deletion.
 - **D-004:** The app makes no network request containing a routine, pack, or
-  preference except when the user explicitly exports or shares it. After a
-  separate opt-in, the app may transmit an individual saying and selected
-  participant name plus the selected pack's voice instructions for online
-  speech synthesis but must not upload the pack or roster as a collection.
+  preference except for an explicitly requested online feature. OpenAI speech
+  may transmit one saying, its selected participant name, and the selected
+  pack's voice instructions. Choosing Generate with OpenAI may transmit the
+  entered authoring guidance and only the participant profiles checked in that
+  authoring screen. No other pack or roster collection is uploaded.
 - **D-005:** The app does not require analytics or tracking for core operation.
 - **D-006:** The user can manage an optional participant roster stored on the
   current device. Each participant has a required display name plus optional

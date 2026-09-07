@@ -450,20 +450,38 @@ And analytics or tracking is not required for any core operation
 
 ## Content-pack lifecycle
 
-### Create a Personality with help from an AI assistant on a phone
+### Create a Personality directly or with help from an AI assistant on a phone
 
-**Requirements:** C-002, C-003, C-006, C-011, C-017, C-018, C-019, C-020
+**Requirements:** C-002, C-003, C-006, C-011, C-017, C-018, C-019, C-020, C-021
 
 ```gherkin
 Given the user starts Create Personality on a phone
 And enters a name and optional tone, themes, and subjects to avoid
 And optionally enables participant personalization and checks the profiles to use
+When the user chooses Generate with OpenAI
+Then the authoring brief and only the checked participant profiles are sent
+  using the project API key saved in Settings
+And structured v1 sayings and voice instructions are opened in Review
+And the classic or personalized addressing choice is preserved
+And the current Personality selection remains unchanged
+```
+
+```gherkin
+Given direct generation fails because of configuration, authentication, rate
+  limiting, timeout, connectivity, service availability, or invalid output
+When the failure is reported
+Then the unfinished authoring draft remains available
+And the user can retry or use the manual copy-and-paste path
+```
+
+```gherkin
+Given the user is creating a Personality manually
 When the user chooses Copy prompt for ChatGPT
 Then a schema-aware authoring prompt is copied or shown for manual copying
 And only checked participants' names, spoken names, and About notes are present
 And the prompt requests bounded voice-delivery instructions matching the
   Personality without names, sayings, sound effects, or additional dialogue
-And the app does not contact ChatGPT or transmit the authoring fields
+And the manual path does not contact ChatGPT or transmit the authoring fields
 And the unfinished draft is saved on this device
 When the PWA reloads after the user switches apps
 Then the unfinished draft is recovered
