@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { AppPreferences } from '../domain/preferences/appPreferences'
 import type {
+  ContentPackAddressingMode,
   ContentPackSayings,
 } from '../domain/contentPacks/types'
 import type { RoutineTiming } from '../domain/timer/types'
@@ -25,6 +26,7 @@ export interface ContentPackRecord {
   readonly id: string
   readonly schemaVersion: 1
   readonly name: string
+  readonly addressingMode?: ContentPackAddressingMode
   readonly voiceInstructions?: string
   readonly sayings: ContentPackSayings
   readonly extensions: Readonly<Record<string, unknown>>
@@ -98,8 +100,11 @@ export class WheelOfPainDatabase extends Dexie {
       await transaction.table('contentPacks').toCollection().modify((pack) => {
         if (pack.schemaVersion === 2) {
           pack.schemaVersion = 1
-          delete pack.addressingMode
         }
+        if (
+          pack.addressingMode !== 'participant-prefix' &&
+          pack.addressingMode !== 'authored'
+        ) pack.addressingMode = 'participant-prefix'
       })
       await transaction.table('preferences').toCollection().modify((preferences) => {
         if (

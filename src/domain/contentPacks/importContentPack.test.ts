@@ -24,6 +24,7 @@ describe('content-pack import', () => {
     expect(pack).toEqual({
       schemaVersion: 1,
       name: 'Tuesday Chaos',
+      addressingMode: 'participant-prefix',
       voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
       sayings: {
         general: ['Prepare your excuses.', 'Form first.'],
@@ -49,6 +50,7 @@ describe('content-pack import', () => {
     expect(pack).toEqual({
       schemaVersion: 1,
       name: 'Crew',
+      addressingMode: 'participant-prefix',
       voiceInstructions: 'Sound dry and theatrical.',
       sayings: { work: ['Go!'], finished: ['Done.'] },
       extensions: { author: 'Local user' },

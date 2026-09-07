@@ -64,6 +64,7 @@ export class MotivationSession {
     }
     const saying = rotation.next()
     if (saying === undefined) return undefined
+    if (this.pack.addressingMode === 'authored') return saying
     const participant = this.participantRotation.next()
     return participant === undefined
       ? saying

@@ -9,7 +9,7 @@ afterEach(async () => {
 })
 
 describe('database migrations', () => {
-  it('rolls crew-personality records back without losing packs or OpenAI voice selection', async () => {
+  it('simplifies crew-era records without losing personalized playback or profiles', async () => {
     const name = `database-migration-${crypto.randomUUID()}`
     databaseNames.push(name)
     const versionFive = new Dexie(name)
@@ -23,7 +23,7 @@ describe('database migrations', () => {
     await versionFive.table('contentPacks').add({
       id: 'pack:crew-era',
       schemaVersion: 2,
-      addressingMode: 'participant-prefix',
+      addressingMode: 'authored',
       name: 'Still Usable',
       sayings: { general: ['Keep moving.'] },
       extensions: {},
@@ -56,9 +56,9 @@ describe('database migrations', () => {
     expect(pack).toMatchObject({
       id: 'pack:crew-era',
       schemaVersion: 1,
+      addressingMode: 'authored',
       name: 'Still Usable',
     })
-    expect(pack).not.toHaveProperty('addressingMode')
     expect(preferences).toMatchObject({ allowOnlineVoices: true })
     expect(preferences).not.toHaveProperty('useOpenAiVoice')
     expect(preferences).not.toHaveProperty('crewProfile')

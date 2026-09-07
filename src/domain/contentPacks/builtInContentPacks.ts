@@ -7,6 +7,7 @@ export const builtInStarterPack: ContentPack = {
   id: BUILT_IN_STARTER_PACK_ID,
   schemaVersion: 1,
   name: 'Workout Starter',
+  addressingMode: 'participant-prefix',
   voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
   sayings: {
     general: ['Keep moving.', 'You have got this.'],

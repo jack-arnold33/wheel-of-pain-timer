@@ -126,6 +126,7 @@ const validatePack = (value: unknown, index: number): ContentPackRecord => {
       ...(record(input.extensions, `Content pack ${index + 1} extensions`)),
       schemaVersion: input.schemaVersion,
       name: input.name,
+      addressingMode: input.addressingMode,
       voiceInstructions: input.voiceInstructions,
       sayings: input.sayings,
     })

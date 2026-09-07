@@ -28,6 +28,8 @@ describe('Personality authoring', () => {
     expect(prompt).toContain('Themes, recurring jokes, or group context: The ceremonial kettlebell')
     expect(prompt).toContain('Avoid: Comments about appearance')
     expect(prompt).toContain('Do not include participant names or name placeholders')
+    expect(prompt).toContain('sole authority for tone')
+    expect(prompt).not.toContain('Be creative, encouraging')
     expect(prompt).toContain('"voiceInstructions"')
     expect(prompt).toContain('tone, energy, pacing, emphasis, and emotional style')
     expect(prompt).toContain('no more than 500 characters')
@@ -44,6 +46,43 @@ describe('Personality authoring', () => {
     expect(prompt).not.toContain('general sayings')
   })
 
+  it('includes only selected participant profiles in a personalized prompt', () => {
+    const prompt = buildPersonalityPrompt(
+      {
+        ...emptyPersonalityAuthoringDraft(),
+        name: 'Personal Chaos',
+        personalizeWithParticipants: true,
+        selectedParticipantIds: ['participant:alex'],
+      },
+      [
+        {
+          id: 'participant:alex',
+          name: 'Alexandra',
+          spokenName: 'Alex',
+          about: 'Always chooses the heaviest kettlebell.',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+        {
+          id: 'participant:sam',
+          name: 'Sam',
+          about: 'Never skips leg day.',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ],
+    )
+
+    expect(prompt).toContain('Participant display name: Alexandra')
+    expect(prompt).toContain('Name to use in sayings: Alex')
+    expect(prompt).toContain('Always chooses the heaviest kettlebell.')
+    expect(prompt).not.toContain('Participant display name: Sam')
+    expect(prompt).not.toContain('Never skips leg day.')
+    expect(prompt).toContain('no more than 25 percent')
+    expect(prompt).toContain('"addressingMode": "authored"')
+    expect(prompt).toContain('does not add a name prefix')
+  })
+
   it('parses JSON copied with a Markdown fence', () => {
     const pack = parsePastedPersonality(
       'Here you go:\n```json\n{"schemaVersion":1,"name":"Phone Crew","voiceInstructions":"Sound playful and quick.","sayings":{"work":["Go."],"finished":["Done."]}}\n```',
@@ -53,6 +92,7 @@ describe('Personality authoring', () => {
     expect(pack).toEqual({
       schemaVersion: 1,
       name: 'Phone Crew',
+      addressingMode: 'participant-prefix',
       voiceInstructions: 'Sound playful and quick.',
       sayings: { work: ['Go.'], finished: ['Done.'] },
       extensions: {},
@@ -83,6 +123,7 @@ describe('Personality authoring', () => {
     const draft = authoringDraftFromPack(emptyPersonalityAuthoringDraft(), {
       schemaVersion: 1,
       name: 'Editable',
+      addressingMode: 'participant-prefix',
       voiceInstructions: 'Sound dry and theatrical.',
       sayings: { work: ['First.', 'Second.'], cycleRest: ['Breathe.'] },
       extensions: {},
@@ -95,6 +136,7 @@ describe('Personality authoring', () => {
     expect(contentPackFromAuthoringDraft(draft)).toEqual({
       schemaVersion: 1,
       name: 'Editable',
+      addressingMode: 'participant-prefix',
       voiceInstructions: 'Sound dry and theatrical.',
       sayings: { work: ['First.', 'Second.'], cycleRest: ['Breathe.'] },
       extensions: {},
@@ -105,6 +147,7 @@ describe('Personality authoring', () => {
     const draft = authoringDraftFromPack(emptyPersonalityAuthoringDraft(), {
       schemaVersion: 1,
       name: 'Legacy Paste',
+      addressingMode: 'participant-prefix',
       voiceInstructions: DEFAULT_VOICE_INSTRUCTIONS,
       sayings: { general: ['Keep moving.'] },
       extensions: {},

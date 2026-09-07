@@ -176,12 +176,19 @@ instructions, category counts, total saying count, and that it is saved on this
 device; sayings need not be presented on the active workout screen.
 
 **Create Personality** opens a phone-first authoring screen. The user enters a
-name and optional tone, theme or inside-joke context, and subjects to avoid.
+name and optional tone, theme or inside-joke context, and subjects to avoid. An
+explicit **Personalize sayings with participant names and About details**
+checkbox reveals the roster. Active participants are initially checked, and
+the user can choose the exact profiles included in the prompt.
 **Copy prompt for ChatGPT** copies a self-contained schema-aware prompt while
 also showing it for manual copying. The app does not open or contact ChatGPT.
 The user returns, pastes JSON or plain text, and chooses **Review sayings**.
 **Clear pasted response** empties only the response field so the complete AI
 output can be replaced without clearing the name or authoring guidance.
+
+Classic Personalities add the next active participant's spoken name or display
+name during playback. Personalized Personalities are labeled in the library and
+are spoken exactly as authored so names are not doubled.
 
 Review provides an editable AI voice-instructions field, uses plain-language
 category names, shows one saying per editable line, and explains when each

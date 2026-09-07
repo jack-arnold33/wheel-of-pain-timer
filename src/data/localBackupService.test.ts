@@ -33,6 +33,7 @@ const backup = (): LocalBackup => ({
       id: 'pack:backup',
       schemaVersion: 1,
       name: 'Backup Pack',
+      addressingMode: 'authored',
       voiceInstructions: 'Sound steady and reassuring.',
       sayings: { work: ['Keep moving.'] },
       extensions: {},

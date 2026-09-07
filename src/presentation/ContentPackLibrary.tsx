@@ -30,6 +30,7 @@ import {
   type ContentPack,
   type ContentPackDraft,
 } from '../domain/contentPacks/types'
+import type { Participant } from '../domain/participants/types'
 import { PersonalityCreator } from './PersonalityCreator'
 
 export type ContentPackImportResult =
@@ -38,6 +39,8 @@ export type ContentPackImportResult =
 
 interface ContentPackLibraryProps {
   readonly packs: readonly ContentPack[]
+  readonly participants?: readonly Participant[]
+  readonly activeParticipantIds?: readonly string[]
   readonly storageNotice?: string
   readonly onBack: () => void
   readonly onImport: (draft: ContentPackDraft) => Promise<ContentPackImportResult>
@@ -57,6 +60,7 @@ const exportPack = (pack: ContentPack) => {
     ...pack.extensions,
     schemaVersion: pack.schemaVersion,
     name: pack.name,
+    addressingMode: pack.addressingMode,
     voiceInstructions: pack.voiceInstructions,
     sayings: pack.sayings,
   }
@@ -76,6 +80,8 @@ const exportPack = (pack: ContentPack) => {
 
 export function ContentPackLibrary({
   packs,
+  participants = [],
+  activeParticipantIds = [],
   storageNotice,
   onBack,
   onImport,
@@ -139,6 +145,8 @@ export function ContentPackLibrary({
   if (creating) {
     return (
       <PersonalityCreator
+        participants={participants}
+        activeParticipantIds={activeParticipantIds}
         onCancel={() => setCreating(false)}
         onSave={saveCreatedPack}
       />
@@ -203,6 +211,7 @@ export function ContentPackLibrary({
                       </Stack>
                       <Typography variant="body2" color="text.secondary">
                         {totalSayings(pack)} sayings ·{' '}
+                        {pack.addressingMode === 'authored' ? 'personalized' : 'classic'} ·{' '}
                         {isBuiltInContentPack(pack.id) ? 'included with app' : 'saved on this device'}
                       </Typography>
                     </Stack>
@@ -229,6 +238,11 @@ export function ContentPackLibrary({
                     : 'Saved on this device'}
                 </Typography>
                 <Typography variant="h5">{totalSayings(inspection)} sayings</Typography>
+                <Typography color="text.secondary">
+                  {inspection.addressingMode === 'authored'
+                    ? 'Personalized sayings · spoken exactly as written'
+                    : 'Classic sayings · a rotating participant name is added'}
+                </Typography>
                 <Stack spacing={0.5}>
                   <Typography variant="h6">AI voice instructions</Typography>
                   <Typography color="text.secondary">

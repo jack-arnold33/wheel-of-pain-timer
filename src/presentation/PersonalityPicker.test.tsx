@@ -9,6 +9,7 @@ const pack: ContentPack = {
   id: 'pack:test',
   schemaVersion: 1,
   name: 'Tuesday Chaos',
+  addressingMode: 'participant-prefix',
   voiceInstructions: 'Sound dry and theatrical.',
   sayings: { general: ['Move.'], work: ['Go.'] },
   extensions: {},

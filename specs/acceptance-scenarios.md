@@ -452,13 +452,15 @@ And analytics or tracking is not required for any core operation
 
 ### Create a Personality with help from an AI assistant on a phone
 
-**Requirements:** C-002, C-003, C-006, C-011, C-017, C-018, C-019
+**Requirements:** C-002, C-003, C-006, C-011, C-017, C-018, C-019, C-020
 
 ```gherkin
 Given the user starts Create Personality on a phone
 And enters a name and optional tone, themes, and subjects to avoid
+And optionally enables participant personalization and checks the profiles to use
 When the user chooses Copy prompt for ChatGPT
 Then a schema-aware authoring prompt is copied or shown for manual copying
+And only checked participants' names, spoken names, and About notes are present
 And the prompt requests bounded voice-delivery instructions matching the
   Personality without names, sayings, sound effects, or additional dialogue
 And the app does not contact ChatGPT or transmit the authoring fields
@@ -699,7 +701,7 @@ Scenario: One active participant
   Then that participant prefixes every saying
 ```
 
-### Participant details remain available without crew personalities
+### Participant details remain reusable without a separate crew profile
 
 **Requirements:** C-012, D-006, D-008
 
@@ -709,8 +711,25 @@ When the user edits the participant or reloads the app
 Then all three fields remain available on this device
 And spoken motivation uses the nickname when addressing that participant
 And a local backup export and restore preserves all three fields
-And no crew role, motivation style, avoid list, or generated participant saying
-  is required
+And no crew role, motivation style, avoid list, or separate crew profile is required
+```
+
+### Personalized authoring includes selected profiles and prevents double names
+
+**Requirements:** C-017, C-020, D-006
+
+```gherkin
+Given Alex and Sam have saved participant profiles
+And Alex is active for the current workout
+When the user enables Personalize sayings with participant names and About details
+Then Alex is initially selected and Sam is not
+When the user copies the prompt
+Then Alex's display name, spoken name, and About notes are included
+And Sam's profile is not included
+When the user pastes, reviews, and saves the generated Personality
+Then it is labeled as personalized
+And its sayings are spoken exactly as authored
+And the app does not prepend another participant name
 ```
 
 ### Device and OpenAI voices respect consent and key containment

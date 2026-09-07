@@ -15,6 +15,7 @@ const pack: ContentPack = {
   id: 'pack:test',
   schemaVersion: 1,
   name: 'Tuesday Chaos',
+  addressingMode: 'participant-prefix',
   voiceInstructions: 'Sound dry, theatrical, and encouraging.',
   sayings: {
     general: ['Move.', 'Again.'],
@@ -158,6 +159,7 @@ describe('ContentPackLibrary', () => {
       expect(onImport).toHaveBeenCalledWith({
         schemaVersion: 1,
         name: 'Tuesday Chaos',
+        addressingMode: 'participant-prefix',
         voiceInstructions: 'Sound dry, theatrical, and encouraging.',
         sayings: {
           work: ['Go.', 'Keep moving.'],
@@ -168,6 +170,77 @@ describe('ContentPackLibrary', () => {
       }),
     )
     expect(screen.getByRole('heading', { name: 'Personalities' })).toBeInTheDocument()
+  })
+
+  it('includes selected participant profiles and saves personalized playback', async () => {
+    const onImport = vi.fn().mockResolvedValue({ status: 'saved', pack })
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <ContentPackLibrary
+          packs={[]}
+          participants={[
+            {
+              id: 'participant:alex',
+              name: 'Alexandra',
+              spokenName: 'Alex',
+              about: 'Always chooses the heaviest kettlebell.',
+              createdAt: 1,
+              updatedAt: 1,
+            },
+            {
+              id: 'participant:sam',
+              name: 'Sam',
+              about: 'Never skips leg day.',
+              createdAt: 1,
+              updatedAt: 1,
+            },
+          ]}
+          activeParticipantIds={['participant:alex']}
+          onBack={vi.fn()}
+          onImport={onImport}
+          onReplace={vi.fn()}
+          onRename={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </ThemeProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create Personality' }))
+    fireEvent.change(screen.getByLabelText(/Personality name/u), {
+      target: { value: 'Personal Chaos' },
+    })
+    fireEvent.click(
+      screen.getByRole('checkbox', {
+        name: 'Personalize sayings with participant names and About details',
+      }),
+    )
+    expect(screen.getByRole('checkbox', { name: /Alexandra/ })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Sam' })).not.toBeChecked()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy prompt for ChatGPT' }))
+    const prompt = (await screen.findByLabelText('AI prompt') as HTMLTextAreaElement).value
+    expect(prompt).toContain('Name to use in sayings: Alex')
+    expect(prompt).toContain('Always chooses the heaviest kettlebell.')
+    expect(prompt).not.toContain('Never skips leg day.')
+
+    fireEvent.change(screen.getByLabelText('Paste ChatGPT response'), {
+      target: {
+        value:
+          '```json\n{"schemaVersion":1,"name":"Personal Chaos","addressingMode":"participant-prefix","voiceInstructions":"Sound natural.","sayings":{"work":["Alex, lift the ridiculous thing."]}}\n```',
+      },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Review sayings' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save Personality' }))
+
+    await waitFor(() =>
+      expect(onImport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Personal Chaos',
+          addressingMode: 'authored',
+          sayings: { work: ['Alex, lift the ridiculous thing.'] },
+        }),
+      ),
+    )
   })
 
   it('recovers an unfinished creator draft after leaving the library', () => {

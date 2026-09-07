@@ -15,6 +15,7 @@ let service: ContentPackService
 const draft: ContentPackDraft = {
   schemaVersion: 1,
   name: 'Local Pack',
+  addressingMode: 'participant-prefix',
   voiceInstructions: 'Sound upbeat and direct.',
   sayings: { general: ['Keep moving.'] },
   extensions: {},

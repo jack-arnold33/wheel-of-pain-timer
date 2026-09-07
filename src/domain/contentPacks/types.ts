@@ -1,5 +1,13 @@
 export const CONTENT_PACK_SCHEMA_VERSION = 1 as const
 
+export const contentPackAddressingModes = [
+  'participant-prefix',
+  'authored',
+] as const
+
+export type ContentPackAddressingMode =
+  (typeof contentPackAddressingModes)[number]
+
 export const contentPackCategories = [
   'general',
   'work',
@@ -16,6 +24,7 @@ export type ContentPackSayings = Readonly<
 export interface ContentPackDraft {
   readonly schemaVersion: typeof CONTENT_PACK_SCHEMA_VERSION
   readonly name: string
+  readonly addressingMode: ContentPackAddressingMode
   readonly voiceInstructions: string
   readonly sayings: ContentPackSayings
   readonly extensions: Readonly<Record<string, unknown>>
