@@ -627,6 +627,8 @@ export function App({
         >
           <ContentPackLibrary
             packs={contentPacks}
+            participants={participants}
+            activeParticipantIds={activeParticipantIds}
             storageNotice={contentPackNotice}
             onBack={() => setScreen('settings')}
             onImport={async (draft): Promise<ContentPackImportResult> => {

@@ -51,8 +51,17 @@ details such as IndexedDB do not need to be exposed to ordinary users.
 The primary creation path is **Create Personality** in the Settings Personality
 library.
 The user supplies a name and optional guidance for tone, themes or inside jokes,
-and subjects to avoid. The app creates a prompt that the user can copy to an AI
-assistant. The app does not contact the assistant or upload this guidance.
+and subjects to avoid. An explicit personalization option reveals the saved
+participant roster and defaults to the currently active participants. When
+enabled, only checked participants' display names, spoken names, and About notes
+are included in the copied prompt. The app creates the prompt for the user to
+copy; it does not contact the assistant or upload this guidance.
+
+The stable prompt defines quality, category purpose, spoken clarity, factual
+grounding, and variety without imposing a default tone. User-entered creative
+direction is authoritative. Participant facts are treated as occasional
+seasoning unless the user asks for fact-heavy output, and the prompt asks for a
+silent duplicate and overuse review before returning the result.
 The prompt explicitly requests exactly one `json` code block containing a
 complete raw JSON object rather than quoted or escaped JSON, with nothing
 outside the block. In addition to categorized sayings, it requests one concise
@@ -111,6 +120,7 @@ Its required `name` field is authoritative rather than the filename.
 {
   "schemaVersion": 1,
   "name": "Tuesday Chaos Crew",
+  "addressingMode": "participant-prefix",
   "voiceInstructions": "Sound dry, theatrical, and encouraging. Use crisp pacing and confident emphasis without shouting.",
   "sayings": {
     "general": ["Prepare your excuses."],
@@ -124,6 +134,9 @@ Its required `name` field is authoritative rather than the filename.
 ## Initial schema rules
 
 - `schemaVersion` is required and must equal a supported integer version.
+- `addressingMode` is `participant-prefix` for classic sayings and `authored`
+  for personalized sayings. Older files without it default to
+  `participant-prefix`.
 - `name` is required, trimmed, and must contain 1 through 80 Unicode
   characters.
 - `voiceInstructions` is trimmed and must contain 1 through 500 Unicode
@@ -217,9 +230,11 @@ Only participants checked as active on the pre-workout screen take part in the
 rotation. The last attendance selection is remembered for later workouts. If
 no names are active, sayings are spoken without a name.
 
-The app addresses the selected person by prefixing the saying with their name,
-for example, `Jarno! Form first. Complaining second.` Pack authors do not need
-to include a name placeholder in saying text.
+For `participant-prefix` packs, the app addresses the selected person by
+prefixing the saying with their spoken name or display name, for example,
+`Jarno! Form first. Complaining second.` For `authored` packs, selected names
+and details are already woven into the saying and playback speaks it exactly as
+stored without adding another name.
 
 ## Export and recovery
 

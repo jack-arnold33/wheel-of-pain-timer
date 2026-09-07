@@ -116,8 +116,9 @@ reused for a different behavior.
 - **C-017:** The user can create a Personality on the current device by copying
   an app-generated prompt to an AI assistant, pasting the response, reviewing
   and editing the generated voice instructions and categorized sayings, and
-  choosing Save Personality. The app does not contact the assistant or transmit
-  the authoring fields itself.
+  choosing Save Personality. The prompt may include only participant profiles
+  explicitly selected by the user. The app does not contact the assistant or
+  transmit the authoring fields itself.
 - **C-018:** Pasted authoring content accepts a valid v1 JSON object with or
   without a Markdown code fence, or plain text as work sayings. New authoring
   presents and creates only work, cycleRest, and finished sayings; `general`
@@ -125,6 +126,11 @@ reused for a different behavior.
   file packs. It uses the same validation and conflict rules as file import.
 - **C-019:** An unfinished Personality authoring draft is saved locally as it
   changes and is recovered after the PWA reloads. Successful save clears it.
+- **C-020:** Personality authoring offers an explicit option to personalize
+  sayings with selected participants' display names, spoken names, and About
+  notes. Classic sayings receive the shuffled participant prefix during
+  playback; personalized sayings are spoken exactly as authored without an
+  additional prefix.
 
 ## Local storage and privacy
 
@@ -142,8 +148,9 @@ reused for a different behavior.
 - **D-006:** The user can manage an optional participant roster stored on the
   current device. Each participant has a required display name plus optional
   spoken nickname and About notes. These fields are independent of content
-  packs and routines; the spoken nickname replaces the display name only when
-  spoken motivation addresses that participant.
+  packs and routines. The spoken nickname replaces the display name when the
+  app adds a classic prefix and is the preferred name supplied for explicitly
+  personalized authoring.
 - **D-007:** The pre-workout screen lets the user include or exclude saved
   participants for the workout and remembers the last attendance selection.
 - **D-008:** The user can export and restore a portable local backup containing

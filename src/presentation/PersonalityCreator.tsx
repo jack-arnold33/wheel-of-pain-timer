@@ -5,8 +5,10 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Container,
   Divider,
+  FormControlLabel,
   Paper,
   Stack,
   TextField,
@@ -26,8 +28,11 @@ import {
   type PersonalityAuthoringDraft,
 } from '../domain/contentPacks/personalityAuthoring'
 import type { ContentPackDraft } from '../domain/contentPacks/types'
+import type { Participant } from '../domain/participants/types'
 
 interface PersonalityCreatorProps {
+  readonly participants: readonly Participant[]
+  readonly activeParticipantIds: readonly string[]
   readonly onCancel: () => void
   readonly onSave: (draft: ContentPackDraft) => Promise<boolean>
 }
@@ -55,14 +60,30 @@ const lineCount = (value: string) =>
     .split(/\r?\n/u)
     .filter((line) => line.trim().replace(/^•\s*/u, '').length > 0).length
 
-export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps) {
-  const [draft, setDraft] = useState(loadPersonalityAuthoringDraft)
+export function PersonalityCreator({
+  participants,
+  activeParticipantIds,
+  onCancel,
+  onSave,
+}: PersonalityCreatorProps) {
+  const [draft, setDraft] = useState(() => {
+    const stored = loadPersonalityAuthoringDraft()
+    return stored.selectedParticipantIds.length === 0
+      ? { ...stored, selectedParticipantIds: [...activeParticipantIds] }
+      : stored
+  })
   const [error, setError] = useState<string>()
   const [notice, setNotice] = useState<string>()
   const [showPrompt, setShowPrompt] = useState(false)
   const [busy, setBusy] = useState(false)
   const errorRef = useRef<HTMLDivElement>(null)
-  const prompt = useMemo(() => buildPersonalityPrompt(draft), [draft])
+  const prompt = useMemo(
+    () => buildPersonalityPrompt(draft, participants),
+    [draft, participants],
+  )
+  const selectedParticipantCount = participants.filter((participant) =>
+    draft.selectedParticipantIds.includes(participant.id),
+  ).length
 
   useEffect(() => savePersonalityAuthoringDraft(draft), [draft])
   useEffect(() => {
@@ -93,7 +114,14 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
     setError(undefined)
     try {
       const pack = parsePastedPersonality(draft.response, draft.name)
-      setDraft((current) => authoringDraftFromPack(current, pack))
+      setDraft((current) =>
+        authoringDraftFromPack(current, {
+          ...pack,
+          addressingMode: current.personalizeWithParticipants
+            ? 'authored'
+            : 'participant-prefix',
+        }),
+      )
       setNotice(undefined)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'The response could not be read.')
@@ -154,6 +182,59 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
                     onChange={(event) => update('name', event.target.value)}
                     slotProps={{ htmlInput: { maxLength: 80 } }}
                   />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={draft.personalizeWithParticipants}
+                        onChange={(_, checked) =>
+                          setDraft((current) => ({
+                            ...current,
+                            personalizeWithParticipants: checked,
+                            selectedParticipantIds:
+                              checked && current.selectedParticipantIds.length === 0
+                                ? [...activeParticipantIds]
+                                : current.selectedParticipantIds,
+                          }))
+                        }
+                      />
+                    }
+                    label="Personalize sayings with participant names and About details"
+                  />
+                  {draft.personalizeWithParticipants && (
+                    <Stack spacing={0.5}>
+                      <Typography variant="h6">Participants to include</Typography>
+                      {participants.length === 0 ? (
+                        <Alert severity="info">
+                          Add participant profiles before creating personalized sayings.
+                        </Alert>
+                      ) : (
+                        participants.map((participant) => (
+                          <FormControlLabel
+                            key={participant.id}
+                            control={
+                              <Checkbox
+                                checked={draft.selectedParticipantIds.includes(participant.id)}
+                                onChange={(_, checked) =>
+                                  update(
+                                    'selectedParticipantIds',
+                                    checked
+                                      ? [...draft.selectedParticipantIds, participant.id]
+                                      : draft.selectedParticipantIds.filter(
+                                          (id) => id !== participant.id,
+                                        ),
+                                  )
+                                }
+                              />
+                            }
+                            label={`${participant.name}${participant.spokenName ? ` · says as ${participant.spokenName}` : ''}`}
+                          />
+                        ))
+                      )}
+                      <Typography variant="body2" color="text.secondary">
+                        Only selected participants are included in the copied prompt.
+                      </Typography>
+                    </Stack>
+                  )}
                   <TextField
                     fullWidth
                     multiline
@@ -188,7 +269,11 @@ export function PersonalityCreator({ onCancel, onSave }: PersonalityCreatorProps
                 <Button
                   variant="contained"
                   startIcon={<ContentCopyRoundedIcon />}
-                  disabled={draft.name.trim().length === 0}
+                  disabled={
+                    draft.name.trim().length === 0 ||
+                    (draft.personalizeWithParticipants &&
+                      selectedParticipantCount === 0)
+                  }
                   onClick={() => void copyPrompt()}
                 >
                   Copy prompt for ChatGPT

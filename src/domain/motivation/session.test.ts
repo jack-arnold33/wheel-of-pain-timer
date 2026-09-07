@@ -7,6 +7,7 @@ const pack: ContentPack = {
   id: 'pack:test',
   schemaVersion: 1,
   name: 'Test',
+  addressingMode: 'participant-prefix',
   voiceInstructions: 'Sound upbeat and direct.',
   sayings: {
     general: ['General one.', 'General two.'],
@@ -42,6 +43,22 @@ describe('MotivationSession', () => {
       [],
     )
     expect(session.next('finished')).toBeUndefined()
+  })
+
+  it('speaks personalized sayings exactly as authored without a name prefix', () => {
+    const session = new MotivationSession(
+      {
+        ...pack,
+        addressingMode: 'authored',
+        sayings: { work: ['Alex, show Sam what questionable judgment looks like.'] },
+      },
+      participants,
+      () => 0.99,
+    )
+
+    expect(session.next('work')).toBe(
+      'Alex, show Sam what questionable judgment looks like.',
+    )
   })
 })
 

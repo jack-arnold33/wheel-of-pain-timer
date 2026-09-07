@@ -20,6 +20,7 @@ const pack: ContentPack = {
   id: 'test',
   schemaVersion: 1,
   name: 'Test',
+  addressingMode: 'participant-prefix',
   voiceInstructions: 'Sound calm but firm.',
   sayings: { work: ['Work.'], cycleRest: ['Rest.'], finished: ['Done.'] },
   extensions: {},

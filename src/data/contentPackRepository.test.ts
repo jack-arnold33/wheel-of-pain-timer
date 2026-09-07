@@ -13,6 +13,7 @@ let repository: ContentPackRepository
 const draft: ContentPackDraft = {
   schemaVersion: 1,
   name: 'Tuesday Chaos',
+  addressingMode: 'participant-prefix',
   voiceInstructions: 'Sound dry, theatrical, and encouraging.',
   sayings: { general: ['Move.'] },
   extensions: { author: 'Local' },

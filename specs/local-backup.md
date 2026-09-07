@@ -52,7 +52,7 @@ object:
 ```
 
 Content-pack entries use the stored version 1 pack fields: `id`,
-`schemaVersion`, `name`, `voiceInstructions`, `sayings`, `extensions`,
+`schemaVersion`, `name`, `addressingMode`, `voiceInstructions`, `sayings`, `extensions`,
 `createdAt`, and `updatedAt`.
 Participant entries use `id`, `name`, optional `spokenName`, optional `about`,
 `createdAt`, and `updatedAt`. The spoken name is limited to 80 characters and

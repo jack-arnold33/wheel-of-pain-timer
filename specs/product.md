@@ -75,6 +75,8 @@ Version 1 does not require accounts or a centralized list of users.
 - Offer Wheel of Pain, Cold Steel, Neon Circuit, and Day Shift as selectable
   built-in themes with a device-local preference and safe default fallback
 - Configure a device-local participant roster for spoken motivation
+- Optionally use selected participant names, nicknames, and About notes while
+  authoring a personalized Personality
 - Import, select, and remove local-first content packs
 - Save imported content packs on the current device for later selection or
   removal
@@ -108,6 +110,8 @@ Version 1 does not require accounts or a centralized list of users.
 - The participant roster is stored on-device and remains separate from portable
   content packs. Under the online-speech opt-in, the selected name may be sent
   with an individual saying for synthesis.
+- Classic sayings add a rotating participant name during playback; personalized
+  sayings may contain selected profile details and are spoken as authored.
 - The interface remains fully usable when all humorous content is disabled.
 - Adding a built-in theme does not require changes to timer behavior, routine
   data, content packs, or screen semantics, and every theme preserves the same
