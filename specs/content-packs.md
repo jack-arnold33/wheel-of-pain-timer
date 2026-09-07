@@ -54,8 +54,10 @@ The user supplies a name and optional guidance for tone, themes or inside jokes,
 and subjects to avoid. An explicit personalization option reveals the saved
 participant roster and defaults to the currently active participants. When
 enabled, only checked participants' display names, spoken names, and About notes
-are included in the copied prompt. The app creates the prompt for the user to
-copy; it does not contact the assistant or upload this guidance.
+are included in the authoring brief. **Generate with OpenAI** sends that brief
+directly with the project API key saved in Settings and returns structured v1
+data to the review screen. **Copy prompt for ChatGPT** exposes the same brief
+for manual use and does not contact the assistant itself.
 
 The stable prompt defines quality, category purpose, spoken clarity, factual
 grounding, and variety without imposing a default tone. User-entered creative
@@ -72,6 +74,10 @@ It forbids line-continuation backslashes and asks the assistant to use ordinary
 spaces rather than HTML whitespace entities and verify that the content inside
 the block is valid JSON before returning it. The paste parser normalizes common
 HTML whitespace entities introduced by rich-text copying before validation.
+For direct generation, the same creative brief is paired with a strict JSON
+schema instead of the copy/paste formatting instructions. The response is
+validated by the normal content-pack rules, and the app overrides its name and
+addressing mode with the user's current authoring choices before review.
 
 After returning to the app, the user pastes the generated response. Version 1
 accepts the documented JSON object, including JSON copied inside a Markdown code
@@ -91,8 +97,9 @@ creator moves those sayings into Work for review rather than discarding them.
 
 The unfinished authoring draft is saved locally as fields change so that mobile
 operating systems may discard and later reload the PWA while the user switches
-to an AI assistant. Successfully saving clears that authoring draft. File import
-remains available as the secondary interchange workflow.
+to an AI assistant or while a direct request is in progress. A failed request
+does not clear the draft. Successfully saving clears that authoring draft. File
+import remains available as the secondary interchange workflow.
 
 ### Plain text
 

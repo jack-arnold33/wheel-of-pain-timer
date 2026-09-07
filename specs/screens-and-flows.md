@@ -180,9 +180,15 @@ name and optional tone, theme or inside-joke context, and subjects to avoid. An
 explicit **Personalize sayings with participant names and About details**
 checkbox reveals the roster. Active participants are initially checked, and
 the user can choose the exact profiles included in the prompt.
-**Copy prompt for ChatGPT** copies a self-contained schema-aware prompt while
-also showing it for manual copying. The app does not open or contact ChatGPT.
-The user returns, pastes JSON or plain text, and chooses **Review sayings**.
+**Generate with OpenAI** sends the authoring brief through the Responses API
+using the project API key already saved in Settings, requests structured JSON,
+and opens the generated result in Review. It sends only the entered creative
+guidance and the participant profiles checked on this screen. If generation
+fails, the draft remains intact and manual authoring remains available.
+**Copy prompt for ChatGPT** copies the same self-contained, schema-aware brief
+while also showing it for manual copying. That manual path does not contact
+ChatGPT. The user returns, pastes JSON or plain text, and chooses **Review
+sayings**.
 **Clear pasted response** empties only the response field so the complete AI
 output can be replaced without clearing the name or authoring guidance.
 

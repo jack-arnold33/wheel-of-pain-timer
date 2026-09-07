@@ -1,4 +1,5 @@
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
+import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import {
@@ -29,6 +30,10 @@ import {
 } from '../domain/contentPacks/personalityAuthoring'
 import type { ContentPackDraft } from '../domain/contentPacks/types'
 import type { Participant } from '../domain/participants/types'
+import {
+  generateOpenAiPersonality,
+  OpenAiPersonalityError,
+} from '../services/openAiPersonality'
 
 interface PersonalityCreatorProps {
   readonly participants: readonly Participant[]
@@ -59,6 +64,20 @@ const lineCount = (value: string) =>
   value
     .split(/\r?\n/u)
     .filter((line) => line.trim().replace(/^•\s*/u, '').length > 0).length
+
+const generationError = (error: unknown) => {
+  if (!(error instanceof OpenAiPersonalityError)) {
+    return error instanceof Error ? error.message : 'The sayings could not be generated.'
+  }
+  if (error.code === 'not-configured') return 'Save an OpenAI API key in Settings first.'
+  if (error.code === 'authentication') return 'The OpenAI API key was rejected.'
+  if (error.code === 'rate-limited') return 'OpenAI is rate limited. Try again shortly.'
+  if (error.code === 'timeout') return 'Generation took too long. Try again.'
+  if (error.code === 'invalid-response') {
+    return 'OpenAI returned sayings the app could not validate. Try again.'
+  }
+  return 'OpenAI generation is unavailable right now. You can still use copy and paste.'
+}
 
 export function PersonalityCreator({
   participants,
@@ -107,6 +126,20 @@ export function PersonalityCreator({
       setNotice('Prompt copied. Your draft is saved, so you can switch to ChatGPT safely.')
     } catch {
       setNotice('Copy the prompt below, then return here with ChatGPT’s response.')
+    }
+  }
+
+  const generate = async () => {
+    setError(undefined)
+    setNotice(undefined)
+    setBusy(true)
+    try {
+      const pack = await generateOpenAiPersonality(draft, participants)
+      setDraft((current) => authoringDraftFromPack(current, pack))
+    } catch (caught) {
+      setError(generationError(caught))
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -268,8 +301,26 @@ export function PersonalityCreator({
               <Stack spacing={1.5}>
                 <Button
                   variant="contained"
+                  startIcon={<AutoAwesomeRoundedIcon />}
+                  disabled={
+                    busy ||
+                    draft.name.trim().length === 0 ||
+                    (draft.personalizeWithParticipants &&
+                      selectedParticipantCount === 0)
+                  }
+                  onClick={() => void generate()}
+                >
+                  {busy ? 'Generating…' : 'Generate with OpenAI'}
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  Uses the OpenAI API key saved in Settings and opens the sayings for review.
+                </Typography>
+                <Divider>or</Divider>
+                <Button
+                  variant="outlined"
                   startIcon={<ContentCopyRoundedIcon />}
                   disabled={
+                    busy ||
                     draft.name.trim().length === 0 ||
                     (draft.personalizeWithParticipants &&
                       selectedParticipantCount === 0)
@@ -279,7 +330,7 @@ export function PersonalityCreator({
                   Copy prompt for ChatGPT
                 </Button>
                 <Typography variant="body2" color="text.secondary">
-                  The app does not contact ChatGPT. You choose what to copy and paste.
+                  Or copy the same creative brief and paste the response manually.
                 </Typography>
               </Stack>
 

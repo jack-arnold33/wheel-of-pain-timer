@@ -11,6 +11,15 @@ import {
 import { ContentPackLibrary } from './ContentPackLibrary'
 import { wheelOfPainTheme } from './themes/wheelOfPainTheme'
 
+const openAiPersonalityMocks = vi.hoisted(() => ({
+  generateOpenAiPersonality: vi.fn(),
+}))
+
+vi.mock('../services/openAiPersonality', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../services/openAiPersonality')>()),
+  generateOpenAiPersonality: openAiPersonalityMocks.generateOpenAiPersonality,
+}))
+
 const pack: ContentPack = {
   id: 'pack:test',
   schemaVersion: 1,
@@ -30,6 +39,7 @@ const pack: ContentPack = {
 afterEach(() => {
   cleanup()
   localStorage.clear()
+  openAiPersonalityMocks.generateOpenAiPersonality.mockReset()
 })
 
 describe('ContentPackLibrary', () => {
@@ -240,6 +250,73 @@ describe('ContentPackLibrary', () => {
           sayings: { work: ['Alex, lift the ridiculous thing.'] },
         }),
       ),
+    )
+  })
+
+  it('generates a personalized Personality directly with OpenAI and opens review', async () => {
+    openAiPersonalityMocks.generateOpenAiPersonality.mockResolvedValue({
+      schemaVersion: 1,
+      name: 'Personal Chaos',
+      addressingMode: 'authored',
+      voiceInstructions: 'Sound amused and merciless.',
+      sayings: {
+        work: ['Alex, the kettlebell is not impressed.'],
+        cycleRest: ['Alex, negotiate with your lungs.'],
+        finished: ['Alex survived the evidence.'],
+      },
+      extensions: {},
+    })
+    const participants = [
+      {
+        id: 'participant:alex',
+        name: 'Alexandra',
+        spokenName: 'Alex',
+        about: 'Always chooses the heaviest kettlebell.',
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ]
+    render(
+      <ThemeProvider theme={wheelOfPainTheme}>
+        <ContentPackLibrary
+          packs={[]}
+          participants={participants}
+          activeParticipantIds={['participant:alex']}
+          onBack={vi.fn()}
+          onImport={vi.fn()}
+          onReplace={vi.fn()}
+          onRename={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </ThemeProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create Personality' }))
+    fireEvent.change(screen.getByLabelText(/Personality name/u), {
+      target: { value: 'Personal Chaos' },
+    })
+    fireEvent.click(
+      screen.getByRole('checkbox', {
+        name: 'Personalize sayings with participant names and About details',
+      }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Generate with OpenAI' }))
+
+    await waitFor(() =>
+      expect(openAiPersonalityMocks.generateOpenAiPersonality).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Personal Chaos',
+          personalizeWithParticipants: true,
+          selectedParticipantIds: ['participant:alex'],
+        }),
+        participants,
+      ),
+    )
+    expect(
+      await screen.findByRole('heading', { name: 'Review Personality' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('During work sayings')).toHaveValue(
+      '• Alex, the kettlebell is not impressed.',
     )
   })
 

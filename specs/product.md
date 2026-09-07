@@ -77,6 +77,8 @@ Version 1 does not require accounts or a centralized list of users.
 - Configure a device-local participant roster for spoken motivation
 - Optionally use selected participant names, nicknames, and About notes while
   authoring a personalized Personality
+- Generate a Personality directly with OpenAI using the project key saved on
+  the device, with manual copy/paste retained as an alternative
 - Import, select, and remove local-first content packs
 - Save imported content packs on the current device for later selection or
   removal

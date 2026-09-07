@@ -758,8 +758,10 @@ export function SettingsScreen({
         <DialogContent>
           <DialogContentText>
             One selected saying and the participant name used to address it, together with the
-            selected Personality&apos;s voice instructions, will be sent to OpenAI. Personalities,
-            rosters, routines, and workout history are never uploaded as collections.
+            selected Personality&apos;s voice instructions, will be sent to OpenAI for online voice.
+            When you choose Generate with OpenAI, the authoring guidance and only the participant
+            profiles you select will be sent. Other Personalities, participants, routines, and
+            workout history are never uploaded as collections.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

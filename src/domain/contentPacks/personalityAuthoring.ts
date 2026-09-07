@@ -147,7 +147,7 @@ export function parsePastedPersonality(
   return normalizeContentPack(parsed)
 }
 
-export function buildPersonalityPrompt(
+export function buildPersonalityBrief(
   draft: Pick<
     PersonalityAuthoringDraft,
     | 'name'
@@ -200,6 +200,23 @@ export function buildPersonalityPrompt(
     'Also write voiceInstructions that tell a text-to-speech model how this Personality should sound. Describe delivery only: tone, energy, pacing, emphasis, and emotional style. Do not include participant names, sayings, dialogue, sound effects, or instructions to add spoken words. Use 1 through 3 concise sentences and no more than 500 characters.',
     '',
     'Generate exactly 20 work sayings, 8 cycle-rest sayings, and 5 finished sayings.',
+  ].join('\n')
+}
+
+export function buildPersonalityPrompt(
+  draft: Pick<
+    PersonalityAuthoringDraft,
+    | 'name'
+    | 'tone'
+    | 'themes'
+    | 'avoid'
+    | 'personalizeWithParticipants'
+    | 'selectedParticipantIds'
+  >,
+  participants: readonly Participant[] = [],
+): string {
+  return [
+    buildPersonalityBrief(draft, participants),
     '',
     'Return exactly one fenced code block marked json. Do not write anything before or after the code block.',
     'Inside that code block, return valid JSON with exactly this structure:',
