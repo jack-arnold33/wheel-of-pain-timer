@@ -11,8 +11,6 @@ export interface TimerCueFrame {
   readonly observedAtMs: number
 }
 
-const MAX_CONTIGUOUS_GAP_MS = 500
-
 export function timerCueFrame(
   workout: WorkoutState,
   observedAtMs: number,
@@ -36,9 +34,11 @@ export function timerCueFrame(
 }
 
 const TRANSITION_CUE_AT_MS = 3_000
+const MIN_USEFUL_TRANSITION_CUE_REMAINING_MS = 1_000
 
 const applicableTransitionCue = (frame: TimerCueFrame): TimerCue[] =>
   frame.remainingMs <= TRANSITION_CUE_AT_MS && frame.remainingMs > 0
+    && frame.remainingMs >= MIN_USEFUL_TRANSITION_CUE_REMAINING_MS
     ? [{ kind: 'transition' }]
     : []
 
@@ -51,10 +51,7 @@ export function timerCuesBetween(
     return applicableTransitionCue(current)
   }
 
-  const observationGapMs = current.observedAtMs - previous.observedAtMs
-  if (observationGapMs < 0 || observationGapMs > MAX_CONTIGUOUS_GAP_MS) {
-    return []
-  }
+  if (current.observedAtMs < previous.observedAtMs) return []
 
   if (previous.phaseIndex !== current.phaseIndex) {
     return applicableTransitionCue(current)
@@ -63,6 +60,26 @@ export function timerCuesBetween(
   return previous.remainingMs > TRANSITION_CUE_AT_MS &&
     current.remainingMs <= TRANSITION_CUE_AT_MS &&
     current.remainingMs > 0
-    ? [{ kind: 'transition' }]
+    ? applicableTransitionCue(current)
     : []
+}
+
+export class TimerCueScheduler {
+  private previous?: TimerCueFrame
+  private readonly cuedPhaseIndexes = new Set<number>()
+
+  constructor(initialFrame?: TimerCueFrame) {
+    this.previous = initialFrame
+  }
+
+  cuesAt(current: TimerCueFrame): TimerCue[] {
+    const cues = timerCuesBetween(this.previous, current)
+    this.previous = current
+
+    if (cues.length === 0 || current.phaseIndex === undefined) return []
+    if (this.cuedPhaseIndexes.has(current.phaseIndex)) return []
+
+    this.cuedPhaseIndexes.add(current.phaseIndex)
+    return cues
+  }
 }

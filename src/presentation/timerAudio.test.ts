@@ -63,6 +63,30 @@ describe('HTML timer audio', () => {
     expect(order).toEqual(['transition'])
   })
 
+  it('reloads and retries a transition cue once after a transient failure', async () => {
+    const audio = setup()
+    const transition = audio.bySource(TIMER_CUE_ASSETS.transition)
+    transition.play
+      .mockRejectedValueOnce(new DOMException('Interrupted', 'AbortError'))
+      .mockImplementationOnce(async () => {
+        queueMicrotask(() => transition.dispatchEvent(new Event('ended')))
+      })
+
+    await expect(audio.player.playCues([{ kind: 'transition' }])).resolves.toBe('started')
+    expect(transition.play).toHaveBeenCalledTimes(2)
+    expect(transition.load).toHaveBeenCalledOnce()
+  })
+
+  it('does not retry playback blocked by browser permissions', async () => {
+    const audio = setup()
+    const transition = audio.bySource(TIMER_CUE_ASSETS.transition)
+    transition.play.mockRejectedValue(new DOMException('Blocked', 'NotAllowedError'))
+
+    await expect(audio.player.playCues([{ kind: 'transition' }])).resolves.toBe('blocked')
+    expect(transition.play).toHaveBeenCalledOnce()
+    expect(transition.load).not.toHaveBeenCalled()
+  })
+
   it('stops an active bell', async () => {
     const audio = setup()
     const first = audio.bySource(TIMER_CUE_ASSETS.transition)
