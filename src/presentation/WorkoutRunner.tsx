@@ -47,7 +47,7 @@ import {
   primeTimerAudio,
   stopTimerCues,
 } from './timerAudio'
-import { timerCueFrame, timerCuesBetween } from './timerCues'
+import { TimerCueScheduler, timerCueFrame } from './timerCues'
 import { motivationCategoryBetween } from './motivationCues'
 import {
   speakMotivation,
@@ -105,6 +105,7 @@ export function WorkoutRunner({
   const [clockMs, setClockMs] = useState(initialClockMs)
   const [confirmingEnd, setConfirmingEnd] = useState(false)
   const [motivationNotice, setMotivationNotice] = useState<string>()
+  const [timerAudioNotice, setTimerAudioNotice] = useState<string>()
   const [motivationSession] = useState(() =>
     motivation?.enabled
       ? new MotivationSession(motivation.pack, motivation.participants)
@@ -146,10 +147,12 @@ export function WorkoutRunner({
   const completionSpeechStarted = useRef(false)
   const lastCheckpointAtMs = useRef(0)
   const lastCheckpointPosition = useRef('')
-  const previousCueFrame = useRef<ReturnType<typeof timerCueFrame> | undefined>(
-    initialWorkout === undefined
-      ? undefined
-      : timerCueFrame(initialWorkout, initialClockMs),
+  const cueScheduler = useRef(
+    new TimerCueScheduler(
+      initialWorkout === undefined
+        ? undefined
+        : timerCueFrame(initialWorkout, initialClockMs),
+    ),
   )
   const previousMotivationFrame = useRef<
     ReturnType<typeof timerCueFrame> | undefined
@@ -270,9 +273,16 @@ export function WorkoutRunner({
 
   useEffect(() => {
     const currentCueFrame = timerCueFrame(workout, clockMs)
-    const cues = timerCuesBetween(previousCueFrame.current, currentCueFrame)
-    if (soundsEnabled) playTimerCues(cues)
-    previousCueFrame.current = currentCueFrame
+    const cues = cueScheduler.current.cuesAt(currentCueFrame)
+    if (soundsEnabled && cues.length > 0) {
+      void playTimerCues(cues).then((result) => {
+        if (result === 'blocked') {
+          setTimerAudioNotice('Timer sound was blocked by the browser. Pause and resume to enable it.')
+        } else if (result === 'failed') {
+          setTimerAudioNotice('A timer sound could not play. Check your device audio settings.')
+        }
+      })
+    }
   }, [clockMs, soundsEnabled, workout])
 
   useEffect(() => {
@@ -617,6 +627,11 @@ export function WorkoutRunner({
           {motivationNotice && (
             <Typography variant="body2" color="warning.main" role="status">
               {motivationNotice}
+            </Typography>
+          )}
+          {timerAudioNotice && (
+            <Typography variant="body2" color="warning.main" role="status">
+              {timerAudioNotice}
             </Typography>
           )}
         </Stack>

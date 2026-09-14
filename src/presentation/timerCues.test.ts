@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TimerCueFrame } from './timerCues'
-import { timerCuesBetween } from './timerCues'
+import { TimerCueScheduler, timerCuesBetween } from './timerCues'
 
 const frame = (
   remainingMs: number,
@@ -54,19 +54,41 @@ describe('timer cues', () => {
     ).toEqual([])
   })
 
-  it('does not replay cues after a suspended observation gap', () => {
+  it.each([
+    [600, 2_500],
+    [1_000, 2_000],
+    [2_000, 1_000],
+  ])('still cues after a %i ms delayed observation while the warning is useful', (
+    observationGapMs,
+    remainingMs,
+  ) => {
     expect(
       timerCuesBetween(
-        frame(6_000, 0),
-        frame(3_000, 5_000),
+        frame(3_100, 0),
+        frame(remainingMs, observationGapMs),
       ),
-    ).toEqual([])
+    ).toEqual([{ kind: 'transition' }])
+  })
+
+  it('does not play a stale warning with less than one second remaining', () => {
     expect(
       timerCuesBetween(
-        frame(100, 0),
-        frame(10_000, 5_000, { phaseIndex: 2 }),
+        frame(3_100, 0),
+        frame(900, 2_200),
       ),
     ).toEqual([])
+  })
+
+  it('does not infer a crossed threshold when the clock moves backward', () => {
+    expect(timerCuesBetween(frame(3_100, 100), frame(2_900, 0))).toEqual([])
+  })
+
+  it('delivers at most one transition cue per phase', () => {
+    const scheduler = new TimerCueScheduler(frame(3_100, 0))
+
+    expect(scheduler.cuesAt(frame(2_000, 1_100))).toEqual([{ kind: 'transition' }])
+    expect(scheduler.cuesAt(frame(1_900, 1_200, { status: 'paused' }))).toEqual([])
+    expect(scheduler.cuesAt(frame(1_800, 1_300))).toEqual([])
   })
 
   it('stays silent while paused', () => {

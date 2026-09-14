@@ -127,14 +127,8 @@ export class HtmlAudioPlayer {
           continue
         }
         this.activeCue = element
-        element.pause()
-        element.currentTime = 0
         try {
-          await element.play()
-          finalResult = 'started'
-          await this.waitForCueEnd(element)
-        } catch (error) {
-          finalResult = blockedPlayback(error)
+          finalResult = await this.playCue(element, operation)
         } finally {
           if (this.activeCue === element) this.activeCue = undefined
         }
@@ -297,6 +291,29 @@ export class HtmlAudioPlayer {
     this.cancelActiveSpeech()
   }
 
+  private async playCue(
+    element: MediaElement,
+    operation: number,
+  ): Promise<AudioPlaybackResult> {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (operation !== this.cueOperation) return 'not-ready'
+      element.pause()
+      element.currentTime = 0
+      if (attempt > 0) element.load()
+
+      try {
+        await element.play()
+        await this.waitForCueEnd(element)
+        return 'started'
+      } catch (error) {
+        const result = blockedPlayback(error)
+        if (result === 'blocked' || attempt === 1) return result
+      }
+    }
+
+    return 'failed'
+  }
+
   private waitForCueEnd(element: MediaElement): Promise<void> {
     return new Promise((resolve) => {
       let settled = false
@@ -322,7 +339,7 @@ export function primeTimerAudio() {
 }
 
 export function playTimerCues(cues: readonly TimerCue[]) {
-  void appAudioPlayer.playCues(cues)
+  return appAudioPlayer.playCues(cues)
 }
 
 export function stopTimerCues() {
