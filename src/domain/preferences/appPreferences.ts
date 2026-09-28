@@ -2,6 +2,7 @@ export interface AppPreferences {
   readonly themeId: string
   readonly timerSoundsEnabled: boolean
   readonly transitionVolume: number
+  readonly audioDiagnosticsEnabled: boolean
   readonly spokenMotivationEnabled: boolean
   readonly voiceVolume: number
   readonly allowOnlineVoices: boolean
@@ -15,6 +16,7 @@ export const defaultAppPreferences: AppPreferences = {
   themeId: 'wheel-of-pain',
   timerSoundsEnabled: true,
   transitionVolume: 0.5,
+  audioDiagnosticsEnabled: false,
   spokenMotivationEnabled: true,
   voiceVolume: 1,
   allowOnlineVoices: false,

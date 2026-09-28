@@ -230,6 +230,10 @@ const validatePreferences = (
     themeId,
     timerSoundsEnabled: boolean('timerSoundsEnabled'),
     transitionVolume: volume('transitionVolume'),
+    audioDiagnosticsEnabled:
+      input.audioDiagnosticsEnabled === undefined
+        ? defaultAppPreferences.audioDiagnosticsEnabled
+        : boolean('audioDiagnosticsEnabled'),
     spokenMotivationEnabled: boolean('spokenMotivationEnabled'),
     voiceVolume: volume('voiceVolume'),
     allowOnlineVoices: boolean('allowOnlineVoices'),

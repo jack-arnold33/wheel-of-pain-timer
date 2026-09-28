@@ -3,7 +3,7 @@ import { AudioDiagnosticRecorder } from './audioDiagnostics'
 
 describe('audio diagnostics', () => {
   it('does not retain events while disabled', () => {
-    const diagnostics = new AudioDiagnosticRecorder(() => false)
+    const diagnostics = new AudioDiagnosticRecorder(false)
 
     diagnostics.record('cue-scheduled', { phaseIndex: 2 })
 
@@ -11,7 +11,7 @@ describe('audio diagnostics', () => {
   })
 
   it('retains bounded structured events and notifies subscribers', () => {
-    const diagnostics = new AudioDiagnosticRecorder(() => true, 2)
+    const diagnostics = new AudioDiagnosticRecorder(true, 2)
     const listener = vi.fn()
     diagnostics.subscribe(listener)
 
@@ -25,7 +25,7 @@ describe('audio diagnostics', () => {
   })
 
   it('exports a machine-readable header and JSON-lines events', () => {
-    const diagnostics = new AudioDiagnosticRecorder(() => true)
+    const diagnostics = new AudioDiagnosticRecorder(true)
     diagnostics.record('user-marked-missed-bell', { phaseKind: 'exerciseRest' })
 
     const lines = diagnostics.exportText().split('\n').map((line) => JSON.parse(line))
@@ -38,11 +38,23 @@ describe('audio diagnostics', () => {
   })
 
   it('clears retained events and resets numbering', () => {
-    const diagnostics = new AudioDiagnosticRecorder(() => true)
+    const diagnostics = new AudioDiagnosticRecorder(true)
     diagnostics.record('first')
     diagnostics.clear()
     diagnostics.record('after-clear')
 
     expect(diagnostics.getEvents()).toMatchObject([{ sequence: 1, type: 'after-clear' }])
+  })
+
+  it('can be enabled and disabled at runtime', () => {
+    const diagnostics = new AudioDiagnosticRecorder()
+
+    diagnostics.record('ignored')
+    diagnostics.setEnabled(true)
+    diagnostics.record('retained')
+    diagnostics.setEnabled(false)
+
+    expect(diagnostics.isEnabled()).toBe(false)
+    expect(diagnostics.getEvents()).toEqual([])
   })
 })

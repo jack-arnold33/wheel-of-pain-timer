@@ -11,22 +11,7 @@ export interface AudioDiagnosticEvent {
   readonly details: Readonly<Record<string, string | number | boolean | null>>
 }
 
-const STORAGE_KEY = 'wheel-of-pain:audio-diagnostics'
-const QUERY_KEY = 'audioDebug'
 const MAX_EVENTS = 500
-
-const diagnosticsEnabled = (): boolean => {
-  if (typeof window === 'undefined') return false
-
-  try {
-    const requested = new URLSearchParams(window.location.search).get(QUERY_KEY)
-    if (requested === '1') window.localStorage.setItem(STORAGE_KEY, '1')
-    if (requested === '0') window.localStorage.removeItem(STORAGE_KEY)
-    return window.localStorage.getItem(STORAGE_KEY) === '1'
-  } catch {
-    return new URLSearchParams(window.location.search).get(QUERY_KEY) === '1'
-  }
-}
 
 export class AudioDiagnosticRecorder {
   private readonly events: AudioDiagnosticEvent[] = []
@@ -35,12 +20,22 @@ export class AudioDiagnosticRecorder {
   private readonly startedAtMs = typeof performance === 'undefined' ? 0 : performance.now()
 
   constructor(
-    private readonly enabledProvider: () => boolean = diagnosticsEnabled,
+    private enabled = false,
     private readonly eventLimit = MAX_EVENTS,
   ) {}
 
   isEnabled(): boolean {
-    return this.enabledProvider()
+    return this.enabled
+  }
+
+  setEnabled(enabled: boolean): void {
+    if (this.enabled === enabled) return
+    this.enabled = enabled
+    if (!enabled) {
+      this.clear()
+      return
+    }
+    for (const listener of this.listeners) listener()
   }
 
   record(type: string, details: AudioDiagnosticDetails = {}): void {
