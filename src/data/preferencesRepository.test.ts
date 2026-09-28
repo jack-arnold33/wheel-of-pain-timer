@@ -30,6 +30,7 @@ describe('preferences repository', () => {
   it('persists updates for a later repository instance', async () => {
     await repository.update({
       timerSoundsEnabled: false,
+      audioDiagnosticsEnabled: true,
       activeParticipantIds: ['participant:one'],
     })
 
@@ -38,6 +39,7 @@ describe('preferences repository', () => {
     const reopened = new PreferencesRepository(database)
     expect(await reopened.get()).toMatchObject({
       timerSoundsEnabled: false,
+      audioDiagnosticsEnabled: true,
       activeParticipantIds: ['participant:one'],
     })
   })
@@ -64,6 +66,7 @@ describe('preferences repository', () => {
     expect(preferences.timerSoundsEnabled).toBe(true)
     expect(preferences.speechRate).toBe(1)
     expect(preferences.transitionVolume).toBe(0.5)
+    expect(preferences.audioDiagnosticsEnabled).toBe(false)
     expect(preferences.voiceVolume).toBe(1)
     expect(preferences.activeParticipantIds).toEqual([])
   })

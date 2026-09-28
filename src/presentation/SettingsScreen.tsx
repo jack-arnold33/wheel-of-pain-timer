@@ -60,6 +60,7 @@ export type AudioPreferencePatch = Pick<
   AppPreferences,
   | 'timerSoundsEnabled'
   | 'transitionVolume'
+  | 'audioDiagnosticsEnabled'
   | 'spokenMotivationEnabled'
   | 'voiceVolume'
   | 'allowOnlineVoices'
@@ -72,10 +73,11 @@ export type SettingsPreferencePatch = AudioPreferencePatch &
 
 interface SettingsScreenProps extends Omit<
   AudioPreferencePatch,
-  'transitionVolume' | 'voiceVolume'
+  'transitionVolume' | 'voiceVolume' | 'audioDiagnosticsEnabled'
 > {
   readonly transitionVolume?: number
   readonly voiceVolume?: number
+  readonly audioDiagnosticsEnabled?: boolean
   readonly themeId?: string
   readonly voiceInstructions?: string
   readonly participantCount: number
@@ -103,6 +105,7 @@ export function SettingsScreen({
   themeId = 'wheel-of-pain',
   timerSoundsEnabled,
   transitionVolume = 0.5,
+  audioDiagnosticsEnabled = false,
   spokenMotivationEnabled,
   voiceVolume = 1,
   allowOnlineVoices,
@@ -482,6 +485,19 @@ export function SettingsScreen({
                   }
                 />
               </Stack>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={audioDiagnosticsEnabled}
+                    disabled={busy}
+                    onChange={(_, checked) => void save({ audioDiagnosticsEnabled: checked })}
+                  />
+                }
+                label="Audio diagnostics"
+              />
+              <Typography variant="body2" color="text.secondary">
+                Shows a temporary, local event log during workouts to investigate missed bells.
+              </Typography>
               <FormControlLabel
                 control={
                   <Switch

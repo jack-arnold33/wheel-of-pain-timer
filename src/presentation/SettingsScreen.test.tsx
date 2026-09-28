@@ -105,6 +105,7 @@ describe('SettingsScreen', () => {
       <ThemeProvider theme={wheelOfPainTheme}>
         <SettingsScreen
           timerSoundsEnabled
+          audioDiagnosticsEnabled={false}
           spokenMotivationEnabled
           allowOnlineVoices={false}
           voiceId={null}
@@ -135,6 +136,11 @@ describe('SettingsScreen', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'Timer sounds' }))
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith({ timerSoundsEnabled: false }),
+    )
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Audio diagnostics' }))
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({ audioDiagnosticsEnabled: true }),
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Fast' }))

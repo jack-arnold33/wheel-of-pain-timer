@@ -40,6 +40,7 @@ import { formatClock } from './presentation/timerPresentation'
 import { primeTimerAudio } from './presentation/timerAudio'
 import { primeSpokenMotivation } from './presentation/spokenMotivation'
 import type { SettingsPreferencePatch } from './presentation/SettingsScreen'
+import { audioDiagnostics } from './presentation/audioDiagnostics'
 import { useScreenWakeLock, wakeLockNotice } from './presentation/useScreenWakeLock'
 
 type Screen =
@@ -97,6 +98,7 @@ interface AppProps {
     readonly speechRate?: number
     readonly timerSoundsEnabled?: boolean
     readonly transitionVolume?: number
+    readonly audioDiagnosticsEnabled?: boolean
     readonly voiceVolume?: number
   }>
   selectContentPack?: (id: string | null) => Promise<void>
@@ -157,6 +159,7 @@ const loadStoredContentPacks = async () => {
     speechRate: state.preferences.speechRate,
     timerSoundsEnabled: state.preferences.timerSoundsEnabled,
     transitionVolume: state.preferences.transitionVolume,
+    audioDiagnosticsEnabled: state.preferences.audioDiagnosticsEnabled,
     voiceVolume: state.preferences.voiceVolume,
   }
 }
@@ -268,6 +271,9 @@ export function App({
   const [timerSoundsEnabled, setTimerSoundsEnabled] = useState(initialTimerSoundsEnabled)
   const [transitionVolume, setTransitionVolume] = useState(
     defaultAppPreferences.transitionVolume,
+  )
+  const [audioDiagnosticsEnabled, setAudioDiagnosticsEnabled] = useState(
+    defaultAppPreferences.audioDiagnosticsEnabled,
   )
   const [allowOnlineVoices, setAllowOnlineVoices] = useState(false)
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null)
@@ -386,6 +392,10 @@ export function App({
         }
         if (state.transitionVolume !== undefined) {
           setTransitionVolume(state.transitionVolume)
+        }
+        if (state.audioDiagnosticsEnabled !== undefined) {
+          setAudioDiagnosticsEnabled(state.audioDiagnosticsEnabled)
+          audioDiagnostics.setEnabled(state.audioDiagnosticsEnabled)
         }
         if (state.voiceVolume !== undefined) setVoiceVolume(state.voiceVolume)
       })
@@ -527,6 +537,7 @@ export function App({
             themeId={themeId}
             timerSoundsEnabled={timerSoundsEnabled}
             transitionVolume={transitionVolume}
+            audioDiagnosticsEnabled={audioDiagnosticsEnabled}
             spokenMotivationEnabled={spokenMotivationEnabled}
             voiceVolume={voiceVolume}
             allowOnlineVoices={allowOnlineVoices}
@@ -548,6 +559,8 @@ export function App({
               const saved = await updatePreferences(patch)
               setTimerSoundsEnabled(saved.timerSoundsEnabled)
               setTransitionVolume(saved.transitionVolume)
+              setAudioDiagnosticsEnabled(saved.audioDiagnosticsEnabled)
+              audioDiagnostics.setEnabled(saved.audioDiagnosticsEnabled)
               setSpokenMotivationEnabled(saved.spokenMotivationEnabled)
               setVoiceVolume(saved.voiceVolume)
               setAllowOnlineVoices(saved.allowOnlineVoices)
