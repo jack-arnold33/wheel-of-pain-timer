@@ -35,6 +35,18 @@ back to usable system fonts without blocking offline timer operation.
 
 ## Development
 
+### Audio diagnostics
+
+To investigate a missing transition bell, open the app once with
+`?audioDebug=1` appended to its URL. Diagnostics stay enabled on that device
+until the app is opened with `?audioDebug=0`.
+
+During a workout, expand **Audio diagnostics**. Tap **Mark missed bell** as soon
+as a bell is not audible, then use **Copy log** and save the copied text. The log
+is kept only in memory, contains browser and audio playback state rather than
+workout content, and is cleared when the app process restarts or **Clear** is
+pressed.
+
 The application uses Node.js 22 or newer and pnpm. From the repository root:
 
 ```text
