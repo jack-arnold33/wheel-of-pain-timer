@@ -55,6 +55,7 @@ import {
 } from './spokenMotivation'
 import { OPENAI_SPEECH_VOICES, type OpenAiSpeechVoice } from '../services/openAiSpeech'
 import { OnlineMotivationController } from './onlineMotivation'
+import { audioDiagnostics } from './audioDiagnostics'
 
 export interface WorkoutMotivation {
   readonly pack: ContentPack
@@ -106,6 +107,8 @@ export function WorkoutRunner({
   const [confirmingEnd, setConfirmingEnd] = useState(false)
   const [motivationNotice, setMotivationNotice] = useState<string>()
   const [timerAudioNotice, setTimerAudioNotice] = useState<string>()
+  const [, setAudioDiagnosticRevision] = useState(0)
+  const [audioDiagnosticNotice, setAudioDiagnosticNotice] = useState<string>()
   const [motivationSession] = useState(() =>
     motivation?.enabled
       ? new MotivationSession(motivation.pack, motivation.participants)
@@ -162,12 +165,22 @@ export function WorkoutRunner({
       : timerCueFrame(initialWorkout, initialClockMs),
   )
   const previousWorkoutStatus = useRef<WorkoutState['status'] | undefined>(undefined)
+  const previousDiagnosticCueFrame = useRef<ReturnType<typeof timerCueFrame> | undefined>(
+    initialWorkout === undefined
+      ? undefined
+      : timerCueFrame(initialWorkout, initialClockMs),
+  )
+  const diagnosticCuedPhaseIndexes = useRef(new Set<number>())
   const workoutPhaseIndex = 'phaseIndex' in workout ? workout.phaseIndex : -1
 
   useEffect(() => {
     appAudioPlayer.setTransitionVolume(transitionVolume)
     appAudioPlayer.setSpeechVolume(motivation?.speech.volume ?? 1)
   }, [motivation?.speech.volume, transitionVolume])
+
+  useEffect(() => audioDiagnostics.subscribe(() => {
+    setAudioDiagnosticRevision((revision) => revision + 1)
+  }), [])
 
   const advance = (state: WorkoutState, atMs: number): WorkoutState => {
     if (state.status !== 'running') return projectWorkout(state, atMs)
@@ -273,17 +286,84 @@ export function WorkoutRunner({
 
   useEffect(() => {
     const currentCueFrame = timerCueFrame(workout, clockMs)
+    const previousFrame = previousDiagnosticCueFrame.current
+    const phaseChanged = previousFrame?.phaseIndex !== currentCueFrame.phaseIndex
+    const crossedCueThreshold = previousFrame !== undefined &&
+      previousFrame.phaseIndex === currentCueFrame.phaseIndex &&
+      previousFrame.remainingMs > 3_000 && currentCueFrame.remainingMs <= 3_000
+    if (
+      phaseChanged &&
+      previousFrame?.status === 'running' &&
+      previousFrame.phaseIndex !== undefined &&
+      !diagnosticCuedPhaseIndexes.current.has(previousFrame.phaseIndex)
+    ) {
+      audioDiagnostics.record('phase-ended-without-cue', {
+        phaseIndex: previousFrame.phaseIndex,
+        phaseKind: phases[previousFrame.phaseIndex]?.kind,
+        lastObservedRemainingMs: Math.round(previousFrame.remainingMs),
+        observationGapMs: Math.round(
+          currentCueFrame.observedAtMs - previousFrame.observedAtMs,
+        ),
+        nextPhaseIndex: currentCueFrame.phaseIndex,
+        visibility: document.visibilityState,
+      })
+    }
+    if (phaseChanged || crossedCueThreshold) {
+      const phase = currentCueFrame.phaseIndex === undefined
+        ? undefined
+        : phases[currentCueFrame.phaseIndex]
+      audioDiagnostics.record(phaseChanged ? 'phase-observed' : 'cue-threshold-crossed', {
+        phaseIndex: currentCueFrame.phaseIndex,
+        phaseKind: phase?.kind,
+        remainingMs: Math.round(currentCueFrame.remainingMs),
+        observationGapMs: previousFrame === undefined
+          ? undefined
+          : Math.round(currentCueFrame.observedAtMs - previousFrame.observedAtMs),
+        visibility: document.visibilityState,
+        status: currentCueFrame.status,
+      })
+    }
     const cues = cueScheduler.current.cuesAt(currentCueFrame)
+    if (cues.length > 0 && currentCueFrame.phaseIndex !== undefined) {
+      diagnosticCuedPhaseIndexes.current.add(currentCueFrame.phaseIndex)
+    }
+    if (crossedCueThreshold && cues.length === 0) {
+      audioDiagnostics.record('cue-not-scheduled', {
+        phaseIndex: currentCueFrame.phaseIndex,
+        remainingMs: Math.round(currentCueFrame.remainingMs),
+        reason: currentCueFrame.remainingMs < 1_000 ? 'stale-under-one-second' : 'deduplicated',
+      })
+    }
     if (soundsEnabled && cues.length > 0) {
+      const phase = currentCueFrame.phaseIndex === undefined
+        ? undefined
+        : phases[currentCueFrame.phaseIndex]
+      audioDiagnostics.record('cue-scheduled', {
+        phaseIndex: currentCueFrame.phaseIndex,
+        phaseKind: phase?.kind,
+        remainingMs: Math.round(currentCueFrame.remainingMs),
+        soundsEnabled,
+        transitionVolume,
+      })
       void playTimerCues(cues).then((result) => {
+        audioDiagnostics.record('cue-result-received', {
+          phaseIndex: currentCueFrame.phaseIndex,
+          result,
+        })
         if (result === 'blocked') {
           setTimerAudioNotice('Timer sound was blocked by the browser. Pause and resume to enable it.')
         } else if (result === 'failed') {
           setTimerAudioNotice('A timer sound could not play. Check your device audio settings.')
         }
       })
+    } else if (cues.length > 0) {
+      audioDiagnostics.record('cue-suppressed', {
+        phaseIndex: currentCueFrame.phaseIndex,
+        reason: 'timer-sounds-disabled',
+      })
     }
-  }, [clockMs, soundsEnabled, workout])
+    previousDiagnosticCueFrame.current = currentCueFrame
+  }, [clockMs, phases, soundsEnabled, transitionVolume, workout])
 
   useEffect(() => {
     if (!soundsEnabled) stopTimerCues()
@@ -291,6 +371,11 @@ export function WorkoutRunner({
 
   useEffect(() => {
     const pauseInterruptedResume = () => {
+      audioDiagnostics.record('visibility-changed', {
+        visibility: document.visibilityState,
+        phaseIndex: workoutPhaseIndex >= 0 ? workoutPhaseIndex : undefined,
+        status: workout.status,
+      })
       if (document.visibilityState === 'visible') return
       onlineMotivation?.cancel()
       const atMs = now()
@@ -302,7 +387,7 @@ export function WorkoutRunner({
     document.addEventListener('visibilitychange', pauseInterruptedResume)
     return () =>
       document.removeEventListener('visibilitychange', pauseInterruptedResume)
-  }, [onlineMotivation])
+  }, [onlineMotivation, workout.status, workoutPhaseIndex])
 
   if (workout.status === 'complete') return null
 
@@ -338,6 +423,12 @@ export function WorkoutRunner({
 
   const handleSkip = () => {
     const atMs = now()
+    audioDiagnostics.record('user-skipped-phase', {
+      phaseIndex: workout.phaseIndex,
+      phaseKind: currentPhase(workout)?.kind,
+      remainingMs: Math.round(remainingPhaseMs(workout)),
+      status: workout.status,
+    })
     setClockMs(atMs)
     setWorkout((state) => skipPhase(advance(state, atMs), atMs))
   }
@@ -633,6 +724,78 @@ export function WorkoutRunner({
             <Typography variant="body2" color="warning.main" role="status">
               {timerAudioNotice}
             </Typography>
+          )}
+          {audioDiagnostics.isEnabled() && (
+            <Box
+              component="details"
+              sx={{ width: '100%', border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}
+            >
+              <Typography component="summary" variant="body2" sx={{ cursor: 'pointer', fontWeight: 700 }}>
+                Audio diagnostics ({audioDiagnostics.getEvents().length})
+              </Typography>
+              <Stack spacing={1} sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Tap Mark missed bell immediately after a cue you could not hear.
+                </Typography>
+                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    onClick={() => {
+                      audioDiagnostics.record('user-marked-missed-bell', {
+                        phaseIndex: workout.phaseIndex,
+                        phaseKind: phase.kind,
+                        remainingMs: Math.round(remainingMs),
+                        visibility: document.visibilityState,
+                      })
+                      setAudioDiagnosticNotice('Miss recorded.')
+                    }}
+                  >
+                    Mark missed bell
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(audioDiagnostics.exportText())
+                        .then(() => setAudioDiagnosticNotice('Diagnostics copied.'))
+                        .catch(() => setAudioDiagnosticNotice('Copy failed. Select the log text below.'))
+                    }}
+                  >
+                    Copy log
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      audioDiagnostics.clear()
+                      setAudioDiagnosticNotice('Diagnostics cleared.')
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </Stack>
+                {audioDiagnosticNotice && (
+                  <Typography variant="caption" role="status">{audioDiagnosticNotice}</Typography>
+                )}
+                <Box
+                  component="pre"
+                  aria-label="Recent audio diagnostic events"
+                  sx={{
+                    m: 0,
+                    p: 1,
+                    maxHeight: 160,
+                    overflow: 'auto',
+                    bgcolor: 'background.default',
+                    fontSize: '0.65rem',
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  {audioDiagnostics.getEvents().slice(-12).map((event) =>
+                    `${event.sequence} ${event.type} ${JSON.stringify(event.details)}`,
+                  ).join('\n') || 'No audio events recorded yet.'}
+                </Box>
+              </Stack>
+            </Box>
           )}
         </Stack>
       </Paper>

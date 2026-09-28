@@ -1,5 +1,6 @@
 import transitionBellUrl from '../assets/audio/transition-bell.wav?url'
 import type { TimerCue } from './timerCues'
+import { audioDiagnostics, describeMediaError } from './audioDiagnostics'
 
 type AudioSessionNavigator = Navigator & {
   audioSession?: { type: string }
@@ -14,6 +15,10 @@ interface MediaElement {
   volume: number
   currentTime: number
   readonly readyState: number
+  readonly paused?: boolean
+  readonly ended?: boolean
+  readonly networkState?: number
+  readonly error?: { readonly code: number; readonly message?: string } | null
   load(): void
   pause(): void
   play(): Promise<void>
@@ -95,6 +100,7 @@ export class HtmlAudioPlayer {
   }
 
   async prime(): Promise<void> {
+    audioDiagnostics.record('audio-prime-start')
     this.environment.configureAudioSession()
     for (const element of this.cues.values()) element.load()
 
@@ -103,9 +109,14 @@ export class HtmlAudioPlayer {
     element.muted = true
     try {
       await element.play()
+      audioDiagnostics.record('audio-prime-play-resolved', this.mediaState(element))
       element.pause()
       element.currentTime = 0
-    } catch {
+    } catch (error) {
+      audioDiagnostics.record('audio-prime-play-rejected', {
+        ...this.mediaState(element),
+        error: describeMediaError(error),
+      })
       // A later real cue reports a bounded failure; startup is never blocked.
     } finally {
       element.muted = false
@@ -114,15 +125,22 @@ export class HtmlAudioPlayer {
 
   playCues(cues: readonly TimerCue[]): Promise<AudioPlaybackResult> {
     if (cues.length === 0) return Promise.resolve('not-ready')
+    const speechWasActive = this.activeSpeech !== undefined
     this.interruptActiveSpeech()
     this.activeCue?.pause()
     const operation = ++this.cueOperation
+    audioDiagnostics.record('cue-playback-requested', {
+      operation,
+      cueCount: cues.length,
+      speechInterrupted: speechWasActive,
+    })
     return (async () => {
       let finalResult: AudioPlaybackResult = 'not-ready'
       for (const cue of cues) {
         if (operation !== this.cueOperation) return 'not-ready'
         const element = this.cues.get(TIMER_CUE_ASSETS[cue.kind])
         if (element === undefined) {
+          audioDiagnostics.record('cue-asset-missing', { operation, kind: cue.kind })
           finalResult = 'failed'
           continue
         }
@@ -133,11 +151,16 @@ export class HtmlAudioPlayer {
           if (this.activeCue === element) this.activeCue = undefined
         }
       }
+      audioDiagnostics.record('cue-playback-finished', { operation, result: finalResult })
       return finalResult
     })()
   }
 
   stopCues(): void {
+    audioDiagnostics.record('cue-playback-stopped', {
+      operation: this.cueOperation,
+      active: this.activeCue !== undefined,
+    })
     this.cueOperation += 1
     this.activeCue?.pause()
     this.activeCue = undefined
@@ -296,17 +319,44 @@ export class HtmlAudioPlayer {
     operation: number,
   ): Promise<AudioPlaybackResult> {
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      if (operation !== this.cueOperation) return 'not-ready'
+      if (operation !== this.cueOperation) {
+        audioDiagnostics.record('cue-attempt-cancelled', { operation, attempt: attempt + 1 })
+        return 'not-ready'
+      }
       element.pause()
       element.currentTime = 0
       if (attempt > 0) element.load()
 
+      audioDiagnostics.record('cue-attempt-started', {
+        operation,
+        attempt: attempt + 1,
+        ...this.mediaState(element),
+      })
+
       try {
         await element.play()
-        await this.waitForCueEnd(element)
+        audioDiagnostics.record('cue-play-resolved', {
+          operation,
+          attempt: attempt + 1,
+          ...this.mediaState(element),
+        })
+        const completion = await this.waitForCueEnd(element, operation, attempt + 1)
+        audioDiagnostics.record('cue-playback-completed', {
+          operation,
+          attempt: attempt + 1,
+          completion,
+          ...this.mediaState(element),
+        })
         return 'started'
       } catch (error) {
         const result = blockedPlayback(error)
+        audioDiagnostics.record('cue-play-rejected', {
+          operation,
+          attempt: attempt + 1,
+          result,
+          error: describeMediaError(error),
+          ...this.mediaState(element),
+        })
         if (result === 'blocked' || attempt === 1) return result
       }
     }
@@ -314,21 +364,49 @@ export class HtmlAudioPlayer {
     return 'failed'
   }
 
-  private waitForCueEnd(element: MediaElement): Promise<void> {
+  private waitForCueEnd(
+    element: MediaElement,
+    operation: number,
+    attempt: number,
+  ): Promise<'ended' | 'error' | 'timeout'> {
     return new Promise((resolve) => {
       let settled = false
-      const finish = () => {
+      const finish = (completion: 'ended' | 'error' | 'timeout') => {
         if (settled) return
         settled = true
         window.clearTimeout(timeout)
-        element.removeEventListener('ended', finish)
-        element.removeEventListener('error', finish)
-        resolve()
+        element.removeEventListener('ended', ended)
+        element.removeEventListener('error', failed)
+        resolve(completion)
       }
-      const timeout = window.setTimeout(finish, 2_500)
-      element.addEventListener('ended', finish, { once: true })
-      element.addEventListener('error', finish, { once: true })
+      const ended = () => finish('ended')
+      const failed = () => finish('error')
+      const timeout = window.setTimeout(() => {
+        audioDiagnostics.record('cue-playback-timeout', {
+          operation,
+          attempt,
+          ...this.mediaState(element),
+        })
+        finish('timeout')
+      }, 2_500)
+      element.addEventListener('ended', ended, { once: true })
+      element.addEventListener('error', failed, { once: true })
     })
+  }
+
+  private mediaState(element: MediaElement) {
+    return {
+      readyState: element.readyState,
+      currentTime: Number(element.currentTime.toFixed(3)),
+      volume: element.volume,
+      muted: element.muted,
+      paused: element.paused,
+      ended: element.ended,
+      networkState: element.networkState,
+      mediaErrorCode: element.error?.code,
+      mediaErrorMessage: element.error?.message,
+      visibility: typeof document === 'undefined' ? 'unknown' : document.visibilityState,
+    }
   }
 }
 
