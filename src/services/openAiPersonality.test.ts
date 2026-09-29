@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { emptyPersonalityAuthoringDraft } from '../domain/contentPacks/personalityAuthoring'
 import {
   generateOpenAiPersonality,
-  OPENAI_PERSONALITY_MODEL,
 } from './openAiPersonality'
 
 const generatedPack = {
@@ -72,7 +71,7 @@ describe('generateOpenAiPersonality', () => {
     expect(request.headers.Authorization).toBe('Bearer sk-test')
     const body = JSON.parse(request.body)
     expect(body).toMatchObject({
-      model: OPENAI_PERSONALITY_MODEL,
+      model: 'gpt-6-sol',
       store: false,
       reasoning: { effort: 'none' },
       text: { format: { type: 'json_schema', strict: true } },
@@ -80,6 +79,35 @@ describe('generateOpenAiPersonality', () => {
     expect(body.input).toContain('Name to use in sayings: Alex')
     expect(body.input).toContain('Loves heavy kettlebells.')
     expect(body.input).not.toContain('Never skips leg day.')
+  })
+
+  it('uses the generation model selected in the authoring draft', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        output: [
+          {
+            content: [
+              { type: 'output_text', text: JSON.stringify(generatedPack) },
+            ],
+          },
+        ],
+      }),
+    })
+
+    await generateOpenAiPersonality(
+      {
+        ...emptyPersonalityAuthoringDraft(),
+        name: 'Astra Test',
+        generationModel: 'gpt-6-astra',
+      },
+      [],
+      { fetch: fetchMock, readApiKey: async () => 'sk-test', timeoutMs: 1_000 },
+    )
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body.model).toBe('gpt-6-astra')
   })
 
   it('makes no request when no OpenAI key is configured', async () => {

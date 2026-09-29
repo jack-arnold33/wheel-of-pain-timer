@@ -295,6 +295,10 @@ describe('ContentPackLibrary', () => {
     fireEvent.change(screen.getByLabelText(/Personality name/u), {
       target: { value: 'Personal Chaos' },
     })
+    fireEvent.mouseDown(
+      screen.getByRole('combobox', { name: 'OpenAI generation model' }),
+    )
+    fireEvent.click(screen.getByRole('option', { name: /GPT-6 Astra/u }))
     fireEvent.click(
       screen.getByRole('checkbox', {
         name: 'Personalize sayings with participant names and About details',
@@ -306,6 +310,7 @@ describe('ContentPackLibrary', () => {
       expect(openAiPersonalityMocks.generateOpenAiPersonality).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Personal Chaos',
+          generationModel: 'gpt-6-astra',
           personalizeWithParticipants: true,
           selectedParticipantIds: ['participant:alex'],
         }),

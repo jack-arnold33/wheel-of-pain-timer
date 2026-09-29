@@ -15,12 +15,42 @@ export const personalityAuthoringCategories = [
   'finished',
 ] as const
 
+export const personalityGenerationModels = [
+  {
+    id: 'gpt-6-sol',
+    label: 'GPT-6 Sol',
+    description: 'Recommended balance of writing quality and cost',
+  },
+  {
+    id: 'gpt-6-luna',
+    label: 'GPT-6 Luna',
+    description: 'Lowest cost for frequent generation',
+  },
+  {
+    id: 'gpt-6-astra',
+    label: 'GPT-6 Astra',
+    description: 'Highest quality and highest cost',
+  },
+] as const
+
+export type PersonalityGenerationModel =
+  (typeof personalityGenerationModels)[number]['id']
+
+export const DEFAULT_PERSONALITY_GENERATION_MODEL: PersonalityGenerationModel =
+  'gpt-6-sol'
+
+const isPersonalityGenerationModel = (
+  value: unknown,
+): value is PersonalityGenerationModel =>
+  personalityGenerationModels.some(({ id }) => id === value)
+
 export type PersonalityAuthoringCategory =
   (typeof personalityAuthoringCategories)[number]
 
 export interface PersonalityAuthoringDraft {
   readonly schemaVersion: 1
   readonly step: 'ideas' | 'review'
+  readonly generationModel: PersonalityGenerationModel
   readonly personalizeWithParticipants: boolean
   readonly selectedParticipantIds: readonly string[]
   readonly name: string
@@ -35,6 +65,7 @@ export interface PersonalityAuthoringDraft {
 export const emptyPersonalityAuthoringDraft = (): PersonalityAuthoringDraft => ({
   schemaVersion: 1,
   step: 'ideas',
+  generationModel: DEFAULT_PERSONALITY_GENERATION_MODEL,
   personalizeWithParticipants: false,
   selectedParticipantIds: [],
   name: '',
@@ -66,6 +97,9 @@ export function loadPersonalityAuthoringDraft(
     return {
       schemaVersion: 1,
       step: parsed.step === 'review' ? 'review' : 'ideas',
+      generationModel: isPersonalityGenerationModel(parsed.generationModel)
+        ? parsed.generationModel
+        : DEFAULT_PERSONALITY_GENERATION_MODEL,
       personalizeWithParticipants: parsed.personalizeWithParticipants === true,
       selectedParticipantIds: Array.isArray(parsed.selectedParticipantIds)
         ? parsed.selectedParticipantIds.filter(
