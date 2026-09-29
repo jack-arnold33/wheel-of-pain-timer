@@ -171,6 +171,12 @@ describe('Personality authoring', () => {
     expect(localStorage.getItem(PERSONALITY_AUTHORING_DRAFT_KEY)).not.toBeNull()
     expect(loadPersonalityAuthoringDraft()).toEqual(draft)
 
+    localStorage.setItem(
+      PERSONALITY_AUTHORING_DRAFT_KEY,
+      JSON.stringify({ ...draft, generationModel: 'unknown-model' }),
+    )
+    expect(loadPersonalityAuthoringDraft().generationModel).toBe('gpt-6-sol')
+
     localStorage.setItem(PERSONALITY_AUTHORING_DRAFT_KEY, '{')
     expect(loadPersonalityAuthoringDraft()).toEqual(emptyPersonalityAuthoringDraft())
   })

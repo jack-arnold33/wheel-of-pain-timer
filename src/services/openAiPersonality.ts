@@ -7,7 +7,6 @@ import type { ContentPackDraft } from '../domain/contentPacks/types'
 import { normalizeContentPack } from '../domain/contentPacks/validation'
 import type { Participant } from '../domain/participants/types'
 
-export const OPENAI_PERSONALITY_MODEL = 'gpt-5.6-luna'
 export const OPENAI_RESPONSES_ENDPOINT = 'https://api.openai.com/v1/responses'
 
 export type OpenAiPersonalityErrorCode =
@@ -139,7 +138,7 @@ export async function generateOpenAiPersonality(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: OPENAI_PERSONALITY_MODEL,
+          model: draft.generationModel,
           store: false,
           reasoning: { effort: 'none' },
           max_output_tokens: 6_000,

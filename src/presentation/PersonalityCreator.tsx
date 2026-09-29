@@ -10,6 +10,7 @@ import {
   Container,
   Divider,
   FormControlLabel,
+  MenuItem,
   Paper,
   Stack,
   TextField,
@@ -24,6 +25,7 @@ import {
   loadPersonalityAuthoringDraft,
   parsePastedPersonality,
   personalityAuthoringCategories,
+  personalityGenerationModels,
   savePersonalityAuthoringDraft,
   type PersonalityAuthoringCategory,
   type PersonalityAuthoringDraft,
@@ -295,6 +297,25 @@ export function PersonalityCreator({
                     value={draft.avoid}
                     onChange={(event) => update('avoid', event.target.value)}
                   />
+                  <TextField
+                    select
+                    fullWidth
+                    label="OpenAI generation model"
+                    value={draft.generationModel}
+                    onChange={(event) =>
+                      update(
+                        'generationModel',
+                        event.target.value as PersonalityAuthoringDraft['generationModel'],
+                      )
+                    }
+                    helperText="Used only when generating sayings directly with OpenAI."
+                  >
+                    {personalityGenerationModels.map((model) => (
+                      <MenuItem key={model.id} value={model.id}>
+                        {model.label} — {model.description}
+                      </MenuItem>
+                    ))}
+                  </TextField>
                 </Stack>
               </Paper>
 
@@ -313,7 +334,8 @@ export function PersonalityCreator({
                   {busy ? 'Generating…' : 'Generate with OpenAI'}
                 </Button>
                 <Typography variant="body2" color="text.secondary">
-                  Uses the OpenAI API key saved in Settings and opens the sayings for review.
+                  Uses {personalityGenerationModels.find(({ id }) => id === draft.generationModel)?.label}{' '}
+                  with the OpenAI API key saved in Settings, then opens the sayings for review.
                 </Typography>
                 <Divider>or</Divider>
                 <Button
