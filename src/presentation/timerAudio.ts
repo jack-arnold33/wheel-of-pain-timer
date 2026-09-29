@@ -1,4 +1,4 @@
-import transitionBellUrl from '../assets/audio/transition-bell.wav?url'
+import transitionBellUrl from '../assets/audio/transition-bell-extended.wav?url'
 import type { TimerCue } from './timerCues'
 import { audioDiagnostics, describeMediaError } from './audioDiagnostics'
 
@@ -72,6 +72,9 @@ const browserEnvironment: PlayerEnvironment = {
 export const TIMER_CUE_ASSETS = {
   transition: transitionBellUrl,
 } as const
+
+// Leave room for the longer cue and delayed iOS media events on an AirPlay route.
+const CUE_END_TIMEOUT_MS = 4_000
 
 const blockedPlayback = (error: unknown): AudioPlaybackResult =>
   error instanceof DOMException && error.name === 'NotAllowedError'
@@ -388,7 +391,7 @@ export class HtmlAudioPlayer {
           ...this.mediaState(element),
         })
         finish('timeout')
-      }, 2_500)
+      }, CUE_END_TIMEOUT_MS)
       element.addEventListener('ended', ended, { once: true })
       element.addEventListener('error', failed, { once: true })
     })

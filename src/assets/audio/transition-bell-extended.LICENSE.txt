@@ -1,0 +1,9 @@
+File: transition-bell-extended.wav
+Derived from: transition-bell.wav (Dingdingding.wav)
+Author of original: IOII-IOIO-IIOI
+Source: https://commons.wikimedia.org/wiki/File:Dingdingding.wav
+License: CC0 1.0 Universal Public Domain Dedication
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+Modification: The original recording is overlapped with a quieter copy delayed
+by 0.6 seconds, then faded over its final 0.08 seconds. The generator is
+scripts/extend-transition-bell.mjs.

@@ -12,7 +12,7 @@ class FakeAudio extends EventTarget {
   pause = vi.fn()
   autoEnd = false
   play = vi.fn(async () => {
-    if (this.autoEnd) queueMicrotask(() => this.dispatchEvent(new Event('ended')))
+    if (this.autoEnd) window.setTimeout(() => this.dispatchEvent(new Event('ended')), 0)
   })
 }
 
@@ -54,7 +54,7 @@ describe('HTML timer audio', () => {
     for (const [name, source] of Object.entries(TIMER_CUE_ASSETS)) {
       audio.bySource(source).play.mockImplementation(async function (this: FakeAudio) {
         order.push(name)
-        queueMicrotask(() => this.dispatchEvent(new Event('ended')))
+        window.setTimeout(() => this.dispatchEvent(new Event('ended')), 0)
       })
     }
     await audio.player.playCues([
@@ -69,7 +69,7 @@ describe('HTML timer audio', () => {
     transition.play
       .mockRejectedValueOnce(new DOMException('Interrupted', 'AbortError'))
       .mockImplementationOnce(async () => {
-        queueMicrotask(() => transition.dispatchEvent(new Event('ended')))
+        window.setTimeout(() => transition.dispatchEvent(new Event('ended')), 0)
       })
 
     await expect(audio.player.playCues([{ kind: 'transition' }])).resolves.toBe('started')
